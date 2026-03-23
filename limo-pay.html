@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LimoPay — Driver Earnings</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: #2a2a38;
+    --accent: #c8f060;
+    --accent2: #60d4f0;
+    --warn: #f0a060;
+    --text: #e8e8f0;
+    --muted: #6a6a80;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 100;
+  }
+
+  .logo {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  .logo span { color: var(--accent); }
+
+  .role-toggle {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+
+  .role-btn {
+    padding: 6px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+    background: transparent;
+    color: var(--muted);
+  }
+
+  .role-btn.active {
+    background: var(--accent);
+    color: #000;
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px;
+  }
+
+  .tab {
+    padding: 14px 20px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    margin-bottom: -1px;
+  }
+
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* MAIN */
+  main { padding: 28px; max-width: 900px; margin: 0 auto; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* UPLOAD ZONE */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--surface);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(200,240,96,0.04);
+  }
+
+  .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+  .upload-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .upload-label {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .upload-sub {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* PREVIEW IMG */
+  #img-preview {
+    display: none;
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    margin-top: 16px;
+    object-fit: contain;
+  }
+
+  /* FIELDS FORM */
+  .fields-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  @media (max-width: 600px) {
+    .fields-grid { grid-template-columns: 1fr; }
+    main { padding: 16px; }
+  }
+
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .field-group.full { grid-column: 1 / -1; }
+
+  label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  input[type="number"], input[type="text"], input[type="date"], textarea {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 15px;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input:focus, textarea:focus {
+    border-color: var(--accent);
+  }
+
+  textarea { resize: vertical; min-height: 70px; }
+
+  /* RESULT BOX */
+  .result-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-top: 20px;
+    display: none;
+  }
+
+  .result-box.visible { display: block; }
+
+  .result-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+  }
+
+  .result-rows { display: flex; flex-direction: column; gap: 8px; }
+
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+  }
+
+  .result-row .rname { color: var(--muted); }
+  .result-row .rval { font-family: 'DM Mono', monospace; font-weight: 500; }
+  .result-row .rval.green { color: var(--accent); }
+  .result-row .rval.blue { color: var(--accent2); }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 8px 0;
+  }
+
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 4px;
+  }
+
+  .total-label { font-size: 16px; font-weight: 700; }
+  .total-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 28px;
+    font-weight: 500;
+    color: var(--accent);
+  }
+
+  /* BUTTONS */
+  .btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+    width: 100%;
+    margin-top: 16px;
+  }
+
+  .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+    margin-top: 10px;
+    width: 100%;
+  }
+
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-save {
+    background: var(--accent2);
+    color: #000;
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  /* LOADING */
+  .loading {
+    display: none;
+    text-align: center;
+    padding: 20px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .spinner {
+    width: 24px; height: 24px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 12px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* STATS CARDS */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  @media (max-width: 600px) { .stats-grid { grid-template-columns: 1fr; } }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+
+  .stat-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 26px;
+    font-weight: 500;
+    color: var(--accent);
+  }
+
+  .stat-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* PERIOD FILTER */
+  .period-filter {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .period-btn {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--muted);
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .period-btn.active {
+    background: var(--surface2);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* TRIPS TABLE */
+  .trips-table {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .trips-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .trips-table th {
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+
+  .trips-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(42,42,56,0.5);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .trips-table tr:last-child td { border-bottom: none; }
+  .trips-table tr:hover td { background: rgba(200,240,96,0.03); }
+
+  .earn-val { color: var(--accent); font-weight: 500; }
+
+  .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--muted);
+  }
+
+  .empty-icon { font-size: 36px; margin-bottom: 12px; }
+  .empty-text { font-size: 14px; }
+
+  /* NOTICE */
+  .notice {
+    background: rgba(200,240,96,0.08);
+    border: 1px solid rgba(200,240,96,0.2);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--accent);
+    margin-bottom: 16px;
+    display: none;
+  }
+
+  .notice.visible { display: block; }
+
+  /* API KEY */
+  .api-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .api-title {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .api-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .api-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .api-row input {
+    flex: 1;
+    font-size: 13px;
+  }
+
+  .api-row .btn {
+    padding: 10px 16px;
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    font-size: 13px;
+    margin-top: 0;
+    width: auto;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-left: 8px;
+  }
+
+  .badge-ok { background: rgba(200,240,96,0.15); color: var(--accent); }
+  .badge-no { background: rgba(240,160,96,0.15); color: var(--warn); }
+
+  /* MANAGER VIEW */
+  .driver-filter {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .driver-filter label { text-transform: none; font-size: 13px; letter-spacing: 0; margin: 0; }
+
+  select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+  }
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Limo<span>Pay</span></div>
+  <div class="role-toggle">
+    <button class="role-btn active" onclick="setRole('driver')">Driver</button>
+    <button class="role-btn" onclick="setRole('manager')">Manager</button>
+  </div>
+</header>
+
+<div class="tabs" id="driver-tabs">
+  <button class="tab active" onclick="switchTab('add')">+ New Trip</button>
+  <button class="tab" onclick="switchTab('history')">History</button>
+</div>
+
+<!-- DRIVER: ADD TRIP -->
+<main>
+<div class="page active" id="page-add">
+
+  <div class="api-section">
+    <div class="api-title">Claude API Key <span class="badge" id="api-badge">not set</span></div>
+    <div class="api-sub">Required for AI screenshot parsing. Get your key at console.anthropic.com</div>
+    <div class="api-row">
+      <input type="password" id="api-key-input" placeholder="sk-ant-..." />
+      <button class="btn" onclick="saveApiKey()">Save</button>
+    </div>
+  </div>
+
+  <div class="upload-zone" id="upload-zone">
+    <input type="file" id="file-input" accept="image/*" onchange="handleFile(this)" />
+    <span class="upload-icon">📸</span>
+    <div class="upload-label">Drop screenshot or tap to upload</div>
+    <div class="upload-sub">Trip receipt from dispatch system</div>
+  </div>
+
+  <img id="img-preview" alt="Trip screenshot" />
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    Reading trip details with AI...
+  </div>
+
+  <div class="notice" id="parse-notice">✓ AI parsed the screenshot — review and adjust below</div>
+
+  <div class="fields-grid" id="fields-form">
+    <div class="field-group">
+      <label>Booking #</label>
+      <input type="text" id="f-booking" placeholder="e.g. 1029384" />
+    </div>
+    <div class="field-group">
+      <label>Date</label>
+      <input type="date" id="f-date" />
+    </div>
+    <div class="field-group">
+      <label>Base ($)</label>
+      <input type="number" id="f-base" placeholder="0.00" step="0.01" oninput="calc()" />
+    </div>
+    <div class="field-group">
+      <label>Discount ($)</label>
+      <input type="number" id="f-discount" placeholder="0.00" step="0.01" oninput="calc()" />
+    </div>
+    <div class="field-group">
+      <label>Expenses ($)</label>
+      <input type="number" id="f-expenses" placeholder="0.00" step="0.01" oninput="calc()" />
+    </div>
+    <div class="field-group">
+      <label>Extra (carseat/concert) ($)</label>
+      <input type="number" id="f-extra" placeholder="0.00" step="0.01" oninput="calc()" />
+    </div>
+    <div class="field-group">
+      <label>Gratuity ($)</label>
+      <input type="number" id="f-gratuity" placeholder="0.00" step="0.01" oninput="calc()" />
+    </div>
+    <div class="field-group">
+      <label>Fuel ($)</label>
+      <input type="number" id="f-fuel" placeholder="0.00" step="0.01" oninput="calc()" />
+    </div>
+    <div class="field-group">
+      <label>Wait Time ($)</label>
+      <input type="number" id="f-wait" placeholder="0.00" step="0.01" oninput="calc()" />
+    </div>
+    <div class="field-group">
+      <label>Airport Fee ($)</label>
+      <input type="number" id="f-airport" placeholder="0.00" step="0.01" oninput="calc()" />
+    </div>
+    <div class="field-group">
+      <label>Tolls ($)</label>
+      <input type="number" id="f-tolls" placeholder="0.00" step="0.01" oninput="calc()" />
+    </div>
+    <div class="field-group">
+      <label>Tech ($) <span style="color:var(--muted);font-size:10px;">stays with company</span></label>
+      <input type="number" id="f-tech" placeholder="0.00" step="0.01" oninput="calc()" />
+    </div>
+    <div class="field-group">
+      <label>Total Fare ($)</label>
+      <input type="number" id="f-total" placeholder="0.00" step="0.01" oninput="calcExtra()" />
+    </div>
+    <div class="field-group full">
+      <label>Notes</label>
+      <textarea id="f-notes" placeholder="Any special details..."></textarea>
+    </div>
+  </div>
+
+  <div class="result-box" id="result-box">
+    <div class="result-title">Pay Breakdown</div>
+    <div class="result-rows">
+      <div class="result-row">
+        <span class="rname">Adjusted Base</span>
+        <span class="rval" id="r-adj-base">—</span>
+      </div>
+      <div class="result-row">
+        <span class="rname">× 38% commission</span>
+        <span class="rval green" id="r-commission">—</span>
+      </div>
+      <div class="result-row">
+        <span class="rname">Gratuity (100%)</span>
+        <span class="rval blue" id="r-gratuity">—</span>
+      </div>
+      <div class="result-row">
+        <span class="rname">Fuel (100%)</span>
+        <span class="rval blue" id="r-fuel">—</span>
+      </div>
+      <div class="result-row">
+        <span class="rname">Wait Time (100%)</span>
+        <span class="rval blue" id="r-wait">—</span>
+      </div>
+      <div class="result-row">
+        <span class="rname">Airport Fee (100%)</span>
+        <span class="rval blue" id="r-airport">—</span>
+      </div>
+      <div class="result-row">
+        <span class="rname">Tolls (100%)</span>
+        <span class="rval blue" id="r-tolls">—</span>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="total-row">
+      <span class="total-label">Driver Earns</span>
+      <span class="total-val" id="r-total">$0.00</span>
+    </div>
+  </div>
+
+  <button class="btn btn-save" id="save-btn" onclick="saveTrip()" style="display:none">Save Trip</button>
+  <button class="btn btn-ghost" onclick="resetForm()">Clear</button>
+
+</div>
+
+<!-- DRIVER: HISTORY -->
+<div class="page" id="page-history">
+  <div class="stats-grid" id="stats-grid"></div>
+  <div class="period-filter">
+    <button class="period-btn active" onclick="setPeriod('all', this)">All time</button>
+    <button class="period-btn" onclick="setPeriod('today', this)">Today</button>
+    <button class="period-btn" onclick="setPeriod('week', this)">This week</button>
+    <button class="period-btn" onclick="setPeriod('month', this)">This month</button>
+  </div>
+  <div class="trips-table" id="trips-table"></div>
+  <button class="btn btn-ghost" style="margin-top:12px" onclick="exportCSV()">⬇ Export CSV for Manager</button>
+</div>
+
+<!-- MANAGER VIEW -->
+<div class="page" id="page-manager">
+  <div class="stats-grid" id="mgr-stats"></div>
+  <div class="driver-filter">
+    <label>Driver:</label>
+    <select id="driver-select" onchange="renderManager()">
+      <option value="all">All drivers</option>
+    </select>
+    <div class="period-filter" style="margin:0">
+      <button class="period-btn active" onclick="setMgrPeriod('all', this)">All</button>
+      <button class="period-btn" onclick="setMgrPeriod('today', this)">Today</button>
+      <button class="period-btn" onclick="setMgrPeriod('week', this)">Week</button>
+      <button class="period-btn" onclick="setMgrPeriod('month', this)">Month</button>
+    </div>
+  </div>
+  <div class="trips-table" id="mgr-table"></div>
+</div>
+
+</main>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let trips = JSON.parse(localStorage.getItem('limo_trips') || '[]');
+let currentPeriod = 'all';
+let mgrPeriod = 'all';
+let currentRole = 'driver';
+let activeTab = 'add';
+let parsedData = null;
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+window.onload = () => {
+  const savedKey = localStorage.getItem('anthropic_key');
+  if (savedKey) {
+    document.getElementById('api-key-input').value = savedKey;
+    document.getElementById('api-badge').textContent = 'set ✓';
+    document.getElementById('api-badge').className = 'badge badge-ok';
+  } else {
+    document.getElementById('api-badge').textContent = 'not set';
+    document.getElementById('api-badge').className = 'badge badge-no';
+  }
+  document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+  renderHistory();
+};
+
+// ─── API KEY ──────────────────────────────────────────────────────────────────
+function saveApiKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if (!key) return;
+  localStorage.setItem('anthropic_key', key);
+  document.getElementById('api-badge').textContent = 'set ✓';
+  document.getElementById('api-badge').className = 'badge badge-ok';
+}
+
+// ─── ROLE & TABS ──────────────────────────────────────────────────────────────
+function setRole(role) {
+  currentRole = role;
+  document.querySelectorAll('.role-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === role));
+  document.getElementById('driver-tabs').style.display = role === 'driver' ? 'flex' : 'none';
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  if (role === 'driver') {
+    document.getElementById('page-' + activeTab).classList.add('active');
+  } else {
+    document.getElementById('page-manager').classList.add('active');
+    renderManager();
+  }
+}
+
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', (i === 0 && tab === 'add') || (i === 1 && tab === 'history')));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + tab).classList.add('active');
+  if (tab === 'history') renderHistory();
+}
+
+// ─── FILE UPLOAD & AI PARSE ───────────────────────────────────────────────────
+function handleFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const preview = document.getElementById('img-preview');
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    parseWithAI(e.target.result.split(',')[1]);
+  };
+  reader.readAsDataURL(file);
+}
+
+async function parseWithAI(base64) {
+  const key = localStorage.getItem('anthropic_key');
+  if (!key) {
+    document.getElementById('parse-notice').textContent = '⚠ Set your API key above to enable AI parsing';
+    document.getElementById('parse-notice').style.borderColor = 'rgba(240,160,96,0.3)';
+    document.getElementById('parse-notice').style.color = 'var(--warn)';
+    document.getElementById('parse-notice').classList.add('visible');
+    return;
+  }
+
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('parse-notice').classList.remove('visible');
+
+  const prompt = `You are parsing a limo/black car service trip receipt. Extract these fields and return ONLY valid JSON, nothing else:
+{
+  "booking": "booking/reservation number or empty string",
+  "base": number or 0,
+  "gratuity": number or 0,
+  "fuel": number or 0,
+  "wait": number or 0,
+  "airport": number or 0,
+  "tolls": number or 0,
+  "tech": number or 0,
+  "discount": number or 0,
+  "expenses": number or 0,
+  "total": number or 0
+}
+Extra charges (carseat, concert, etc.) are the difference between total and sum of all named fields — do NOT include them separately.
+Return only the JSON object, no explanation.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 500,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64 } },
+            { type: 'text', text: prompt }
+          ]
+        }]
+      })
+    });
+
+    const data = await res.json();
+    const text = data.content?.[0]?.text || '{}';
+    const clean = text.replace(/```json|```/g, '').trim();
+    parsedData = JSON.parse(clean);
+    fillForm(parsedData);
+
+    document.getElementById('parse-notice').textContent = '✓ AI parsed the screenshot — review and adjust below';
+    document.getElementById('parse-notice').style.borderColor = 'rgba(200,240,96,0.2)';
+    document.getElementById('parse-notice').style.color = 'var(--accent)';
+    document.getElementById('parse-notice').classList.add('visible');
+  } catch(e) {
+    document.getElementById('parse-notice').textContent = '⚠ Could not parse — fill in manually';
+    document.getElementById('parse-notice').style.color = 'var(--warn)';
+    document.getElementById('parse-notice').classList.add('visible');
+  }
+
+  document.getElementById('loading').style.display = 'none';
+}
+
+function fillForm(d) {
+  if (d.booking) document.getElementById('f-booking').value = d.booking;
+  const set = (id, val) => { if (val) document.getElementById(id).value = val; };
+  set('f-base', d.base);
+  set('f-gratuity', d.gratuity);
+  set('f-fuel', d.fuel);
+  set('f-wait', d.wait);
+  set('f-airport', d.airport);
+  set('f-tolls', d.tolls);
+  set('f-tech', d.tech);
+  set('f-discount', d.discount);
+  set('f-expenses', d.expenses);
+  set('f-total', d.total);
+  calcExtra();
+  calc();
+}
+
+// ─── CALCULATION ──────────────────────────────────────────────────────────────
+function v(id) { return parseFloat(document.getElementById(id).value) || 0; }
+function fmt(n) { return '$' + n.toFixed(2); }
+
+function calcExtra() {
+  const total = v('f-total');
+  if (!total) return;
+  const namedSum = v('f-base') + v('f-gratuity') + v('f-fuel') + v('f-wait') + v('f-airport') + v('f-tolls') + v('f-tech');
+  const extra = Math.max(0, total - namedSum);
+  if (extra > 0) document.getElementById('f-extra').value = extra.toFixed(2);
+  calc();
+}
+
+function calc() {
+  const base = v('f-base');
+  const discount = v('f-discount');
+  const expenses = v('f-expenses');
+  const extra = v('f-extra');
+  const gratuity = v('f-gratuity');
+  const fuel = v('f-fuel');
+  const wait = v('f-wait');
+  const airport = v('f-airport');
+  const tolls = v('f-tolls');
+
+  if (!base && !gratuity && !fuel) return;
+
+  const adjBase = base - discount + expenses + extra;
+  const commission = adjBase * 0.38;
+  const driverTotal = commission + gratuity + fuel + wait + airport + tolls;
+
+  document.getElementById('r-adj-base').textContent = fmt(adjBase);
+  document.getElementById('r-commission').textContent = fmt(commission);
+  document.getElementById('r-gratuity').textContent = fmt(gratuity);
+  document.getElementById('r-fuel').textContent = fmt(fuel);
+  document.getElementById('r-wait').textContent = fmt(wait);
+  document.getElementById('r-airport').textContent = fmt(airport);
+  document.getElementById('r-tolls').textContent = fmt(tolls);
+  document.getElementById('r-total').textContent = fmt(driverTotal);
+
+  document.getElementById('result-box').classList.add('visible');
+  document.getElementById('save-btn').style.display = 'block';
+}
+
+// ─── SAVE TRIP ────────────────────────────────────────────────────────────────
+function saveTrip() {
+  const base = v('f-base');
+  const discount = v('f-discount');
+  const expenses = v('f-expenses');
+  const extra = v('f-extra');
+  const gratuity = v('f-gratuity');
+  const fuel = v('f-fuel');
+  const wait = v('f-wait');
+  const airport = v('f-airport');
+  const tolls = v('f-tolls');
+  const adjBase = base - discount + expenses + extra;
+  const driverEarnings = (adjBase * 0.38) + gratuity + fuel + wait + airport + tolls;
+
+  const trip = {
+    id: Date.now(),
+    date: document.getElementById('f-date').value || new Date().toISOString().split('T')[0],
+    booking: document.getElementById('f-booking').value || '—',
+    driver: 'Me',
+    base, discount, expenses, extra, gratuity, fuel, wait, airport, tolls,
+    tech: v('f-tech'),
+    total: v('f-total'),
+    earnings: driverEarnings,
+    notes: document.getElementById('f-notes').value
+  };
+
+  trips.unshift(trip);
+  localStorage.setItem('limo_trips', JSON.stringify(trips));
+  resetForm();
+  switchTab('history');
+}
+
+function resetForm() {
+  ['f-booking','f-base','f-discount','f-expenses','f-extra','f-gratuity',
+   'f-fuel','f-wait','f-airport','f-tolls','f-tech','f-total','f-notes'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('img-preview').style.display = 'none';
+  document.getElementById('result-box').classList.remove('visible');
+  document.getElementById('save-btn').style.display = 'none';
+  document.getElementById('parse-notice').classList.remove('visible');
+  parsedData = null;
+}
+
+// ─── HISTORY & STATS ──────────────────────────────────────────────────────────
+function setPeriod(p, btn) {
+  currentPeriod = p;
+  document.querySelectorAll('#page-history .period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderHistory();
+}
+
+function filterByPeriod(list, period) {
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  const weekAgo = new Date(now - 7*86400000).toISOString().split('T')[0];
+  const monthAgo = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  return list.filter(t => {
+    if (period === 'today') return t.date === today;
+    if (period === 'week') return t.date >= weekAgo;
+    if (period === 'month') return t.date >= monthAgo;
+    return true;
+  });
+}
+
+function renderHistory() {
+  const filtered = filterByPeriod(trips, currentPeriod);
+  const total = filtered.reduce((s, t) => s + t.earnings, 0);
+  const count = filtered.length;
+  const avg = count ? total / count : 0;
+
+  const sg = document.getElementById('stats-grid');
+  sg.innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Total Earned</div>
+      <div class="stat-val">${fmt(total)}</div>
+      <div class="stat-sub">${count} trip${count !== 1 ? 's' : ''}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Avg per Trip</div>
+      <div class="stat-val">${fmt(avg)}</div>
+      <div class="stat-sub">per completed ride</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Best Trip</div>
+      <div class="stat-val">${filtered.length ? fmt(Math.max(...filtered.map(t => t.earnings))) : '$0.00'}</div>
+      <div class="stat-sub">highest single earning</div>
+    </div>
+  `;
+
+  const tt = document.getElementById('trips-table');
+  if (!filtered.length) {
+    tt.innerHTML = `<div class="empty-state"><div class="empty-icon">🚗</div><div class="empty-text">No trips yet for this period</div></div>`;
+    return;
+  }
+
+  tt.innerHTML = `<table>
+    <thead><tr>
+      <th>Date</th><th>Booking</th><th>Base</th><th>Gratuity</th><th>Earned</th>
+    </tr></thead>
+    <tbody>
+      ${filtered.map(t => `<tr>
+        <td>${t.date}</td>
+        <td>${t.booking}</td>
+        <td>${fmt(t.base)}</td>
+        <td>${fmt(t.gratuity)}</td>
+        <td class="earn-val">${fmt(t.earnings)}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+// ─── MANAGER VIEW ─────────────────────────────────────────────────────────────
+function setMgrPeriod(p, btn) {
+  mgrPeriod = p;
+  document.querySelectorAll('#page-manager .period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderManager();
+}
+
+function renderManager() {
+  const driverSel = document.getElementById('driver-select').value;
+  let filtered = filterByPeriod(trips, mgrPeriod);
+  if (driverSel !== 'all') filtered = filtered.filter(t => t.driver === driverSel);
+
+  const total = filtered.reduce((s, t) => s + t.earnings, 0);
+  const totalFare = filtered.reduce((s, t) => s + (t.total || 0), 0);
+  const count = filtered.length;
+
+  document.getElementById('mgr-stats').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Total Payroll</div>
+      <div class="stat-val">${fmt(total)}</div>
+      <div class="stat-sub">${count} trips</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Revenue</div>
+      <div class="stat-val">${fmt(totalFare)}</div>
+      <div class="stat-sub">gross fare collected</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Company Keeps</div>
+      <div class="stat-val">${fmt(totalFare - total)}</div>
+      <div class="stat-sub">after driver pay</div>
+    </div>
+  `;
+
+  const mt = document.getElementById('mgr-table');
+  if (!filtered.length) {
+    mt.innerHTML = `<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-text">No trips for this period</div></div>`;
+    return;
+  }
+
+  mt.innerHTML = `<table>
+    <thead><tr>
+      <th>Date</th><th>Driver</th><th>Booking</th><th>Fare</th><th>Driver Pay</th>
+    </tr></thead>
+    <tbody>
+      ${filtered.map(t => `<tr>
+        <td>${t.date}</td>
+        <td>${t.driver}</td>
+        <td>${t.booking}</td>
+        <td>${fmt(t.total || 0)}</td>
+        <td class="earn-val">${fmt(t.earnings)}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+// ─── CSV EXPORT ───────────────────────────────────────────────────────────────
+function exportCSV() {
+  const filtered = filterByPeriod(trips, currentPeriod);
+  if (!filtered.length) { alert('No trips to export for this period.'); return; }
+
+  const headers = [
+    'Date','Booking','Driver','Base','Discount','Expenses','Extra',
+    'Gratuity','Fuel','Wait Time','Airport Fee','Tolls','Tech',
+    'Total Fare','Driver Earnings','Notes'
+  ];
+
+  const rows = filtered.map(t => [
+    t.date, t.booking, t.driver,
+    t.base.toFixed(2), t.discount.toFixed(2), t.expenses.toFixed(2), t.extra.toFixed(2),
+    t.gratuity.toFixed(2), t.fuel.toFixed(2), t.wait.toFixed(2),
+    t.airport.toFixed(2), t.tolls.toFixed(2), t.tech.toFixed(2),
+    (t.total||0).toFixed(2), t.earnings.toFixed(2),
+    '"' + (t.notes||'').replace(/"/g,'""') + '"'
+  ]);
+
+  const totalEarnings = filtered.reduce((s,t) => s + t.earnings, 0);
+  const totalFare = filtered.reduce((s,t) => s + (t.total||0), 0);
+  rows.push(['','','TOTAL','','','','','','','','','','',
+    totalFare.toFixed(2), totalEarnings.toFixed(2), '']);
+
+  const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const period = currentPeriod === 'all' ? 'all-time' : currentPeriod;
+  a.href = url;
+  a.download = `limopay-${period}-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─── DRAG & DROP ──────────────────────────────────────────────────────────────
+const zone = document.getElementById('upload-zone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+zone.addEventListener('drop', e => {
+  e.preventDefault();
+  zone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      document.getElementById('img-preview').src = ev.target.result;
+      document.getElementById('img-preview').style.display = 'block';
+      parseWithAI(ev.target.result.split(',')[1]);
+    };
+    reader.readAsDataURL(file);
+  }
+});
+</script>
+</body>
+</html>
