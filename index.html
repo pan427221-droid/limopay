@@ -436,17 +436,9 @@ async function verifyDriverId() {
     }
 
     // Save profile with driver_id
-    const { data: profile, error: upsertError } = await sb.from('profiles').upsert({
-      id: currentUser.id,
-      email: currentUser.email,
-      full_name: currentUser.user_metadata?.full_name || currentUser.email,
-      avatar_url: currentUser.user_metadata?.avatar_url || null,
-      role: 'driver',
+    const { data: profile, error: upsertError } = await sb.from('profiles').update({
       driver_id: input
-    }).select().single();
-
-    if (upsertError) throw upsertError;
-    await loadApp(currentUser, profile);
+    }).eq('id', currentUser.id).select().single();
 
   } catch(err) {
     errEl.textContent = 'Something went wrong. Try again.';
