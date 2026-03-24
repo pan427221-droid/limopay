@@ -369,7 +369,10 @@ async function signInWithGoogle() {
   if (error) alert('Login failed: ' + error.message);
 }
 
-async function signOut() { await sb.auth.signOut(); }
+async function signOut() {
+  await sb.auth.signOut();
+  window.location.href = window.location.origin + window.location.pathname;
+}
 
 function showTab(name) {
   ['log','stats','history','dashboard'].forEach(t => {
