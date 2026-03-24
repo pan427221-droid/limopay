@@ -8,33 +8,25 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0a0a0f;
-    --surface: #111118;
-    --surface2: #1a1a24;
-    --border: #2a2a38;
-    --accent: #c8f060;
-    --accent2: #60d4f0;
-    --danger: #f06060;
-    --text: #e8e8f0;
-    --muted: #6a6a80;
-    --radius: 12px;
+    --bg: #0a0a0f; --surface: #111118; --surface2: #1a1a24; --border: #2a2a38;
+    --accent: #c8f060; --accent2: #60d4f0; --danger: #f06060; --text: #e8e8f0; --muted: #6a6a80; --radius: 12px;
   }
-
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Syne', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-  /* LOGIN */
-  #login-screen {
-    min-height: 100vh; display: flex; align-items: center; justify-content: center;
-    background: radial-gradient(ellipse at 20% 50%, #1a1a2e 0%, var(--bg) 60%);
-  }
-  .login-card {
+  /* SCREENS */
+  .screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+  .screen { background: radial-gradient(ellipse at 20% 50%, #1a1a2e 0%, var(--bg) 60%); }
+
+  .card {
     background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
     padding: 48px 40px; width: 100%; max-width: 400px; text-align: center;
   }
-  .login-logo { font-size: 32px; font-weight: 800; letter-spacing: -1px; margin-bottom: 8px; }
-  .login-logo span { color: var(--accent); }
-  .login-sub { color: var(--muted); font-size: 14px; margin-bottom: 40px; }
+
+  .logo { font-size: 32px; font-weight: 800; letter-spacing: -1px; margin-bottom: 8px; }
+  .logo span { color: var(--accent); }
+  .card-sub { color: var(--muted); font-size: 14px; margin-bottom: 40px; }
+
   .btn-google {
     display: flex; align-items: center; justify-content: center; gap: 12px;
     width: 100%; padding: 14px 24px; background: var(--surface2); border: 1px solid var(--border);
@@ -42,7 +34,31 @@
     font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s;
   }
   .btn-google:hover { border-color: var(--accent); background: rgba(200,240,96,0.05); }
-  .login-note { margin-top: 24px; font-size: 12px; color: var(--muted); }
+  .card-note { margin-top: 24px; font-size: 12px; color: var(--muted); }
+
+  /* DRIVER ID SCREEN */
+  .driver-id-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: block; }
+
+  .driver-id-input {
+    width: 100%; padding: 16px; background: var(--surface2); border: 2px solid var(--border);
+    border-radius: var(--radius); color: var(--text); font-family: 'DM Mono', monospace;
+    font-size: 28px; font-weight: 700; text-align: center; letter-spacing: 8px;
+    transition: border-color 0.2s; margin-bottom: 16px;
+  }
+  .driver-id-input:focus { outline: none; border-color: var(--accent); }
+  .driver-id-input::placeholder { letter-spacing: 4px; font-size: 20px; }
+
+  .btn-primary {
+    width: 100%; padding: 14px; background: var(--accent); border: none; border-radius: var(--radius);
+    color: #000; font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-primary:hover { background: #d4f570; transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .error-msg { color: var(--danger); font-size: 13px; margin-top: 12px; min-height: 20px; }
+
+  .btn-link { background: none; border: none; color: var(--muted); font-size: 12px; cursor: pointer; margin-top: 16px; text-decoration: underline; font-family: 'Syne', sans-serif; }
+  .btn-link:hover { color: var(--text); }
 
   /* LOADING */
   #loading-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
@@ -56,8 +72,8 @@
     padding: 16px 24px; border-bottom: 1px solid var(--border);
     background: var(--bg); position: sticky; top: 0; z-index: 100;
   }
-  .logo { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
-  .logo span { color: var(--accent); }
+  .logo-sm { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+  .logo-sm span { color: var(--accent); }
   .header-right { display: flex; align-items: center; gap: 12px; }
   .user-info { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
   .user-avatar {
@@ -66,13 +82,20 @@
     align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--accent); flex-shrink: 0;
   }
   .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+  .driver-id-badge {
+    padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700;
+    font-family: 'DM Mono', monospace; background: rgba(200,240,96,0.1);
+    border: 1px solid rgba(200,240,96,0.2); color: var(--accent);
+  }
+
   .role-badge { padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
   .role-badge.driver { background: rgba(200,240,96,0.15); color: var(--accent); }
   .role-badge.manager { background: rgba(96,212,240,0.15); color: var(--accent2); }
+
   .btn-signout {
     padding: 6px 12px; background: transparent; border: 1px solid var(--border);
-    border-radius: 6px; color: var(--muted); font-family: 'Syne', sans-serif;
-    font-size: 12px; cursor: pointer; transition: all 0.2s;
+    border-radius: 6px; color: var(--muted); font-family: 'Syne', sans-serif; font-size: 12px; cursor: pointer; transition: all 0.2s;
   }
   .btn-signout:hover { border-color: var(--danger); color: var(--danger); }
 
@@ -88,7 +111,6 @@
   /* CONTENT */
   .content { padding: 24px; max-width: 900px; margin: 0 auto; }
 
-  /* STATS ROW */
   .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 24px; }
   .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
   .stat-card.highlight { border-color: rgba(200,240,96,0.3); background: rgba(200,240,96,0.05); }
@@ -96,7 +118,6 @@
   .stat-value { font-size: 20px; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--accent); }
   .stat-value.neutral { color: var(--text); }
 
-  /* LAST TRIP CARD */
   .last-trip-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 24px; }
   .ltc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
   .ltc-title { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
@@ -107,16 +128,13 @@
   .ltc-row-label { font-size: 10px; color: var(--muted); margin-bottom: 2px; }
   .ltc-row-val { font-size: 13px; font-family: 'DM Mono', monospace; font-weight: 500; }
 
-  /* PERIOD BUTTONS */
   .period-tabs { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
   .period-btn {
     padding: 6px 14px; background: var(--surface); border: 1px solid var(--border);
-    border-radius: 6px; color: var(--muted); font-family: 'Syne', sans-serif;
-    font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    border-radius: 6px; color: var(--muted); font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;
   }
   .period-btn.active { background: rgba(200,240,96,0.1); border-color: var(--accent); color: var(--accent); }
 
-  /* UPLOAD */
   .upload-zone {
     border: 2px dashed var(--border); border-radius: var(--radius); padding: 28px;
     text-align: center; cursor: pointer; transition: all 0.2s; margin-bottom: 20px; background: var(--surface);
@@ -128,7 +146,6 @@
   .upload-text strong { color: var(--accent); }
   #img-preview { max-width: 180px; max-height: 130px; border-radius: 8px; margin: 12px auto 0; display: none; border: 1px solid var(--border); }
 
-  /* FORM */
   .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
   .field label { display: block; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
   .field input {
@@ -137,7 +154,6 @@
   }
   .field input:focus { outline: none; border-color: var(--accent); }
 
-  /* EARNINGS PREVIEW */
   .earnings-preview { background: var(--surface); border: 1px solid rgba(200,240,96,0.2); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; display: none; }
   .earnings-preview.show { display: block; }
   .ep-title { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
@@ -146,15 +162,13 @@
   .ep-row.total { font-weight: 700; font-size: 17px; color: var(--accent); margin-top: 4px; padding-top: 8px; }
   .ep-val { font-family: 'DM Mono', monospace; }
 
-  /* BUTTON */
-  .btn-primary {
+  .btn-save {
     width: 100%; padding: 14px; background: var(--accent); border: none; border-radius: var(--radius);
     color: #000; font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s;
   }
-  .btn-primary:hover { background: #d4f570; transform: translateY(-1px); }
-  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-save:hover { background: #d4f570; transform: translateY(-1px); }
+  .btn-save:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-  /* TABLE */
   .table-wrap { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
   th { text-align: left; padding: 10px 12px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 1px solid var(--border); }
@@ -165,7 +179,6 @@
   .btn-delete { padding: 4px 8px; background: transparent; border: 1px solid var(--border); border-radius: 4px; color: var(--muted); font-size: 11px; cursor: pointer; transition: all 0.2s; }
   .btn-delete:hover { border-color: var(--danger); color: var(--danger); }
 
-  /* STATUS */
   .status-bar { padding: 10px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; display: none; }
   .status-bar.show { display: block; }
   .status-bar.loading { background: rgba(96,212,240,0.1); border: 1px solid rgba(96,212,240,0.3); color: var(--accent2); }
@@ -179,19 +192,21 @@
   @media (max-width: 600px) {
     .content { padding: 16px; }
     header { padding: 12px 16px; }
-    .login-card { padding: 32px 20px; margin: 16px; }
+    .card { padding: 32px 20px; margin: 16px; }
     .user-name-text { display: none; }
   }
 </style>
 </head>
 <body>
 
+<!-- LOADING -->
 <div id="loading-screen"><div class="spinner"></div></div>
 
-<div id="login-screen" style="display:none">
-  <div class="login-card">
-    <div class="login-logo">Limo<span>Pay</span></div>
-    <div class="login-sub">Driver earnings tracker</div>
+<!-- LOGIN -->
+<div id="login-screen" class="screen" style="display:none">
+  <div class="card">
+    <div class="logo">Limo<span>Pay</span></div>
+    <div class="card-sub">Driver earnings tracker</div>
     <button class="btn-google" onclick="signInWithGoogle()">
       <svg width="18" height="18" viewBox="0 0 18 18">
         <path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z"/>
@@ -201,17 +216,32 @@
       </svg>
       Continue with Google
     </button>
-    <div class="login-note">Your trips are private and visible only to you and managers.</div>
+    <div class="card-note">Sign in with your Google account to continue.</div>
   </div>
 </div>
 
+<!-- DRIVER ID SCREEN -->
+<div id="driverid-screen" class="screen" style="display:none">
+  <div class="card">
+    <div class="logo">Limo<span>Pay</span></div>
+    <div class="card-sub">Enter your Driver ID to continue</div>
+    <label class="driver-id-label">Driver ID</label>
+    <input type="text" id="driver-id-input" class="driver-id-input" maxlength="4" placeholder="····" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+    <button class="btn-primary" id="btn-verify" onclick="verifyDriverId()">Continue</button>
+    <div class="error-msg" id="driverid-error"></div>
+    <button class="btn-link" onclick="signOut()">Sign out and use a different account</button>
+  </div>
+</div>
+
+<!-- APP -->
 <div id="app">
   <header>
-    <div class="logo">Limo<span>Pay</span></div>
+    <div class="logo-sm">Limo<span>Pay</span></div>
     <div class="header-right">
       <div class="user-info">
         <div class="user-avatar" id="user-avatar">?</div>
         <span id="user-name" class="user-name-text"></span>
+        <span class="driver-id-badge" id="driver-id-display"></span>
         <span class="role-badge driver" id="role-badge">driver</span>
       </div>
       <button class="btn-signout" onclick="signOut()">Sign out</button>
@@ -254,7 +284,7 @@
       <div class="ep-row"><span>Tolls</span><span class="ep-val" id="ep-tolls">$0.00</span></div>
       <div class="ep-row total"><span>Your Earnings</span><span class="ep-val" id="ep-total">$0.00</span></div>
     </div>
-    <button class="btn-primary" id="btn-save" onclick="saveTrip()">Save Trip</button>
+    <button class="btn-save" id="btn-save" onclick="saveTrip()">Save Trip</button>
   </div>
 
   <!-- MY STATS -->
@@ -299,7 +329,7 @@
     <div class="stats-row" id="dash-stats"></div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Date</th><th>Driver</th><th>Booking</th><th>Total</th><th>Earnings</th></tr></thead>
+        <thead><tr><th>Date</th><th>Driver ID</th><th>Booking</th><th>Total</th><th>Earnings</th></tr></thead>
         <tbody id="dash-body"></tbody>
       </table>
     </div>
@@ -311,19 +341,21 @@
 
 <script>
 const SUPABASE_URL  = 'https://uljmcbrorgjrrvoxzmdb.supabase.co';
-const SUPABASE_ANON = 'sb_publishable_LPqirZQz4fh3RShvzH92Tg_k1aSWfae';
+const SUPABASE_ANON = '%%VITE_SUPABASE_ANON_KEY%%';
 const API_URL       = 'https://limopay-production.up.railway.app';
 
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
-let currentUser = null, currentRole = 'driver', allTrips = [];
+let currentUser = null, currentRole = 'driver', currentDriverId = null, allTrips = [];
 let statsFilter = 'today', historyFilter = 'all', dashFilter = 'all';
 
+// ── INIT ──────────────────────────────────────────────────────────────────────
 async function init() {
   const { data: { session } } = await sb.auth.getSession();
   if (session) await onLoggedIn(session.user);
   else showScreen('login');
+
   sb.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' && session) await onLoggedIn(session.user);
     else if (event === 'SIGNED_OUT') { currentUser = null; allTrips = []; showScreen('login'); }
@@ -332,35 +364,110 @@ async function init() {
 
 async function onLoggedIn(user) {
   currentUser = user;
+
   let { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single();
+
   if (!profile) {
-    const { data: np } = await sb.from('profiles').insert({
-      id: user.id, email: user.email,
-      full_name: user.user_metadata?.full_name || user.email,
-      avatar_url: user.user_metadata?.avatar_url || null, role: 'driver'
-    }).select().single();
-    profile = np;
+    // New user — show Driver ID screen first
+    showScreen('driverid');
+    return;
   }
-  currentRole = profile?.role || 'driver';
+
+  // Existing user — check if they have a driver_id
+  if (!profile.driver_id && currentRole !== 'manager') {
+    showScreen('driverid');
+    return;
+  }
+
+  await loadApp(user, profile);
+}
+
+async function loadApp(user, profile) {
+  currentRole     = profile?.role || 'driver';
+  currentDriverId = profile?.driver_id || null;
+
   const name = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
   document.getElementById('user-name').textContent = name;
+
   const badge = document.getElementById('role-badge');
   badge.textContent = currentRole; badge.className = `role-badge ${currentRole}`;
+
   const avatar = document.getElementById('user-avatar');
   if (user.user_metadata?.avatar_url) avatar.innerHTML = `<img src="${user.user_metadata.avatar_url}" alt="">`;
   else avatar.textContent = name[0].toUpperCase();
+
+  const idDisplay = document.getElementById('driver-id-display');
+  if (currentDriverId) idDisplay.textContent = `#${currentDriverId}`;
+  else idDisplay.style.display = 'none';
+
   if (currentRole === 'manager') document.getElementById('tab-dashboard').style.display = '';
+
   document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
   showScreen('app');
   await loadTrips();
 }
 
-function showScreen(s) {
-  document.getElementById('loading-screen').style.display = s==='loading' ? 'flex' : 'none';
-  document.getElementById('login-screen').style.display   = s==='login'   ? 'flex' : 'none';
-  document.getElementById('app').style.display            = s==='app'     ? 'block': 'none';
+// ── DRIVER ID VERIFICATION ────────────────────────────────────────────────────
+async function verifyDriverId() {
+  const input = document.getElementById('driver-id-input').value.trim();
+  const errEl = document.getElementById('driverid-error');
+  const btn   = document.getElementById('btn-verify');
+
+  if (input.length !== 4) { errEl.textContent = 'Driver ID must be 4 digits.'; return; }
+
+  btn.disabled = true; btn.textContent = 'Checking...'; errEl.textContent = '';
+
+  try {
+    // Check if ID exists in allowed_drivers
+    const { data: allowed, error } = await sb.from('allowed_drivers').select('driver_id').eq('driver_id', input).single();
+
+    if (error || !allowed) {
+      errEl.textContent = 'Invalid Driver ID. Contact your manager.';
+      btn.disabled = false; btn.textContent = 'Continue';
+      return;
+    }
+
+    // Check if this ID is already taken by another user
+    const { data: existingProfile } = await sb.from('profiles').select('id').eq('driver_id', input).single();
+    if (existingProfile && existingProfile.id !== currentUser.id) {
+      errEl.textContent = 'This Driver ID is already in use.';
+      btn.disabled = false; btn.textContent = 'Continue';
+      return;
+    }
+
+    // Save profile with driver_id
+    const { data: profile, error: upsertError } = await sb.from('profiles').upsert({
+      id: currentUser.id,
+      email: currentUser.email,
+      full_name: currentUser.user_metadata?.full_name || currentUser.email,
+      avatar_url: currentUser.user_metadata?.avatar_url || null,
+      role: 'driver',
+      driver_id: input
+    }).select().single();
+
+    if (upsertError) throw upsertError;
+    await loadApp(currentUser, profile);
+
+  } catch(err) {
+    errEl.textContent = 'Something went wrong. Try again.';
+    btn.disabled = false; btn.textContent = 'Continue';
+  }
 }
 
+// Allow Enter key on Driver ID input
+document.getElementById('driver-id-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') verifyDriverId();
+});
+
+// ── SCREENS ───────────────────────────────────────────────────────────────────
+function showScreen(s) {
+  document.getElementById('loading-screen').style.display  = s==='loading'  ? 'flex'  : 'none';
+  document.getElementById('login-screen').style.display    = s==='login'    ? 'flex'  : 'none';
+  document.getElementById('driverid-screen').style.display = s==='driverid' ? 'flex'  : 'none';
+  document.getElementById('app').style.display             = s==='app'      ? 'block' : 'none';
+}
+
+// ── AUTH ──────────────────────────────────────────────────────────────────────
 async function signInWithGoogle() {
   const { error } = await sb.auth.signInWithOAuth({
     provider: 'google',
@@ -374,24 +481,25 @@ async function signOut() {
   window.location.href = window.location.origin + window.location.pathname;
 }
 
+// ── TABS ──────────────────────────────────────────────────────────────────────
 function showTab(name) {
   ['log','stats','history','dashboard'].forEach(t => {
-    const p = document.getElementById(`pane-${t}`);
-    const b = document.getElementById(`tab-${t}`);
-    if (p) p.style.display = t===name ? 'block' : 'none';
-    if (b) b.classList.toggle('active', t===name);
+    const p=document.getElementById(`pane-${t}`), b=document.getElementById(`tab-${t}`);
+    if (p) p.style.display=t===name?'block':'none';
+    if (b) b.classList.toggle('active',t===name);
   });
   if (name==='stats')     renderStats();
   if (name==='history')   renderHistory();
   if (name==='dashboard') renderDashboard();
 }
 
+// ── FILE UPLOAD ───────────────────────────────────────────────────────────────
 async function handleFile(file) {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
-    const p = document.getElementById('img-preview');
-    p.src = e.target.result; p.style.display = 'block';
+    const p=document.getElementById('img-preview');
+    p.src=e.target.result; p.style.display='block';
     parseScreenshot(e.target.result.split(',')[1]);
   };
   reader.readAsDataURL(file);
@@ -402,7 +510,7 @@ zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add(
 zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
 zone.addEventListener('drop', e => {
   e.preventDefault(); zone.classList.remove('drag-over');
-  const f = e.dataTransfer.files[0];
+  const f=e.dataTransfer.files[0];
   if (f?.type.startsWith('image/')) handleFile(f);
 });
 
@@ -417,7 +525,7 @@ async function parseScreenshot(base64) {
     });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error);
-    const d = json.data;
+    const d=json.data;
     if (d.date)           document.getElementById('f-date').value     = d.date;
     if (d.booking_id)     document.getElementById('f-booking').value  = d.booking_id;
     if (d.base_fare)      document.getElementById('f-base').value     = d.base_fare;
@@ -431,6 +539,7 @@ async function parseScreenshot(base64) {
   } catch { setStatus('log','error','Could not parse screenshot. Fill in manually.'); }
 }
 
+// ── EARNINGS ──────────────────────────────────────────────────────────────────
 function calcEarnings() {
   const base=parseFloat(document.getElementById('f-base').value)||0;
   const grat=parseFloat(document.getElementById('f-gratuity').value)||0;
@@ -446,9 +555,10 @@ function calcEarnings() {
   document.getElementById('ep-airport').textContent=fmt(air);
   document.getElementById('ep-tolls').textContent=fmt(toll);
   document.getElementById('ep-total').textContent=fmt(total);
-  document.getElementById('earnings-preview').classList.toggle('show', base>0||grat>0);
+  document.getElementById('earnings-preview').classList.toggle('show',base>0||grat>0);
 }
 
+// ── SAVE TRIP ─────────────────────────────────────────────────────────────────
 async function saveTrip() {
   const btn=document.getElementById('btn-save');
   btn.disabled=true; btn.textContent='Saving...';
@@ -467,9 +577,10 @@ async function saveTrip() {
         airport_fee:    parseFloat(document.getElementById('f-airport').value)||0,
         tolls:          parseFloat(document.getElementById('f-tolls').value)||0,
         total:          parseFloat(document.getElementById('f-base').value)||0,
+        driver_id:      currentDriverId,
       })
     });
-    const json = await res.json();
+    const json=await res.json();
     if (!res.ok) throw new Error(json.error);
     setStatus('log','success','✓ Trip saved!');
     allTrips.unshift(json.data);
@@ -485,19 +596,20 @@ function clearForm() {
   document.getElementById('earnings-preview').classList.remove('show');
 }
 
+// ── LOAD TRIPS ────────────────────────────────────────────────────────────────
 async function loadTrips() {
   try {
     const { data: { session } } = await sb.auth.getSession();
-    const res = await fetch(`${API_URL}/api/trips`, { headers: { 'Authorization': `Bearer ${session.access_token}` } });
-    const json = await res.json();
+    const res=await fetch(`${API_URL}/api/trips`,{ headers:{ 'Authorization':`Bearer ${session.access_token}` } });
+    const json=await res.json();
     if (!res.ok) throw new Error(json.error);
-    allTrips = json.data || [];
-  } catch(err) { console.error('Load trips:', err); }
+    allTrips=json.data||[];
+  } catch(err) { console.error('Load trips:',err); }
 }
 
-function filterByPeriod(trips, f) {
-  const now=new Date(), today=now.toISOString().split('T')[0];
-  return trips.filter(t => {
+function filterByPeriod(trips,f) {
+  const now=new Date(),today=now.toISOString().split('T')[0];
+  return trips.filter(t=>{
     if (f==='today') return t.date===today;
     if (f==='week')  { const d=new Date(t.date),w=new Date(now); w.setDate(w.getDate()-7); return d>=w; }
     if (f==='month') { const d=new Date(t.date); return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear(); }
@@ -505,6 +617,7 @@ function filterByPeriod(trips, f) {
   });
 }
 
+// ── MY STATS ──────────────────────────────────────────────────────────────────
 function setStatsPeriod(f,btn) {
   statsFilter=f;
   document.querySelectorAll('#pane-stats .period-btn').forEach(b=>b.classList.remove('active'));
@@ -527,8 +640,7 @@ function renderStats() {
     <div class="stat-card highlight"><div class="stat-label">Total Earned</div><div class="stat-value">${fmt(tot)}</div></div>
     <div class="stat-card"><div class="stat-label">Avg Per Trip</div><div class="stat-value">${fmt(avg)}</div></div>
     <div class="stat-card"><div class="stat-label">Best Trip</div><div class="stat-value">${fmt(best)}</div></div>
-    <div class="stat-card"><div class="stat-label">Trips</div><div class="stat-value neutral">${filtered.length}</div></div>
-  `;
+    <div class="stat-card"><div class="stat-label">Trips</div><div class="stat-value neutral">${filtered.length}</div></div>`;
   const last=allTrips[0];
   if (!last) { ltEl.innerHTML=''; return; }
   ltEl.innerHTML=`
@@ -549,6 +661,7 @@ function renderStats() {
     </div>`;
 }
 
+// ── MY TRIPS ──────────────────────────────────────────────────────────────────
 function setHistoryFilter(f,btn) {
   historyFilter=f;
   document.querySelectorAll('#pane-history .period-btn').forEach(b=>b.classList.remove('active'));
@@ -575,12 +688,13 @@ async function deleteTrip(id) {
   if (!confirm('Delete this trip?')) return;
   try {
     const { data: { session } } = await sb.auth.getSession();
-    await fetch(`${API_URL}/api/trips/${id}`, { method:'DELETE', headers:{ 'Authorization':`Bearer ${session.access_token}` } });
+    await fetch(`${API_URL}/api/trips/${id}`,{ method:'DELETE', headers:{ 'Authorization':`Bearer ${session.access_token}` } });
     allTrips=allTrips.filter(t=>t.id!==id);
     renderHistory(); renderStats();
   } catch { alert('Failed to delete trip'); }
 }
 
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
 function setDashFilter(f,btn) {
   dashFilter=f;
   document.querySelectorAll('#pane-dashboard .period-btn').forEach(b=>b.classList.remove('active'));
@@ -603,7 +717,7 @@ function renderDashboard() {
   tbody.innerHTML=filtered.map(t=>`
     <tr>
       <td class="mono">${t.date}</td>
-      <td style="color:var(--muted);font-size:11px">${t.user_id?.slice(0,8)||'—'}</td>
+      <td><span class="driver-id-badge">#${t.driver_id||'—'}</span></td>
       <td style="color:var(--muted)">${t.booking_id||'—'}</td>
       <td class="mono">${fmt(t.total||0)}</td>
       <td class="earn-val">${fmt(t.earnings||0)}</td>
