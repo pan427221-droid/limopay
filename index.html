@@ -365,7 +365,7 @@ async function init() {
 async function onLoggedIn(user) {
   currentUser = user;
 
-  let { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single();
+  let { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
 
   if (!profile) {
     // New user — show Driver ID screen first
