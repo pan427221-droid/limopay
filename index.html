@@ -345,11 +345,7 @@ const SUPABASE_ANON = '%%VITE_SUPABASE_ANON_KEY%%';
 const API_URL       = 'https://limopay-production.up.railway.app';
 
 const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
-  auth: {
-    flowType: 'pkce'
-  }
-});
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
 let currentUser = null, currentRole = 'driver', currentDriverId = null, allTrips = [];
 let statsFilter = 'today', historyFilter = 'all', dashFilter = 'all';
