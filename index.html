@@ -341,7 +341,7 @@
 
 <script>
 const SUPABASE_URL  = 'https://uljmcbrorgjrrvoxzmdb.supabase.co';
-const SUPABASE_ANON = 'sb_publishable_LPqirZQz4fh3RShvzH92Tg_k1aSWfae';
+const SUPABASE_ANON = '%%VITE_SUPABASE_ANON_KEY%%';
 const API_URL       = 'https://limopay-production.up.railway.app';
 
 const { createClient } = supabase;
@@ -365,7 +365,7 @@ async function init() {
 async function onLoggedIn(user) {
   currentUser = user;
 
-  let { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
+  let { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single();
 
   if (!profile) {
     // New user — show Driver ID screen first
@@ -418,33 +418,22 @@ async function verifyDriverId() {
   btn.disabled = true; btn.textContent = 'Checking...'; errEl.textContent = '';
 
   try {
-    // Check if ID exists in allowed_drivers
-    const { data: allowed, error } = await sb.from('allowed_drivers').select('driver_id').eq('driver_id', input).single();
-
-    if (error || !allowed) {
-      errEl.textContent = 'Invalid Driver ID. Contact your manager.';
+    const { data: { session } } = await sb.auth.getSession();
+    const res = await fetch(API_URL + '/api/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + session.access_token
+      },
+      body: JSON.stringify({ driver_id: input })
+    });
+    const json = await res.json();
+    if (!res.ok) {
+      errEl.textContent = json.error || 'Something went wrong. Try again.';
       btn.disabled = false; btn.textContent = 'Continue';
       return;
     }
-
-    // Check if this ID is already taken by another user
-    const { data: existingProfile } = await sb.from('profiles').select('id').eq('driver_id', input).single();
-    if (existingProfile && existingProfile.id !== currentUser.id) {
-      errEl.textContent = 'This Driver ID is already in use.';
-      btn.disabled = false; btn.textContent = 'Continue';
-      return;
-    }
-
-    // Save profile with driver_id
-    const { data: profile, error: upsertError } = await sb.from('profiles').upsert({
-      id: currentUser.id,
-      email: currentUser.email,
-      full_name: currentUser.user_metadata?.full_name || currentUser.email,
-      avatar_url: currentUser.user_metadata?.avatar_url || null,
-      role: 'driver',
-      driver_id: input
-    }, { onConflict: 'id' }).select().single();
-
+    await loadApp(currentUser, json.profile);
   } catch(err) {
     errEl.textContent = 'Something went wrong. Try again.';
     btn.disabled = false; btn.textContent = 'Continue';
