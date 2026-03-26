@@ -352,6 +352,16 @@ let statsFilter = 'today', historyFilter = 'all', dashFilter = 'all';
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 async function init() {
+  // Handle OAuth redirect with token in URL hash
+  if (window.location.hash.includes('access_token')) {
+    const { data: { session }, error } = await sb.auth.getSession();
+    if (session) {
+      window.history.replaceState(null, '', window.location.pathname);
+      await onLoggedIn(session.user);
+      return;
+    }
+  }
+
   const { data: { session } } = await sb.auth.getSession();
   if (session) await onLoggedIn(session.user);
   else showScreen('login');
