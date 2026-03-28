@@ -77,7 +77,13 @@ app.post('/api/register', requireAuth, async (req, res) => {
     res.status(500).json({ error: 'Server error: ' + err.message });
   }
 });
-
+function detectImageType(base64) {
+  if (base64.startsWith('/9j/')) return 'image/jpeg';
+  if (base64.startsWith('iVBORw')) return 'image/png';
+  if (base64.startsWith('R0lGOD')) return 'image/gif';
+  if (base64.startsWith('UklGR')) return 'image/webp';
+  return 'image/jpeg';
+}
 // ── PARSE SCREENSHOT ──────────────────────────────────────────────────────────
 app.post('/api/parse-screenshot', requireAuth, async (req, res) => {
   try {
@@ -90,7 +96,7 @@ app.post('/api/parse-screenshot', requireAuth, async (req, res) => {
       messages: [{
         role: 'user',
         content: [
-          { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imageBase64 } },
+          { type: 'image', source: { type: 'base64', media_type: detectImageType(imageBase64), data: imageBase64 } },
           { type: 'text', text: `Extract trip payment data from this limo/rideshare screenshot.
 Return ONLY valid JSON with these fields (use null if not found):
 {
