@@ -631,7 +631,7 @@ async function parseScreenshot(base64) {
     if (!res.ok) throw new Error(json.error);
     const d=json.data;
     if (d.date)           document.getElementById('f-date').value      = d.date;
-    if (d.booking_id)     document.getElementById('f-booking').value   = d.booking_id;
+    if (d.booking_id && /^\d{7}$/.test(String(d.booking_id)))     document.getElementById('f-booking').value   = d.booking_id;
     if (d.base_fare)      document.getElementById('f-base').value      = d.base_fare;
     if (d.wait_time)      document.getElementById('f-wait').value      = d.wait_time;
     if (d.greet_fee)      document.getElementById('f-greet').checked   = d.greet_fee > 0;

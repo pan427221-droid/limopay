@@ -71,6 +71,10 @@ app.post('/api/register', requireAuth, async (req, res) => {
     if (existing && existing.id !== req.user.id)
       return res.status(409).json({ error: 'This Driver ID is already in use.' });
 
+    // Get existing profile to preserve role
+    const { data: existingProf } = await supabase
+      .from('profiles').select('role').eq('id', req.user.id).maybeSingle();
+
     const { data: profile, error: upsertError } = await supabase
       .from('profiles')
       .upsert({
@@ -78,7 +82,7 @@ app.post('/api/register', requireAuth, async (req, res) => {
         email: req.user.email,
         full_name: req.user.user_metadata?.full_name || req.user.email,
         avatar_url: req.user.user_metadata?.avatar_url || null,
-        role: 'driver',
+        role: existingProf?.role || 'driver',
         driver_id: driverId
       }, { onConflict: 'id' })
       .select().single();
@@ -133,7 +137,7 @@ Return ONLY valid JSON with these fields (use null if not found):
   "total": number
 }
 Notes:
-- booking_id: the reservation/booking number - look for a 7-digit number (do NOT use passenger count, s- booking_id: ONLY a standalone 7-digit reservation number shown as a booking/reservation reference. Do NOT extract numbers from text descriptions, passenger counts, or seat numbers. If no clear 7-digit booking reference is visible, return null.eat numbers, or other numbers)
+- booking_id: the reservation/booking number - look for a 7-digit number (do NOT use passenger count, seat numbers, or other numbers)
 - base_fare: the base/booking fare before any additions
 - wait_time: waiting charge (billed per 15min at $15 each)
 - greet_fee: meet & greet airport fee ($40 fixed)
