@@ -300,7 +300,7 @@
       <div class="ep-row"><span>Fuel Surcharge</span><span class="ep-val" id="ep-fuel">$0.00</span></div>
       <div class="ep-row"><span>Parking</span><span class="ep-val" id="ep-parking">$0.00</span></div>
       <div class="ep-row"><span>Airport Fee</span><span class="ep-val" id="ep-airport">$0.00</span></div>
-      <div class="ep-row"><span>Tolls</span><span class="ep-val" id="ep-tolls">$0.00</span></div>
+      <div class="ep-row" style="color:var(--muted);font-size:12px"><span>Tolls (company)</span><span class="ep-val" id="ep-tolls">$0.00</span></div>
       <div class="ep-row total"><span>Your Earnings</span><span class="ep-val" id="ep-total">$0.00</span></div>
     </div>
     <button class="btn-save" id="btn-save" onclick="saveTrip()">Save Trip</button>
@@ -573,7 +573,8 @@ function calcEarnings() {
 
   const adjBase = base + wait + greet + seatFee + eventWait - discount + expenses;
   const basePct = adjBase * 0.38;
-  const total   = basePct + grat + fuel + parking + air + toll;
+  const total   = basePct + grat + fuel + parking + air;
+  // tolls — company expense, not included in driver earnings
 
   document.getElementById('ep-adj-base').textContent  = fmt(adjBase);
   document.getElementById('ep-base-pct').textContent  = fmt(basePct);
@@ -581,7 +582,6 @@ function calcEarnings() {
   document.getElementById('ep-fuel').textContent      = fmt(fuel);
   document.getElementById('ep-parking').textContent   = fmt(parking);
   document.getElementById('ep-airport').textContent   = fmt(air);
-  document.getElementById('ep-tolls').textContent     = fmt(toll);
   document.getElementById('ep-total').textContent     = fmt(total);
   document.getElementById('earnings-preview').classList.toggle('show', base > 0);
 }

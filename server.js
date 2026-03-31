@@ -49,8 +49,8 @@ function calcEarnings(t) {
     gratuity +    // 100% to driver
     fuel +        // 100% to driver (= 5% of base, already calculated)
     parking +     // 100% to driver
-    airportFee +  // 100% to driver
-    tolls;        // 100% to driver
+    airportFee;   // 100% to driver
+    // tolls — company expense (i-Pass), NOT paid to driver
 
   return Math.round(earnings * 100) / 100;
 }
