@@ -26,22 +26,33 @@ async function requireAuth(req, res, next) {
 }
 
 // ── EARNINGS CALCULATOR ───────────────────────────────────────────────────────
-// Uses DB column names as input
-function calcEarningsFromDB(t) {
-  const base       = parseFloat(t.base)       || 0;
-  const wait       = parseFloat(t.wait)       || 0;
-  const greetFee   = parseFloat(t.greet_fee)  || 0;
-  const carSeatFee = parseFloat(t.car_seat_fee)|| 0;
-  const eventWait  = parseFloat(t.event_wait) || 0;
-  const discount   = parseFloat(t.discount)   || 0;
-  const expenses   = parseFloat(t.expenses)   || 0;
-  const gratuity   = parseFloat(t.gratuity)   || 0;
-  const fuel       = parseFloat(t.fuel)       || 0;
-  const parking    = parseFloat(t.parking)    || 0;
-  const airport    = parseFloat(t.airport)    || 0;
+function calcEarnings(t) {
+  const base        = t.base_fare       || 0;
+  const waitTime    = t.wait_time       || 0;
+  const greetFee    = t.greet_fee       || 0;
+  const carSeatFee  = t.car_seat_fee    || 0;
+  const eventWait   = t.event_wait      || 0;
+  const discount    = t.discount        || 0;
+  const expenses    = t.expenses        || 0;
+  const gratuity    = t.gratuity        || 0;
+  const fuel        = t.fuel_surcharge  || 0;
+  const parking     = t.parking         || 0;
+  const airportFee  = t.airport_fee     || 0;
+  const tolls       = t.tolls           || 0;
 
-  const adjustedBase = base + wait + greetFee + carSeatFee + eventWait - discount + expenses;
-  return Math.round(((adjustedBase * 0.38) + gratuity + fuel + parking + airport) * 100) / 100;
+  // Adjusted base: everything that affects the 38%
+  const adjustedBase = base + waitTime + greetFee + carSeatFee + eventWait - discount + expenses;
+
+  // Driver earnings
+  const earnings =
+    (adjustedBase * 0.38) +
+    gratuity +    // 100% to driver
+    fuel +        // 100% to driver (= 5% of base, already calculated)
+    parking +     // 100% to driver
+    airportFee;   // 100% to driver
+    // tolls — company expense (i-Pass), NOT paid to driver
+
+  return Math.round(earnings * 100) / 100;
 }
 
 // ── REGISTER ─────────────────────────────────────────────────────────────────
@@ -93,8 +104,20 @@ function detectImageType(base64) {
   return 'image/jpeg';
 }
 
-// ── PARSE SCREENSHOT PROMPT ───────────────────────────────────────────────────
-const PARSE_PROMPT = `Extract trip payment data from this limo/rideshare booking screenshot.
+// ── PARSE SCREENSHOT ──────────────────────────────────────────────────────────
+app.post('/api/parse-screenshot', requireAuth, async (req, res) => {
+  try {
+    const { imageBase64 } = req.body;
+    if (!imageBase64) return res.status(400).json({ error: 'No image' });
+
+    const response = await anthropic.messages.create({
+      model: 'claude-opus-4-20250514',
+      max_tokens: 1024,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: detectImageType(imageBase64), data: imageBase64 } },
+          { type: 'text', text: `Extract trip payment data from this limo/rideshare booking screenshot.
 Return ONLY valid JSON with these fields (use null if not found):
 {
   "date": "YYYY-MM-DD",
@@ -127,75 +150,15 @@ Notes:
 - parking: parking fee paid by driver
 - airport_fee: airport terminal entry fee
 - tolls: road tolls
-- total: the final "Total Fare" shown at the bottom of the receipt — this is what the client paid`;
+- total: the final "Total Fare" shown at the bottom of the receipt — this is what the client paid` }
+        ]
+      }]
+    });
 
-// ── MERGE PARSED RESULTS ──────────────────────────────────────────────────────
-// Strategy: first image is the "primary" receipt (base data).
-// Additional images fill in ONLY fields that are null/0 in the primary.
-// This treats multi-photo as "same receipt, different angles" — no summing.
-const NUMERIC_FIELDS = ['base_fare','wait_time','greet_fee','car_seat_fee','event_wait','discount','expenses','gratuity','fuel_surcharge','parking','airport_fee','tolls','total'];
-const STRING_FIELDS  = ['date','booking_id'];
-
-function mergeResults(results) {
-  // Start with first image as base
-  const merged = { ...results[0] };
-  // Fill missing fields from subsequent images (never overwrite existing values)
-  for (let i = 1; i < results.length; i++) {
-    for (const field of STRING_FIELDS) {
-      if (!merged[field] && results[i][field]) merged[field] = results[i][field];
-    }
-    for (const field of NUMERIC_FIELDS) {
-      if ((!merged[field] || merged[field] === 0) && results[i][field]) {
-        merged[field] = results[i][field];
-      }
-    }
-  }
-  return merged;
-}
-
-// ── PARSE SINGLE IMAGE ────────────────────────────────────────────────────────
-async function parseSingleImage(base64) {
-  const response = await anthropic.messages.create({
-    model: 'claude-opus-4-20250514',
-    max_tokens: 1024,
-    messages: [{
-      role: 'user',
-      content: [
-        { type: 'image', source: { type: 'base64', media_type: detectImageType(base64), data: base64 } },
-        { type: 'text', text: PARSE_PROMPT }
-      ]
-    }]
-  });
-  const text = response.content[0].text;
-  const match = text.match(/\{[\s\S]*\}/);
-  if (!match) throw new Error('Could not parse image');
-  return JSON.parse(match[0]);
-}
-
-// ── PARSE SCREENSHOT ──────────────────────────────────────────────────────────
-app.post('/api/parse-screenshot', requireAuth, async (req, res) => {
-  try {
-    // Support both single image (legacy) and array of images
-    const { imageBase64, images } = req.body;
-
-    const imageList = images
-      ? (Array.isArray(images) ? images : [images])
-      : (imageBase64 ? [imageBase64] : null);
-
-    if (!imageList || imageList.length === 0)
-      return res.status(400).json({ error: 'No image provided' });
-
-    if (imageList.length === 1) {
-      // Single image — original behaviour
-      const data = await parseSingleImage(imageList[0]);
-      return res.json({ success: true, data });
-    }
-
-    // Multiple images — parse in parallel then merge
-    const results = await Promise.all(imageList.map(img => parseSingleImage(img)));
-    const data = mergeResults(results);
-    res.json({ success: true, data, sources: results.length });
-
+    const text = response.content[0].text;
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) return res.status(422).json({ error: 'Could not parse image' });
+    res.json({ success: true, data: JSON.parse(match[0]) });
   } catch (err) {
     console.error('Parse error:', err);
     res.status(500).json({ error: 'Failed to parse screenshot' });
@@ -206,27 +169,12 @@ app.post('/api/parse-screenshot', requireAuth, async (req, res) => {
 app.get('/api/trips', requireAuth, async (req, res) => {
   try {
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', req.user.id).single();
-    let query = supabase.from('trips').select('*').order('date', { ascending: false }).order('id', { ascending: false });
+    let query = supabase.from('trips').select('*').order('date', { ascending: false });
     if (!profile || profile.role !== 'manager') query = query.eq('user_id', req.user.id);
     const { data, error } = await query;
     if (error) throw error;
-
-    // Normalize DB column names → JS field names used in frontend
-    // DB schema (from Supabase): base, wait, fuel, airport, booking, total_fare
-    // JS/frontend expects:       base_fare, wait_time, fuel_surcharge, airport_fee, booking_id, total
-    const normalized = (data || []).map(t => ({
-      ...t,
-      base_fare:      t.base_fare      ?? t.base      ?? 0,
-      wait_time:      t.wait_time      ?? t.wait      ?? 0,
-      fuel_surcharge: t.fuel_surcharge ?? t.fuel      ?? 0,
-      airport_fee:    t.airport_fee    ?? t.airport   ?? 0,
-      booking_id:     t.booking_id     ?? t.booking   ?? null,
-      total:          t.total          ?? t.total_fare ?? 0,
-    }));
-
-    res.json({ success: true, data: normalized });
+    res.json({ success: true, data });
   } catch (err) {
-    console.error('Get trips error:', err);
     res.status(500).json({ error: 'Failed to fetch trips' });
   }
 });
@@ -240,31 +188,30 @@ app.post('/api/trips', requireAuth, async (req, res) => {
       fuel_surcharge, parking, airport_fee, tolls, total, driver_id
     } = req.body;
 
-    // Map JS field names → actual DB column names
-    const dbRow = {
-      base:       base_fare      || 0,
-      wait:       wait_time      || 0,
-      greet_fee:  greet_fee      || 0,
+    const tripData = {
+      base_fare:      base_fare      || 0,
+      wait_time:      wait_time      || 0,
+      greet_fee:      greet_fee      || 0,
       car_seat_count: car_seat_count || 0,
       car_seat_fee:   car_seat_fee   || 0,
-      event_wait: event_wait     || 0,
-      discount:   discount       || 0,
-      expenses:   expenses       || 0,
-      gratuity:   gratuity       || 0,
-      fuel:       fuel_surcharge || 0,
-      parking:    parking        || 0,
-      airport:    airport_fee    || 0,
-      tolls:      tolls          || 0,
+      event_wait:     event_wait     || 0,
+      discount:       discount       || 0,
+      expenses:       expenses       || 0,
+      gratuity:       gratuity       || 0,
+      fuel_surcharge: fuel_surcharge || 0,
+      parking:        parking        || 0,
+      airport_fee:    airport_fee    || 0,
+      tolls:          tolls          || 0,
     };
 
-    const earnings = calcEarningsFromDB(dbRow);
+    const earnings = calcEarnings(tripData);
 
     // Check for duplicate booking
     if (booking_id) {
       const { data: existing } = await supabase
         .from('trips')
         .select('id')
-        .eq('booking', booking_id)
+        .eq('booking_id', booking_id)
         .eq('user_id', req.user.id)
         .maybeSingle();
       if (existing) {
@@ -273,28 +220,18 @@ app.post('/api/trips', requireAuth, async (req, res) => {
     }
 
     const { data, error } = await supabase.from('trips').insert({
-      user_id:   req.user.id,
+      user_id: req.user.id,
       driver_id: driver_id || null,
-      date:      date || new Date().toISOString().split('T')[0],
-      booking:   booking_id || null,
-      ...dbRow,
-      total_fare: total || 0,
-      cash_tips:  req.body.cash_tips || 0,
+      date: date || new Date().toISOString().split('T')[0],
+      booking_id,
+      ...tripData,
+      total: total || 0,
+      cash_tips: req.body.cash_tips || 0,
       earnings
     }).select().single();
 
     if (error) throw error;
-
-    // Return with normalized JS field names so frontend works correctly
-    res.json({ success: true, data: {
-      ...data,
-      base_fare:      data.base      ?? 0,
-      wait_time:      data.wait      ?? 0,
-      fuel_surcharge: data.fuel      ?? 0,
-      airport_fee:    data.airport   ?? 0,
-      booking_id:     data.booking   ?? null,
-      total:          data.total_fare ?? 0,
-    }});
+    res.json({ success: true, data });
   } catch (err) {
     console.error('Create trip error:', err);
     res.status(500).json({ error: 'Failed to create trip: ' + err.message });
