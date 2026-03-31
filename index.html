@@ -571,10 +571,7 @@ function showScreen(s) {
 async function signInWithGoogle() {
   const { error } = await sb.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: window.location.origin + window.location.paoptions: { 
-  redirectTo: window.location.origin + window.location.pathname,
-  queryParams: { prompt: 'select_account' }
-}thname }
+    options: { redirectTo: window.location.origin + window.location.pathname }
   });
   if (error) alert('Login failed: ' + error.message);
 }
