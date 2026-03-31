@@ -207,7 +207,8 @@ app.get('/api/trips', requireAuth, async (req, res) => {
     const { data, error } = await supabase
       .from('trips')
       .select('*')
-      .eq('user_id', req.user.id)  // завжди тільки свої
+      .eq('user_id', req.user.id)
+      .not('deleted_by', 'eq', 'driver') // водій не бачить те що сам видалив
       .order('date', { ascending: false })
       .order('id', { ascending: false });
     if (error) throw error;
@@ -228,6 +229,7 @@ app.get('/api/trips/all', requireAuth, async (req, res) => {
     const { data, error } = await supabase
       .from('trips')
       .select('*')
+      .not('deleted_by', 'eq', 'manager') // менеджер не бачить те що сам видалив
       .order('date', { ascending: false })
       .order('id', { ascending: false });
     if (error) throw error;
@@ -246,6 +248,11 @@ app.post('/api/trips', requireAuth, async (req, res) => {
       car_seat_fee, event_wait, discount, expenses, gratuity,
       fuel_surcharge, parking, airport_fee, tolls, total, driver_id
     } = req.body;
+
+    // Required fields validation
+    if (!booking_id) return res.status(400).json({ error: 'Booking ID is required.' });
+    if (!base_fare || base_fare <= 0) return res.status(400).json({ error: 'Base Fare is required.' });
+    if (!total || total <= 0) return res.status(400).json({ error: 'Total Fare is required.' });
 
     const tripData = {
       base_fare:      base_fare      || 0,
@@ -266,16 +273,14 @@ app.post('/api/trips', requireAuth, async (req, res) => {
     const earnings = calcEarnings(tripData);
 
     // Check for duplicate booking
-    if (booking_id) {
-      const { data: existing } = await supabase
-        .from('trips')
-        .select('id')
-        .eq('booking_id', booking_id)
-        .eq('user_id', req.user.id)
-        .maybeSingle();
-      if (existing) {
-        return res.status(409).json({ error: 'Trip with this Booking ID already exists.' });
-      }
+    const { data: existing } = await supabase
+      .from('trips')
+      .select('id')
+      .eq('booking_id', booking_id)
+      .eq('user_id', req.user.id)
+      .maybeSingle();
+    if (existing) {
+      return res.status(409).json({ error: 'Trip with this Booking ID already exists.' });
     }
 
     const { data, error } = await supabase.from('trips').insert({
@@ -284,9 +289,10 @@ app.post('/api/trips', requireAuth, async (req, res) => {
       date:      date || new Date().toISOString().split('T')[0],
       booking_id,
       ...tripData,
-      total:     total || 0,
+      total:     total,
       cash_tips: req.body.cash_tips || 0,
-      earnings
+      earnings,
+      deleted_by: null
     }).select().single();
 
     if (error) throw error;
@@ -297,13 +303,31 @@ app.post('/api/trips', requireAuth, async (req, res) => {
   }
 });
 
-// ── DELETE TRIP ───────────────────────────────────────────────────────────────
+// ── DELETE TRIP (soft delete) ─────────────────────────────────────────────────
 app.delete('/api/trips/:id', requireAuth, async (req, res) => {
   try {
-    const { error } = await supabase.from('trips').delete()
-      .eq('id', req.params.id).eq('user_id', req.user.id);
+    const { data: profile } = await supabase
+      .from('profiles').select('role').eq('id', req.user.id).single();
+    const role = profile?.role || 'driver';
+
+    // Get trip to verify access
+    const { data: trip } = await supabase
+      .from('trips').select('id, user_id, deleted_by').eq('id', req.params.id).maybeSingle();
+    if (!trip) return res.status(404).json({ error: 'Trip not found' });
+
+    // Driver can only delete own trips; manager can delete any
+    if (role !== 'manager' && trip.user_id !== req.user.id)
+      return res.status(403).json({ error: 'Access denied' });
+
+    // Soft delete — mark who deleted it
+    const deletedBy = role === 'manager' ? 'manager' : 'driver';
+    const { error } = await supabase
+      .from('trips')
+      .update({ deleted_by: deletedBy })
+      .eq('id', req.params.id);
     if (error) throw error;
-    res.json({ success: true });
+
+    res.json({ success: true, deleted_by: deletedBy });
   } catch (err) {
     res.status(500).json({ error: 'Failed to delete trip' });
   }

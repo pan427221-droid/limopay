@@ -491,7 +491,7 @@
 
 <script>
 const SUPABASE_URL  = 'https://uljmcbrorgjrrvoxzmdb.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsam1jYnJvcmdqcnJ2b3h6bWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQzNzAsImV4cCI6MjA4OTg4MDM3MH0.gzfN9ayldCSF0kRSfSCT9Np02Dpke8ZSS42iJLBhzmA';
+const SUPABASE_ANON = '%%VITE_SUPABASE_ANON_KEY%%';
 const API_URL       = 'https://limopay-production.up.railway.app';
 
 const { createClient } = supabase;
@@ -790,12 +790,23 @@ function calcEarnings() {
 // ── SAVE TRIP ─────────────────────────────────────────────────────────────────
 async function saveTrip() {
   const bookingId = document.getElementById('f-booking').value.trim();
+  const baseFare  = parseFloat(document.getElementById('f-base').value) || 0;
+  const total     = parseFloat(document.getElementById('f-total').value) || 0;
+
   if (!bookingId) {
-    setStatus('log','error','Please enter Booking ID before saving.');
+    setStatus('log','error','Booking ID є обов\'язковим.');
     return;
   }
   if (!/^\d{7}$/.test(bookingId)) {
     setStatus('log','error','Booking ID must be exactly 7 digits.');
+    return;
+  }
+  if (baseFare <= 0) {
+    setStatus('log','error','Base Fare є обов\'язковим.');
+    return;
+  }
+  if (total <= 0) {
+    setStatus('log','error','Total Fare є обов\'язковим.');
     return;
   }
   const btn=document.getElementById('btn-save');
@@ -956,7 +967,12 @@ function renderHistory() {
       <td style="color:var(--muted)">${t.booking_id||'—'}</td>
       <td class="mono">${fmt(t.total||0)}</td>
       <td class="earn-val">${fmt(t.earnings||0)}</td>
-      <td><button class="btn-delete" onclick="deleteTrip('${t.id}')">✕</button></td>
+      <td>
+        ${t.deleted_by === 'manager'
+          ? '<span style="font-size:10px;color:var(--danger);border:1px solid var(--danger);border-radius:4px;padding:2px 6px">Deleted by manager</span>'
+          : `<button class="btn-delete" onclick="deleteTrip('${t.id}')">✕</button>`
+        }
+      </td>
     </tr>`).join('');
 }
 
@@ -964,9 +980,16 @@ async function deleteTrip(id) {
   if (!confirm('Delete this trip?')) return;
   try {
     const { data: { session } } = await sb.auth.getSession();
-    await fetch(`${API_URL}/api/trips/${id}`,{ method:'DELETE', headers:{ 'Authorization':`Bearer ${session.access_token}` } });
-    allTrips=allTrips.filter(t=>t.id!==id);
-    renderHistory(); renderStats();
+    const res = await fetch(`${API_URL}/api/trips/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${session.access_token}` }
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error);
+    // Remove from local array entirely (soft delete — server handles visibility)
+    allTrips = allTrips.filter(t => t.id !== id);
+    allTripsManager = allTripsManager.filter(t => t.id !== id);
+    renderHistory(); renderStats(); renderDashboard();
   } catch { alert('Failed to delete trip'); }
 }
 
@@ -1077,7 +1100,10 @@ function renderDashboard() {
       <td><span class="expand-icon">▶</span></td>
       <td class="mono">${t.date}</td>
       <td><span class="driver-id-badge">#${t.driver_id||'—'}</span></td>
-      <td style="color:var(--muted)">${t.booking_id||'—'}</td>
+      <td style="color:var(--muted)">
+        ${t.booking_id||'—'}
+        ${t.deleted_by === 'driver' ? '<span style="font-size:10px;color:var(--danger);border:1px solid var(--danger);border-radius:4px;padding:2px 5px;margin-left:6px">Deleted by driver</span>' : ''}
+      </td>
       <td class="mono">${fmt(t.total||0)}</td>
       <td class="earn-val">${fmt(t.earnings||0)}</td>
     </tr>
