@@ -202,6 +202,19 @@ app.post('/api/trips', requireAuth, async (req, res) => {
 
     const earnings = calcEarnings(tripData);
 
+    // Check for duplicate booking
+    if (booking_id) {
+      const { data: existing } = await supabase
+        .from('trips')
+        .select('id')
+        .eq('booking_id', booking_id)
+        .eq('user_id', req.user.id)
+        .maybeSingle();
+      if (existing) {
+        return res.status(409).json({ error: 'Trip with this Booking ID already exists.' });
+      }
+    }
+
     const { data, error } = await supabase.from('trips').insert({
       user_id: req.user.id,
       driver_id: driver_id || null,
@@ -209,6 +222,7 @@ app.post('/api/trips', requireAuth, async (req, res) => {
       booking_id,
       ...tripData,
       total: total || 0,
+      cash_tips: req.body.cash_tips || 0,
       earnings
     }).select().single();
 

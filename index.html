@@ -339,6 +339,7 @@
       <div class="field"><label>Airport Fee ($)</label><input type="number" id="f-airport" placeholder="0.00" oninput="calcEarnings()"></div>
       <div class="field"><label>Tolls ($)</label><input type="number" id="f-tolls" placeholder="0.00" oninput="calcEarnings()"></div>
       <div class="field" style="grid-column:1/-1;border-top:1px solid var(--border);padding-top:12px"><label style="color:var(--accent)">Total Fare ($) — from receipt</label><input type="number" id="f-total" placeholder="0.00" style="border-color:rgba(200,240,96,0.3)"></div>
+      <div class="field"><label style="color:var(--accent2)">Cash Tips ($) — visible only in your stats</label><input type="number" id="f-cash-tips" placeholder="0.00" style="border-color:rgba(96,212,240,0.3)" oninput="calcEarnings()"></div>
     </div>
     <div class="earnings-preview" id="earnings-preview">
       <div class="ep-title">Earnings Breakdown</div>
@@ -350,6 +351,7 @@
       <div class="ep-row"><span>Airport Fee</span><span class="ep-val" id="ep-airport">$0.00</span></div>
       <div class="ep-row" style="color:var(--muted);font-size:12px"><span>Tolls (company)</span><span class="ep-val" id="ep-tolls">$0.00</span></div>
       <div class="ep-row total"><span>Your Earnings</span><span class="ep-val" id="ep-total">$0.00</span></div>
+      <div class="ep-row" style="color:var(--accent2);font-size:13px;border-top:1px solid var(--border);margin-top:4px;padding-top:8px"><span>Cash Tips (private)</span><span class="ep-val" id="ep-cash-tips">$0.00</span></div>
     </div>
     <button class="btn-save" id="btn-save" onclick="saveTrip()">Save Trip</button>
   </div>
@@ -363,6 +365,7 @@
       <button class="period-btn"        onclick="setStatsPeriod('all',this)">All Time</button>
     </div>
     <div class="stats-row" id="stats-numbers"></div>
+    <div id="stats-cash"></div>
     <div class="section-title">Last Trip</div>
     <div id="last-trip-container"></div>
   </div>
@@ -445,7 +448,7 @@
 
 <script>
 const SUPABASE_URL  = 'https://uljmcbrorgjrrvoxzmdb.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsam1jYnJvcmdqcnJ2b3h6bWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQzNzAsImV4cCI6MjA4OTg4MDM3MH0.gzfN9ayldCSF0kRSfSCT9Np02Dpke8ZSS42iJLBhzmA';
+const SUPABASE_ANON = '%%VITE_SUPABASE_ANON_KEY%%';
 const API_URL       = 'https://limopay-production.up.railway.app';
 
 const { createClient } = supabase;
@@ -680,6 +683,8 @@ function calcEarnings() {
   document.getElementById('ep-parking').textContent   = fmt(parking);
   document.getElementById('ep-airport').textContent   = fmt(air);
   document.getElementById('ep-total').textContent     = fmt(total);
+  const cashTips = parseFloat(document.getElementById('f-cash-tips').value) || 0;
+  document.getElementById('ep-cash-tips').textContent = fmt(cashTips);
   document.getElementById('earnings-preview').classList.toggle('show', base > 0);
 }
 
@@ -719,6 +724,7 @@ async function saveTrip() {
         airport_fee:    parseFloat(document.getElementById('f-airport').value)||0,
         tolls:          parseFloat(document.getElementById('f-tolls').value)||0,
         total:          parseFloat(document.getElementById('f-total').value)||0,
+        cash_tips:      parseFloat(document.getElementById('f-cash-tips').value)||0,
         driver_id:      currentDriverId,
       })
     });
@@ -732,7 +738,7 @@ async function saveTrip() {
 }
 
 function clearForm() {
-  ['f-booking','f-base','f-wait','f-carseat','f-eventwait','f-discount','f-expenses','f-gratuity','f-fuel','f-parking','f-airport','f-tolls','f-total'].forEach(id=>document.getElementById(id).value='');
+  ['f-booking','f-base','f-wait','f-carseat','f-eventwait','f-discount','f-expenses','f-gratuity','f-fuel','f-parking','f-airport','f-tolls','f-total','f-cash-tips'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f-greet').checked = false;
   document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
   document.getElementById('img-preview').style.display='none';
@@ -784,6 +790,21 @@ function renderStats() {
     <div class="stat-card"><div class="stat-label">Avg Per Trip</div><div class="stat-value">${fmt(avg)}</div></div>
     <div class="stat-card"><div class="stat-label">Best Trip</div><div class="stat-value">${fmt(best)}</div></div>
     <div class="stat-card"><div class="stat-label">Trips</div><div class="stat-value neutral">${filtered.length}</div></div>`;
+  // Cash tips analytics
+  const cashEl = document.getElementById('stats-cash');
+  if (cashEl) {
+    const totalCash = filtered.reduce((s,t)=>s+(t.cash_tips||0),0);
+    const avgCash = filtered.length ? totalCash/filtered.length : 0;
+    const bestCash = Math.max(...filtered.map(t=>t.cash_tips||0));
+    cashEl.innerHTML = totalCash > 0 ? `
+      <div class="section-title" style="margin-top:8px;color:var(--accent2)">Cash Tips (private)</div>
+      <div class="stats-row">
+        <div class="stat-card" style="border-color:rgba(96,212,240,0.2)"><div class="stat-label">Total Cash</div><div class="stat-value" style="color:var(--accent2)">${fmt(totalCash)}</div></div>
+        <div class="stat-card" style="border-color:rgba(96,212,240,0.2)"><div class="stat-label">Avg Per Trip</div><div class="stat-value" style="color:var(--accent2)">${fmt(avgCash)}</div></div>
+        <div class="stat-card" style="border-color:rgba(96,212,240,0.2)"><div class="stat-label">Best Trip</div><div class="stat-value" style="color:var(--accent2)">${fmt(bestCash)}</div></div>
+      </div>` : '';
+  }
+
   const last=allTrips[0];
   if (!last) { ltEl.innerHTML=''; return; }
   ltEl.innerHTML=`
