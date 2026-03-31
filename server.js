@@ -133,6 +133,7 @@ Return ONLY valid JSON with these fields (use null if not found):
   "total": number
 }
 Notes:
+- booking_id: the reservation/booking number - look for a 7-digit number (do NOT use passenger count, seat numbers, or other numbers)
 - base_fare: the base/booking fare before any additions
 - wait_time: waiting charge (billed per 15min at $15 each)
 - greet_fee: meet & greet airport fee ($40 fixed)
@@ -145,7 +146,7 @@ Notes:
 - parking: parking fee paid by driver
 - airport_fee: airport terminal entry fee
 - tolls: road tolls
-- total: final total charged to client` }
+- total: the final "Total Fare" shown at the bottom of the receipt — this is what the client paid` }
         ]
       }]
     });

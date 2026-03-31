@@ -338,6 +338,7 @@
       <div class="field"><label>Parking ($)</label><input type="number" id="f-parking" placeholder="0.00" oninput="calcEarnings()"></div>
       <div class="field"><label>Airport Fee ($)</label><input type="number" id="f-airport" placeholder="0.00" oninput="calcEarnings()"></div>
       <div class="field"><label>Tolls ($)</label><input type="number" id="f-tolls" placeholder="0.00" oninput="calcEarnings()"></div>
+      <div class="field" style="grid-column:1/-1;border-top:1px solid var(--border);padding-top:12px"><label style="color:var(--accent)">Total Fare ($) — from receipt</label><input type="number" id="f-total" placeholder="0.00" style="border-color:rgba(200,240,96,0.3)"></div>
     </div>
     <div class="earnings-preview" id="earnings-preview">
       <div class="ep-title">Earnings Breakdown</div>
@@ -444,7 +445,7 @@
 
 <script>
 const SUPABASE_URL  = 'https://uljmcbrorgjrrvoxzmdb.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsam1jYnJvcmdqcnJ2b3h6bWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQzNzAsImV4cCI6MjA4OTg4MDM3MH0.gzfN9ayldCSF0kRSfSCT9Np02Dpke8ZSS42iJLBhzmA';
+const SUPABASE_ANON = '%%VITE_SUPABASE_ANON_KEY%%';
 const API_URL       = 'https://limopay-production.up.railway.app';
 
 const { createClient } = supabase;
@@ -640,6 +641,7 @@ async function parseScreenshot(base64) {
     if (d.parking)        document.getElementById('f-parking').value   = d.parking;
     if (d.airport_fee)    document.getElementById('f-airport').value   = d.airport_fee;
     if (d.tolls)          document.getElementById('f-tolls').value     = d.tolls;
+    if (d.total)          document.getElementById('f-total').value     = d.total;
     calcEarnings();
     setStatus('log','success','✓ Screenshot parsed successfully');
   } catch { setStatus('log','error','Could not parse screenshot. Fill in manually.'); }
@@ -688,6 +690,10 @@ async function saveTrip() {
     setStatus('log','error','Please enter Booking ID before saving.');
     return;
   }
+  if (!/^\d{7}$/.test(bookingId)) {
+    setStatus('log','error','Booking ID must be exactly 7 digits.');
+    return;
+  }
   const btn=document.getElementById('btn-save');
   btn.disabled=true; btn.textContent='Saving...';
   try {
@@ -712,7 +718,7 @@ async function saveTrip() {
         parking:        parseFloat(document.getElementById('f-parking').value)||0,
         airport_fee:    parseFloat(document.getElementById('f-airport').value)||0,
         tolls:          parseFloat(document.getElementById('f-tolls').value)||0,
-        total:          parseFloat(document.getElementById('f-base').value)||0,
+        total:          parseFloat(document.getElementById('f-total').value)||0,
         driver_id:      currentDriverId,
       })
     });
@@ -726,7 +732,7 @@ async function saveTrip() {
 }
 
 function clearForm() {
-  ['f-booking','f-base','f-wait','f-carseat','f-eventwait','f-discount','f-expenses','f-gratuity','f-fuel','f-parking','f-airport','f-tolls'].forEach(id=>document.getElementById(id).value='');
+  ['f-booking','f-base','f-wait','f-carseat','f-eventwait','f-discount','f-expenses','f-gratuity','f-fuel','f-parking','f-airport','f-tolls','f-total'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f-greet').checked = false;
   document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
   document.getElementById('img-preview').style.display='none';
