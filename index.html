@@ -136,7 +136,7 @@
   .period-btn.active { background: rgba(200,240,96,0.1); border-color: var(--accent); color: var(--accent); }
 
   .upload-zone {
-    border: 2px dashed var(--border); border-radius: var(--radius); padding: 28px;
+    border: 2px dashed var(--border); border-radius: var(--radius); padding: 20px;
     text-align: center; cursor: pointer; transition: all 0.2s; margin-bottom: 20px; background: var(--surface);
   }
   .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: rgba(200,240,96,0.03); }
@@ -144,7 +144,43 @@
   .upload-icon { font-size: 28px; margin-bottom: 8px; }
   .upload-text { font-size: 13px; color: var(--muted); }
   .upload-text strong { color: var(--accent); }
-  #img-preview { max-width: 180px; max-height: 130px; border-radius: 8px; margin: 12px auto 0; display: none; border: 1px solid var(--border); }
+
+  /* MULTI-IMAGE PREVIEW */
+  .img-previews {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    margin-top: 14px; justify-content: center;
+  }
+  .img-thumb {
+    position: relative; width: 90px; height: 72px; border-radius: 8px;
+    border: 1px solid var(--border); overflow: hidden; flex-shrink: 0;
+    background: var(--surface2);
+  }
+  .img-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .img-thumb .thumb-remove {
+    position: absolute; top: 3px; right: 3px; width: 18px; height: 18px;
+    background: rgba(0,0,0,0.7); border: none; border-radius: 50%; color: #fff;
+    font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    line-height: 1; transition: background 0.15s;
+  }
+  .img-thumb .thumb-remove:hover { background: var(--danger); }
+  .img-thumb .thumb-num {
+    position: absolute; bottom: 3px; left: 4px; font-size: 9px; font-family: 'DM Mono', monospace;
+    color: rgba(255,255,255,0.7); background: rgba(0,0,0,0.5); padding: 1px 4px; border-radius: 3px;
+  }
+  .add-more-btn {
+    width: 90px; height: 72px; border-radius: 8px; border: 1.5px dashed var(--border);
+    background: var(--surface2); color: var(--muted); font-size: 22px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0;
+  }
+  .add-more-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .parse-multi-btn {
+    width: 100%; margin-top: 12px; padding: 11px; background: rgba(200,240,96,0.1);
+    border: 1px solid rgba(200,240,96,0.3); border-radius: var(--radius);
+    color: var(--accent); font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s; display: none;
+  }
+  .parse-multi-btn:hover { background: rgba(200,240,96,0.2); }
+  .parse-multi-btn.visible { display: block; }
 
   .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
   .field label { display: block; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
@@ -312,10 +348,17 @@
   <div id="pane-log" class="content">
     <div id="status-log" class="status-bar"></div>
     <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
-      <input type="file" id="file-input" accept="image/*" onchange="handleFile(this.files[0])">
+      <input type="file" id="file-input" accept="image/*" multiple onchange="handleFiles(this.files)">
       <div class="upload-icon">📸</div>
-      <div class="upload-text">Drop screenshot or <strong>tap to upload</strong></div>
-      <img id="img-preview">
+      <div class="upload-text">Drop screenshots or <strong>tap to upload</strong></div>
+      <div class="upload-text" style="font-size:11px;margin-top:4px;color:var(--muted)">You can add multiple screenshots for one trip</div>
+    </div>
+    <!-- Multi-image previews (outside upload-zone to avoid click conflicts) -->
+    <div id="multi-preview-wrap" style="margin-bottom:16px;display:none">
+      <div class="img-previews" id="img-previews"></div>
+      <button class="parse-multi-btn" id="parse-multi-btn" onclick="parseAllImages()">
+        🤖 Parse <span id="parse-count"></span> screenshots with AI
+      </button>
     </div>
     <div class="form-grid">
       <div class="field"><label>Date</label><input type="date" id="f-date"></div>
@@ -448,13 +491,13 @@
 
 <script>
 const SUPABASE_URL  = 'https://uljmcbrorgjrrvoxzmdb.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsam1jYnJvcmdqcnJ2b3h6bWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQzNzAsImV4cCI6MjA4OTg4MDM3MH0.gzfN9ayldCSF0kRSfSCT9Np02Dpke8ZSS42iJLBhzmA';
+const SUPABASE_ANON = '%%VITE_SUPABASE_ANON_KEY%%';
 const API_URL       = 'https://limopay-production.up.railway.app';
 
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
-let currentUser = null, currentRole = 'driver', currentDriverId = null, allTrips = [];
+let currentUser = null, currentRole = 'driver', currentDriverId = null, allTrips = [], allTripsManager = [];
 let statsFilter = 'today', historyFilter = 'all', dashFilter = 'all';
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
@@ -597,16 +640,104 @@ function showTab(name) {
   if (name==='dashboard') renderDashboard();
 }
 
-// ── FILE UPLOAD ───────────────────────────────────────────────────────────────
-async function handleFile(file) {
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const p=document.getElementById('img-preview');
-    p.src=e.target.result; p.style.display='block';
-    parseScreenshot(e.target.result.split(',')[1]);
-  };
-  reader.readAsDataURL(file);
+// ── FILE UPLOAD (MULTI) ───────────────────────────────────────────────────────
+let uploadedImages = []; // { base64, objectUrl }
+
+async function handleFiles(files) {
+  if (!files || !files.length) return;
+  for (const file of Array.from(files)) {
+    if (!file.type.startsWith('image/')) continue;
+    const base64 = await fileToBase64(file);
+    const objectUrl = URL.createObjectURL(file);
+    uploadedImages.push({ base64, objectUrl });
+  }
+  renderPreviews();
+  // Auto-parse if images were added
+  if (uploadedImages.length > 0) parseAllImages();
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = e => resolve(e.target.result.split(',')[1]);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+function renderPreviews() {
+  const wrap = document.getElementById('multi-preview-wrap');
+  const container = document.getElementById('img-previews');
+  const parseBtn = document.getElementById('parse-multi-btn');
+  const parseCount = document.getElementById('parse-count');
+
+  if (!uploadedImages.length) {
+    wrap.style.display = 'none';
+    return;
+  }
+  wrap.style.display = 'block';
+
+  container.innerHTML = uploadedImages.map((img, i) => `
+    <div class="img-thumb">
+      <img src="${img.objectUrl}" alt="Screenshot ${i+1}">
+      <button class="thumb-remove" onclick="removeImage(${i})" title="Remove">✕</button>
+      <div class="thumb-num">${i+1}</div>
+    </div>
+  `).join('') + `
+    <button class="add-more-btn" onclick="document.getElementById('file-input-more').click()" title="Add more screenshots">+
+      <input type="file" id="file-input-more" accept="image/*" multiple style="display:none" onchange="handleFiles(this.files)">
+    </button>`;
+
+  parseCount.textContent = uploadedImages.length === 1 ? '1' : uploadedImages.length;
+  parseBtn.classList.add('visible');
+}
+
+function removeImage(idx) {
+  URL.revokeObjectURL(uploadedImages[idx].objectUrl);
+  uploadedImages.splice(idx, 1);
+  renderPreviews();
+  if (!uploadedImages.length) {
+    document.getElementById('earnings-preview').classList.remove('show');
+  }
+}
+
+async function parseAllImages() {
+  if (!uploadedImages.length) return;
+  setStatus('log', 'loading', `Parsing ${uploadedImages.length} screenshot${uploadedImages.length>1?'s':''} with AI...`);
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const res = await fetch(`${API_URL}/api/parse-screenshot`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+      body: JSON.stringify({ images: uploadedImages.map(i => i.base64) })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error);
+    fillForm(json.data);
+    const msg = uploadedImages.length > 1
+      ? `✓ ${uploadedImages.length} screenshots merged successfully`
+      : '✓ Screenshot parsed successfully';
+    setStatus('log', 'success', msg);
+  } catch { setStatus('log', 'error', 'Could not parse screenshot(s). Fill in manually.'); }
+}
+
+function fillForm(d) {
+  if (d.date)           document.getElementById('f-date').value      = d.date;
+  if (d.booking_id && /^\d{7}$/.test(String(d.booking_id)))   document.getElementById('f-booking').value   = d.booking_id;
+  if (d.base_fare)      document.getElementById('f-base').value      = d.base_fare;
+  if (d.wait_time)      document.getElementById('f-wait').value      = d.wait_time;
+  if (d.greet_fee)      document.getElementById('f-greet').checked   = d.greet_fee > 0;
+  if (d.car_seat_fee)   document.getElementById('f-carseat').value   = d.car_seat_count || Math.round((d.car_seat_fee - 10) / 10);
+  if (d.event_wait)     document.getElementById('f-eventwait').value = d.event_wait;
+  if (d.discount)       document.getElementById('f-discount').value  = d.discount;
+  if (d.expenses)       document.getElementById('f-expenses').value  = d.expenses;
+  if (d.gratuity)       document.getElementById('f-gratuity').value  = d.gratuity;
+  if (d.fuel_surcharge) document.getElementById('f-fuel').value      = d.fuel_surcharge;
+  if (d.parking)        document.getElementById('f-parking').value   = d.parking;
+  if (d.airport_fee)    document.getElementById('f-airport').value   = d.airport_fee;
+  if (d.tolls)          document.getElementById('f-tolls').value     = d.tolls;
+  if (d.total)          document.getElementById('f-total').value     = d.total;
+  calcEarnings();
 }
 
 const zone = document.getElementById('upload-zone');
@@ -614,41 +745,9 @@ zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add(
 zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
 zone.addEventListener('drop', e => {
   e.preventDefault(); zone.classList.remove('drag-over');
-  const f=e.dataTransfer.files[0];
-  if (f?.type.startsWith('image/')) handleFile(f);
+  const files = [...e.dataTransfer.files].filter(f => f.type.startsWith('image/'));
+  if (files.length) handleFiles(files);
 });
-
-async function parseScreenshot(base64) {
-  setStatus('log','loading','Parsing screenshot with AI...');
-  try {
-    const { data: { session } } = await sb.auth.getSession();
-    const res = await fetch(`${API_URL}/api/parse-screenshot`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-      body: JSON.stringify({ imageBase64: base64 })
-    });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error);
-    const d=json.data;
-    if (d.date)           document.getElementById('f-date').value      = d.date;
-    if (d.booking_id && /^\d{7}$/.test(String(d.booking_id)))     document.getElementById('f-booking').value   = d.booking_id;
-    if (d.base_fare)      document.getElementById('f-base').value      = d.base_fare;
-    if (d.wait_time)      document.getElementById('f-wait').value      = d.wait_time;
-    if (d.greet_fee)      document.getElementById('f-greet').checked   = d.greet_fee > 0;
-    if (d.car_seat_fee)   document.getElementById('f-carseat').value   = d.car_seat_count || Math.round((d.car_seat_fee - 10) / 10);
-    if (d.event_wait)     document.getElementById('f-eventwait').value = d.event_wait;
-    if (d.discount)       document.getElementById('f-discount').value  = d.discount;
-    if (d.expenses)       document.getElementById('f-expenses').value  = d.expenses;
-    if (d.gratuity)       document.getElementById('f-gratuity').value  = d.gratuity;
-    if (d.fuel_surcharge) document.getElementById('f-fuel').value      = d.fuel_surcharge;
-    if (d.parking)        document.getElementById('f-parking').value   = d.parking;
-    if (d.airport_fee)    document.getElementById('f-airport').value   = d.airport_fee;
-    if (d.tolls)          document.getElementById('f-tolls').value     = d.tolls;
-    if (d.total)          document.getElementById('f-total').value     = d.total;
-    calcEarnings();
-    setStatus('log','success','✓ Screenshot parsed successfully');
-  } catch { setStatus('log','error','Could not parse screenshot. Fill in manually.'); }
-}
 
 // ── EARNINGS ──────────────────────────────────────────────────────────────────
 function carSeatFee(qty) {
@@ -741,7 +840,10 @@ function clearForm() {
   ['f-booking','f-base','f-wait','f-carseat','f-eventwait','f-discount','f-expenses','f-gratuity','f-fuel','f-parking','f-airport','f-tolls','f-total','f-cash-tips'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f-greet').checked = false;
   document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
-  document.getElementById('img-preview').style.display='none';
+  // Clear multi-image state
+  uploadedImages.forEach(img => URL.revokeObjectURL(img.objectUrl));
+  uploadedImages = [];
+  renderPreviews();
   document.getElementById('earnings-preview').classList.remove('show');
 }
 
@@ -749,11 +851,21 @@ function clearForm() {
 async function loadTrips() {
   try {
     const { data: { session } } = await sb.auth.getSession();
-    const res=await fetch(`${API_URL}/api/trips`,{ headers:{ 'Authorization':`Bearer ${session.access_token}` } });
-    const json=await res.json();
+    const headers = { 'Authorization': `Bearer ${session.access_token}` };
+
+    // Завжди завантажуємо власні тріпи
+    const res = await fetch(`${API_URL}/api/trips`, { headers });
+    const json = await res.json();
     if (!res.ok) throw new Error(json.error);
-    allTrips=json.data||[];
-  } catch(err) { console.error('Load trips:',err); }
+    allTrips = json.data || [];
+
+    // Менеджер додатково завантажує всі тріпи для Dashboard
+    const resAll = await fetch(`${API_URL}/api/trips/all`, { headers });
+    if (resAll.ok) {
+      const jsonAll = await resAll.json();
+      allTripsManager = jsonAll.data || [];
+    }
+  } catch (err) { console.error('Load trips:', err); }
 }
 
 function filterByPeriod(trips,f) {
@@ -887,17 +999,17 @@ function resetDashFilters() {
 
 function populateDriverFilter() {
   const sel = document.getElementById('dash-driver-filter');
-  const drivers = [...new Set(allTrips.map(t=>t.driver_id).filter(Boolean))].sort();
+  const drivers = [...new Set(allTripsManager.map(t=>t.driver_id).filter(Boolean))].sort();
   const current = sel.value;
   sel.innerHTML = '<option value="">All drivers</option>' +
     drivers.map(d=>`<option value="${d}"${d===current?' selected':''}>Driver #${d}</option>`).join('');
 }
 
 function getDashFiltered() {
-  const from = document.getElementById('dash-date-from')?.value;
-  const to   = document.getElementById('dash-date-to')?.value;
+  const from   = document.getElementById('dash-date-from')?.value;
+  const to     = document.getElementById('dash-date-to')?.value;
   const driver = document.getElementById('dash-driver-filter')?.value;
-  return allTrips.filter(t => {
+  return allTripsManager.filter(t => {
     if (from && t.date < from) return false;
     if (to   && t.date > to)   return false;
     if (driver && t.driver_id !== driver) return false;
@@ -1027,6 +1139,47 @@ function setStatus(pane,type,msg) {
 }
 
 init();
+
+// ── KEEP ALIVE (prevent page sleeping on mobile/PWA) ─────────────────────────
+(function keepAlive() {
+  let wakeLock = null;
+  let wasHidden = false;
+
+  async function requestWakeLock() {
+    if (!('wakeLock' in navigator)) return;
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => { wakeLock = null; });
+    } catch {}
+  }
+
+  document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'hidden') {
+      wasHidden = true;
+      return;
+    }
+    // Page became visible again
+    requestWakeLock();
+    if (wasHidden && currentUser) {
+      wasHidden = false;
+      await loadTrips();
+      const active = ['log','stats','history','dashboard'].find(t =>
+        document.getElementById(`pane-${t}`)?.style.display !== 'none'
+      );
+      if (active === 'stats')     renderStats();
+      if (active === 'history')   renderHistory();
+      if (active === 'dashboard') renderDashboard();
+    }
+  });
+
+  requestWakeLock();
+
+  // Refresh Supabase session every 4 min to prevent token expiry
+  setInterval(async () => {
+    if (document.visibilityState !== 'visible') return;
+    try { await sb.auth.getSession(); } catch {}
+  }, 4 * 60 * 1000);
+})();
 </script>
 </body>
 </html>
