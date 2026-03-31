@@ -423,7 +423,7 @@
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Date</th><th>Booking</th><th>Total</th><th>Earnings</th><th></th></tr></thead>
+        <thead><tr><th>Date</th><th>Booking</th><th>Total</th><th>Earnings</th><th style="color:var(--accent2)">Cash Tips</th><th></th></tr></thead>
         <tbody id="trips-body"></tbody>
       </table>
     </div>
@@ -491,7 +491,7 @@
 
 <script>
 const SUPABASE_URL  = 'https://uljmcbrorgjrrvoxzmdb.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsam1jYnJvcmdqcnJ2b3h6bWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQzNzAsImV4cCI6MjA4OTg4MDM3MH0.gzfN9ayldCSF0kRSfSCT9Np02Dpke8ZSS42iJLBhzmA';
+const SUPABASE_ANON = '%%VITE_SUPABASE_ANON_KEY%%';
 const API_URL       = 'https://limopay-production.up.railway.app';
 
 const { createClient } = supabase;
@@ -961,19 +961,38 @@ function renderHistory() {
   const empty=document.getElementById('empty-history');
   if (!filtered.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
   empty.style.display='none';
-  tbody.innerHTML=filtered.map(t=>`
-    <tr>
+  tbody.innerHTML=filtered.map(t=>{
+    const cashCell = t.cash_tips > 0
+      ? `<span style="color:var(--accent2);font-family:'DM Mono',monospace;font-weight:600">${fmt(t.cash_tips)}</span>`
+      : `<span style="color:var(--muted)">—</span>`;
+    const actionCell = t.deleted_by === 'manager'
+      ? `<span style="font-size:10px;color:var(--danger);border:1px solid var(--danger);border-radius:4px;padding:2px 6px">Deleted by manager</span>`
+      : `<button class="btn-delete" onclick="deleteTrip('${t.id}')">✕</button>`;
+    return `<tr>
       <td class="mono">${t.date}</td>
       <td style="color:var(--muted)">${t.booking_id||'—'}</td>
       <td class="mono">${fmt(t.total||0)}</td>
       <td class="earn-val">${fmt(t.earnings||0)}</td>
-      <td>
-        ${t.deleted_by === 'manager'
-          ? '<span style="font-size:10px;color:var(--danger);border:1px solid var(--danger);border-radius:4px;padding:2px 6px">Deleted by manager</span>'
-          : `<button class="btn-delete" onclick="deleteTrip('${t.id}')">✕</button>`
-        }
-      </td>
-    </tr>`).join('');
+      <td>${cashCell}</td>
+      <td>${actionCell}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function deleteTripManager(id, bookingId) {
+  const label = bookingId ? `booking #${bookingId}` : `trip #${id}`;
+  if (!confirm(`Delete ${label} from dashboard?\n\nThis trip will remain visible to the driver with a "Deleted by manager" note.`)) return;
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const res = await fetch(`${API_URL}/api/trips/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${session.access_token}` }
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error);
+    allTripsManager = allTripsManager.filter(t => t.id !== id);
+    renderDashboard();
+  } catch { alert('Failed to delete trip'); }
 }
 
 async function deleteTrip(id) {
@@ -986,7 +1005,6 @@ async function deleteTrip(id) {
     });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error);
-    // Remove from local array entirely (soft delete — server handles visibility)
     allTrips = allTrips.filter(t => t.id !== id);
     allTripsManager = allTripsManager.filter(t => t.id !== id);
     renderHistory(); renderStats(); renderDashboard();
@@ -1106,9 +1124,12 @@ function renderDashboard() {
       </td>
       <td class="mono">${fmt(t.total||0)}</td>
       <td class="earn-val">${fmt(t.earnings||0)}</td>
+      <td onclick="event.stopPropagation()">
+        <button class="btn-delete" onclick="deleteTripManager('${t.id}', '${t.booking_id||''}')">✕</button>
+      </td>
     </tr>
     <tr class="breakdown-row">
-      <td colspan="6">
+      <td colspan="7">
         <div class="breakdown-content" id="bd-${t.id}">${breakdownHTML(t)}</div>
       </td>
     </tr>`).join('');
@@ -1129,9 +1150,10 @@ function renderDashboard() {
       <td></td>
       <td class="mono" style="font-weight:700">${fmt(rev)}</td>
       <td class="earn-val" style="font-weight:700">${fmt(pay)}</td>
+      <td></td>
     </tr>
     <tr class="breakdown-row">
-      <td colspan="6">
+      <td colspan="7">
         <div class="breakdown-content" id="bd-total">${summaryBD}</div>
       </td>
     </tr>`;
