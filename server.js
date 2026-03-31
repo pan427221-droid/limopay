@@ -133,7 +133,7 @@ Return ONLY valid JSON with these fields (use null if not found):
   "total": number
 }
 Notes:
-- booking_id: the reservation/booking number - look for a 7-digit number (do NOT use passenger count, seat numbers, or other numbers)
+- booking_id: the reservation/booking number - look for a 7-digit number (do NOT use passenger count, s- booking_id: ONLY a standalone 7-digit reservation number shown as a booking/reservation reference. Do NOT extract numbers from text descriptions, passenger counts, or seat numbers. If no clear 7-digit booking reference is visible, return null.eat numbers, or other numbers)
 - base_fare: the base/booking fare before any additions
 - wait_time: waiting charge (billed per 15min at $15 each)
 - greet_fee: meet & greet airport fee ($40 fixed)
