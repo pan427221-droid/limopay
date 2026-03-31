@@ -208,7 +208,7 @@ app.get('/api/trips', requireAuth, async (req, res) => {
       .from('trips')
       .select('*')
       .eq('user_id', req.user.id)
-      .not('deleted_by', 'eq', 'driver') // водій не бачить те що сам видалив
+      .or('deleted_by.is.null,deleted_by.eq.manager') // показуємо NULL і 'manager', але не 'driver'
       .order('date', { ascending: false })
       .order('id', { ascending: false });
     if (error) throw error;
@@ -229,7 +229,7 @@ app.get('/api/trips/all', requireAuth, async (req, res) => {
     const { data, error } = await supabase
       .from('trips')
       .select('*')
-      .not('deleted_by', 'eq', 'manager') // менеджер не бачить те що сам видалив
+      .or('deleted_by.is.null,deleted_by.eq.driver') // показуємо NULL і 'driver', але не 'manager'
       .order('date', { ascending: false })
       .order('id', { ascending: false });
     if (error) throw error;
