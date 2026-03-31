@@ -25,37 +25,52 @@ async function requireAuth(req, res, next) {
   next();
 }
 
+// ── EARNINGS CALCULATOR ───────────────────────────────────────────────────────
+function calcEarnings(t) {
+  const base        = t.base_fare       || 0;
+  const waitTime    = t.wait_time       || 0;
+  const greetFee    = t.greet_fee       || 0;
+  const carSeatFee  = t.car_seat_fee    || 0;
+  const eventWait   = t.event_wait      || 0;
+  const discount    = t.discount        || 0;
+  const expenses    = t.expenses        || 0;
+  const gratuity    = t.gratuity        || 0;
+  const fuel        = t.fuel_surcharge  || 0;
+  const parking     = t.parking         || 0;
+  const airportFee  = t.airport_fee     || 0;
+  const tolls       = t.tolls           || 0;
+
+  // Adjusted base: everything that affects the 38%
+  const adjustedBase = base + waitTime + greetFee + carSeatFee + eventWait - discount + expenses;
+
+  // Driver earnings
+  const earnings =
+    (adjustedBase * 0.38) +
+    gratuity +    // 100% to driver
+    fuel +        // 100% to driver (= 5% of base, already calculated)
+    parking +     // 100% to driver
+    airportFee +  // 100% to driver
+    tolls;        // 100% to driver
+
+  return Math.round(earnings * 100) / 100;
+}
+
 // ── REGISTER ─────────────────────────────────────────────────────────────────
 app.post('/api/register', requireAuth, async (req, res) => {
   try {
     const { driver_id } = req.body;
     if (!driver_id) return res.status(400).json({ error: 'No driver_id provided' });
-
     const driverId = driver_id.toString().trim();
 
-    // 1. Check whitelist
     const { data: allowed } = await supabase
-      .from('allowed_drivers')
-      .select('driver_id')
-      .eq('driver_id', driverId)
-      .maybeSingle();
+      .from('allowed_drivers').select('driver_id').eq('driver_id', driverId).maybeSingle();
+    if (!allowed) return res.status(403).json({ error: 'Invalid Driver ID. Contact your manager.' });
 
-    if (!allowed) {
-      return res.status(403).json({ error: 'Invalid Driver ID. Contact your manager.' });
-    }
-
-    // 2. Check if ID already taken by another user
     const { data: existing } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('driver_id', driverId)
-      .maybeSingle();
-
-    if (existing && existing.id !== req.user.id) {
+      .from('profiles').select('id').eq('driver_id', driverId).maybeSingle();
+    if (existing && existing.id !== req.user.id)
       return res.status(409).json({ error: 'This Driver ID is already in use.' });
-    }
 
-    // 3. Upsert profile (service_role key — no RLS issues)
     const { data: profile, error: upsertError } = await supabase
       .from('profiles')
       .upsert({
@@ -66,24 +81,25 @@ app.post('/api/register', requireAuth, async (req, res) => {
         role: 'driver',
         driver_id: driverId
       }, { onConflict: 'id' })
-      .select()
-      .single();
+      .select().single();
 
     if (upsertError) throw upsertError;
-
     res.json({ success: true, profile });
   } catch (err) {
     console.error('Register error:', err);
     res.status(500).json({ error: 'Server error: ' + err.message });
   }
 });
+
+// ── DETECT IMAGE TYPE ─────────────────────────────────────────────────────────
 function detectImageType(base64) {
-  if (base64.startsWith('/9j/')) return 'image/jpeg';
+  if (base64.startsWith('/9j/'))   return 'image/jpeg';
   if (base64.startsWith('iVBORw')) return 'image/png';
   if (base64.startsWith('R0lGOD')) return 'image/gif';
-  if (base64.startsWith('UklGR')) return 'image/webp';
+  if (base64.startsWith('UklGR'))  return 'image/webp';
   return 'image/jpeg';
 }
+
 // ── PARSE SCREENSHOT ──────────────────────────────────────────────────────────
 app.post('/api/parse-screenshot', requireAuth, async (req, res) => {
   try {
@@ -97,19 +113,39 @@ app.post('/api/parse-screenshot', requireAuth, async (req, res) => {
         role: 'user',
         content: [
           { type: 'image', source: { type: 'base64', media_type: detectImageType(imageBase64), data: imageBase64 } },
-          { type: 'text', text: `Extract trip payment data from this limo/rideshare screenshot.
+          { type: 'text', text: `Extract trip payment data from this limo/rideshare booking screenshot.
 Return ONLY valid JSON with these fields (use null if not found):
 {
   "date": "YYYY-MM-DD",
   "booking_id": "string",
   "base_fare": number,
+  "wait_time": number,
+  "greet_fee": number,
+  "car_seat_fee": number,
+  "event_wait": number,
+  "discount": number,
+  "expenses": number,
   "gratuity": number,
   "fuel_surcharge": number,
-  "wait_time": number,
+  "parking": number,
   "airport_fee": number,
   "tolls": number,
   "total": number
-}` }
+}
+Notes:
+- base_fare: the base/booking fare before any additions
+- wait_time: waiting charge (billed per 15min at $15 each)
+- greet_fee: meet & greet airport fee ($40 fixed)
+- car_seat_fee: child car seat charge ($20 first, $10 each additional)
+- event_wait: waiting at events (concerts, games) if shown
+- discount: any discount applied (positive number)
+- expenses: expense reimbursement to partially offset discount
+- gratuity: tip/gratuity
+- fuel_surcharge: fuel surcharge
+- parking: parking fee paid by driver
+- airport_fee: airport terminal entry fee
+- tolls: road tolls
+- total: final total charged to client` }
         ]
       }]
     });
@@ -141,27 +177,53 @@ app.get('/api/trips', requireAuth, async (req, res) => {
 // ── CREATE TRIP ───────────────────────────────────────────────────────────────
 app.post('/api/trips', requireAuth, async (req, res) => {
   try {
-    const { date, booking_id, base_fare, gratuity, fuel_surcharge, wait_time, airport_fee, tolls, total } = req.body;
-    const earnings = ((base_fare||0)*0.38) + (gratuity||0) + (fuel_surcharge||0) + (wait_time||0) + (airport_fee||0) + (tolls||0);
+    const {
+      date, booking_id, base_fare, wait_time, greet_fee, car_seat_count,
+      car_seat_fee, event_wait, discount, expenses, gratuity,
+      fuel_surcharge, parking, airport_fee, tolls, total, driver_id
+    } = req.body;
+
+    const tripData = {
+      base_fare:      base_fare      || 0,
+      wait_time:      wait_time      || 0,
+      greet_fee:      greet_fee      || 0,
+      car_seat_count: car_seat_count || 0,
+      car_seat_fee:   car_seat_fee   || 0,
+      event_wait:     event_wait     || 0,
+      discount:       discount       || 0,
+      expenses:       expenses       || 0,
+      gratuity:       gratuity       || 0,
+      fuel_surcharge: fuel_surcharge || 0,
+      parking:        parking        || 0,
+      airport_fee:    airport_fee    || 0,
+      tolls:          tolls          || 0,
+    };
+
+    const earnings = calcEarnings(tripData);
+
     const { data, error } = await supabase.from('trips').insert({
       user_id: req.user.id,
+      driver_id: driver_id || null,
       date: date || new Date().toISOString().split('T')[0],
-      booking_id, base_fare: base_fare||0, gratuity: gratuity||0,
-      fuel_surcharge: fuel_surcharge||0, wait_time: wait_time||0,
-      airport_fee: airport_fee||0, tolls: tolls||0,
-      total: total||0, earnings: Math.round(earnings*100)/100
+      booking_id,
+      ...tripData,
+      total: total || 0,
+      earnings
     }).select().single();
+
     if (error) throw error;
     res.json({ success: true, data });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to create trip' });
+    console.error('Create trip error:', err);
+    res.status(500).json({ error: 'Failed to create trip: ' + err.message });
   }
 });
 
 // ── DELETE TRIP ───────────────────────────────────────────────────────────────
 app.delete('/api/trips/:id', requireAuth, async (req, res) => {
   try {
-    const { error } = await supabase.from('trips').delete().eq('id', req.params.id).eq('user_id', req.user.id);
+    const { error } = await supabase.from('trips').delete()
+      .eq('id', req.params.id).eq('user_id', req.user.id);
     if (error) throw error;
     res.json({ success: true });
   } catch (err) {

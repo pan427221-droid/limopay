@@ -154,6 +154,12 @@
   }
   .field input:focus { outline: none; border-color: var(--accent); }
 
+  .checkbox-field { display: flex; flex-direction: column; }
+  .checkbox-wrap { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: border-color 0.2s; }
+  .checkbox-wrap:has(input:checked) { border-color: var(--accent); background: rgba(200,240,96,0.05); }
+  .checkbox-wrap input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+  .checkbox-label { font-size: 13px; color: var(--text); }
+
   .earnings-preview { background: var(--surface); border: 1px solid rgba(200,240,96,0.2); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; display: none; }
   .earnings-preview.show { display: block; }
   .ep-title { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
@@ -268,18 +274,31 @@
       <div class="field"><label>Date</label><input type="date" id="f-date"></div>
       <div class="field"><label>Booking ID</label><input type="text" id="f-booking" placeholder="BK-12345"></div>
       <div class="field"><label>Base Fare ($)</label><input type="number" id="f-base" placeholder="0.00" oninput="calcEarnings()"></div>
+      <div class="field"><label>Wait Time ($)</label><input type="number" id="f-wait" placeholder="0.00" oninput="calcEarnings()"></div>
+      <div class="field checkbox-field">
+        <label>Greet Fee (+$40)</label>
+        <div class="checkbox-wrap">
+          <input type="checkbox" id="f-greet" onchange="calcEarnings()">
+          <span class="checkbox-label">Meet &amp; Greet at airport</span>
+        </div>
+      </div>
+      <div class="field"><label>Car Seats (qty)</label><input type="number" id="f-carseat" placeholder="0" min="0" max="10" oninput="calcEarnings()"></div>
+      <div class="field"><label>Event Wait ($)</label><input type="number" id="f-eventwait" placeholder="0.00" oninput="calcEarnings()"></div>
+      <div class="field"><label>Discount ($)</label><input type="number" id="f-discount" placeholder="0.00" oninput="calcEarnings()"></div>
+      <div class="field"><label>Expenses ($)</label><input type="number" id="f-expenses" placeholder="0.00" oninput="calcEarnings()"></div>
       <div class="field"><label>Gratuity ($)</label><input type="number" id="f-gratuity" placeholder="0.00" oninput="calcEarnings()"></div>
       <div class="field"><label>Fuel Surcharge ($)</label><input type="number" id="f-fuel" placeholder="0.00" oninput="calcEarnings()"></div>
-      <div class="field"><label>Wait Time ($)</label><input type="number" id="f-wait" placeholder="0.00" oninput="calcEarnings()"></div>
+      <div class="field"><label>Parking ($)</label><input type="number" id="f-parking" placeholder="0.00" oninput="calcEarnings()"></div>
       <div class="field"><label>Airport Fee ($)</label><input type="number" id="f-airport" placeholder="0.00" oninput="calcEarnings()"></div>
       <div class="field"><label>Tolls ($)</label><input type="number" id="f-tolls" placeholder="0.00" oninput="calcEarnings()"></div>
     </div>
     <div class="earnings-preview" id="earnings-preview">
       <div class="ep-title">Earnings Breakdown</div>
-      <div class="ep-row"><span>Base × 38%</span><span class="ep-val" id="ep-base">$0.00</span></div>
+      <div class="ep-row"><span>Adjusted Base</span><span class="ep-val" id="ep-adj-base">$0.00</span></div>
+      <div class="ep-row"><span>Base × 38%</span><span class="ep-val" id="ep-base-pct">$0.00</span></div>
       <div class="ep-row"><span>Gratuity</span><span class="ep-val" id="ep-gratuity">$0.00</span></div>
       <div class="ep-row"><span>Fuel Surcharge</span><span class="ep-val" id="ep-fuel">$0.00</span></div>
-      <div class="ep-row"><span>Wait Time</span><span class="ep-val" id="ep-wait">$0.00</span></div>
+      <div class="ep-row"><span>Parking</span><span class="ep-val" id="ep-parking">$0.00</span></div>
       <div class="ep-row"><span>Airport Fee</span><span class="ep-val" id="ep-airport">$0.00</span></div>
       <div class="ep-row"><span>Tolls</span><span class="ep-val" id="ep-tolls">$0.00</span></div>
       <div class="ep-row total"><span>Your Earnings</span><span class="ep-val" id="ep-total">$0.00</span></div>
@@ -341,7 +360,7 @@
 
 <script>
 const SUPABASE_URL  = 'https://uljmcbrorgjrrvoxzmdb.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsam1jYnJvcmdqcnJ2b3h6bWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQzNzAsImV4cCI6MjA4OTg4MDM3MH0.gzfN9ayldCSF0kRSfSCT9Np02Dpke8ZSS42iJLBhzmA';
+const SUPABASE_ANON = '%%VITE_SUPABASE_ANON_KEY%%';
 const API_URL       = 'https://limopay-production.up.railway.app';
 
 const { createClient } = supabase;
@@ -352,16 +371,6 @@ let statsFilter = 'today', historyFilter = 'all', dashFilter = 'all';
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 async function init() {
-  // Handle OAuth redirect with token in URL hash
-  if (window.location.hash.includes('access_token')) {
-    const { data: { session }, error } = await sb.auth.getSession();
-    if (session) {
-      window.history.replaceState(null, '', window.location.pathname);
-      await onLoggedIn(session.user);
-      return;
-    }
-  }
-
   const { data: { session } } = await sb.auth.getSession();
   if (session) await onLoggedIn(session.user);
   else showScreen('login');
@@ -467,10 +476,7 @@ function showScreen(s) {
 async function signInWithGoogle() {
   const { error } = await sb.auth.signInWithOAuth({
     provider: 'google',
-    options: {
-      redirectTo: window.location.origin + window.location.pathname,
-      queryParams: { prompt: 'select_account' }
-    }
+    options: { redirectTo: window.location.origin + window.location.pathname }
   });
   if (error) alert('Login failed: ' + error.message);
 }
@@ -525,36 +531,59 @@ async function parseScreenshot(base64) {
     const json = await res.json();
     if (!res.ok) throw new Error(json.error);
     const d=json.data;
-    if (d.date)           document.getElementById('f-date').value     = d.date;
-    if (d.booking_id)     document.getElementById('f-booking').value  = d.booking_id;
-    if (d.base_fare)      document.getElementById('f-base').value     = d.base_fare;
-    if (d.gratuity)       document.getElementById('f-gratuity').value = d.gratuity;
-    if (d.fuel_surcharge) document.getElementById('f-fuel').value     = d.fuel_surcharge;
-    if (d.wait_time)      document.getElementById('f-wait').value     = d.wait_time;
-    if (d.airport_fee)    document.getElementById('f-airport').value  = d.airport_fee;
-    if (d.tolls)          document.getElementById('f-tolls').value    = d.tolls;
+    if (d.date)           document.getElementById('f-date').value      = d.date;
+    if (d.booking_id)     document.getElementById('f-booking').value   = d.booking_id;
+    if (d.base_fare)      document.getElementById('f-base').value      = d.base_fare;
+    if (d.wait_time)      document.getElementById('f-wait').value      = d.wait_time;
+    if (d.greet_fee)      document.getElementById('f-greet').checked   = d.greet_fee > 0;
+    if (d.car_seat_fee)   document.getElementById('f-carseat').value   = d.car_seat_count || Math.round((d.car_seat_fee - 10) / 10);
+    if (d.event_wait)     document.getElementById('f-eventwait').value = d.event_wait;
+    if (d.discount)       document.getElementById('f-discount').value  = d.discount;
+    if (d.expenses)       document.getElementById('f-expenses').value  = d.expenses;
+    if (d.gratuity)       document.getElementById('f-gratuity').value  = d.gratuity;
+    if (d.fuel_surcharge) document.getElementById('f-fuel').value      = d.fuel_surcharge;
+    if (d.parking)        document.getElementById('f-parking').value   = d.parking;
+    if (d.airport_fee)    document.getElementById('f-airport').value   = d.airport_fee;
+    if (d.tolls)          document.getElementById('f-tolls').value     = d.tolls;
     calcEarnings();
     setStatus('log','success','✓ Screenshot parsed successfully');
   } catch { setStatus('log','error','Could not parse screenshot. Fill in manually.'); }
 }
 
 // ── EARNINGS ──────────────────────────────────────────────────────────────────
+function carSeatFee(qty) {
+  if (qty <= 0) return 0;
+  return 20 + Math.max(0, qty - 1) * 10;
+}
+
 function calcEarnings() {
-  const base=parseFloat(document.getElementById('f-base').value)||0;
-  const grat=parseFloat(document.getElementById('f-gratuity').value)||0;
-  const fuel=parseFloat(document.getElementById('f-fuel').value)||0;
-  const wait=parseFloat(document.getElementById('f-wait').value)||0;
-  const air =parseFloat(document.getElementById('f-airport').value)||0;
-  const toll=parseFloat(document.getElementById('f-tolls').value)||0;
-  const be=base*0.38, total=be+grat+fuel+wait+air+toll;
-  document.getElementById('ep-base').textContent=fmt(be);
-  document.getElementById('ep-gratuity').textContent=fmt(grat);
-  document.getElementById('ep-fuel').textContent=fmt(fuel);
-  document.getElementById('ep-wait').textContent=fmt(wait);
-  document.getElementById('ep-airport').textContent=fmt(air);
-  document.getElementById('ep-tolls').textContent=fmt(toll);
-  document.getElementById('ep-total').textContent=fmt(total);
-  document.getElementById('earnings-preview').classList.toggle('show',base>0||grat>0);
+  const base      = parseFloat(document.getElementById('f-base').value)     || 0;
+  const wait      = parseFloat(document.getElementById('f-wait').value)     || 0;
+  const greet     = document.getElementById('f-greet').checked ? 40 : 0;
+  const seatQty   = parseInt(document.getElementById('f-carseat').value)    || 0;
+  const seatFee   = carSeatFee(seatQty);
+  const eventWait = parseFloat(document.getElementById('f-eventwait').value)|| 0;
+  const discount  = parseFloat(document.getElementById('f-discount').value) || 0;
+  const expenses  = parseFloat(document.getElementById('f-expenses').value) || 0;
+  const grat      = parseFloat(document.getElementById('f-gratuity').value) || 0;
+  const fuel      = parseFloat(document.getElementById('f-fuel').value)     || 0;
+  const parking   = parseFloat(document.getElementById('f-parking').value)  || 0;
+  const air       = parseFloat(document.getElementById('f-airport').value)  || 0;
+  const toll      = parseFloat(document.getElementById('f-tolls').value)    || 0;
+
+  const adjBase = base + wait + greet + seatFee + eventWait - discount + expenses;
+  const basePct = adjBase * 0.38;
+  const total   = basePct + grat + fuel + parking + air + toll;
+
+  document.getElementById('ep-adj-base').textContent  = fmt(adjBase);
+  document.getElementById('ep-base-pct').textContent  = fmt(basePct);
+  document.getElementById('ep-gratuity').textContent  = fmt(grat);
+  document.getElementById('ep-fuel').textContent      = fmt(fuel);
+  document.getElementById('ep-parking').textContent   = fmt(parking);
+  document.getElementById('ep-airport').textContent   = fmt(air);
+  document.getElementById('ep-tolls').textContent     = fmt(toll);
+  document.getElementById('ep-total').textContent     = fmt(total);
+  document.getElementById('earnings-preview').classList.toggle('show', base > 0);
 }
 
 // ── SAVE TRIP ─────────────────────────────────────────────────────────────────
@@ -563,6 +592,7 @@ async function saveTrip() {
   btn.disabled=true; btn.textContent='Saving...';
   try {
     const { data: { session } } = await sb.auth.getSession();
+    const seatQty = parseInt(document.getElementById('f-carseat').value)||0;
     const res = await fetch(`${API_URL}/api/trips`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
@@ -570,9 +600,16 @@ async function saveTrip() {
         date:           document.getElementById('f-date').value,
         booking_id:     document.getElementById('f-booking').value,
         base_fare:      parseFloat(document.getElementById('f-base').value)||0,
+        wait_time:      parseFloat(document.getElementById('f-wait').value)||0,
+        greet_fee:      document.getElementById('f-greet').checked ? 40 : 0,
+        car_seat_count: seatQty,
+        car_seat_fee:   carSeatFee(seatQty),
+        event_wait:     parseFloat(document.getElementById('f-eventwait').value)||0,
+        discount:       parseFloat(document.getElementById('f-discount').value)||0,
+        expenses:       parseFloat(document.getElementById('f-expenses').value)||0,
         gratuity:       parseFloat(document.getElementById('f-gratuity').value)||0,
         fuel_surcharge: parseFloat(document.getElementById('f-fuel').value)||0,
-        wait_time:      parseFloat(document.getElementById('f-wait').value)||0,
+        parking:        parseFloat(document.getElementById('f-parking').value)||0,
         airport_fee:    parseFloat(document.getElementById('f-airport').value)||0,
         tolls:          parseFloat(document.getElementById('f-tolls').value)||0,
         total:          parseFloat(document.getElementById('f-base').value)||0,
@@ -589,7 +626,8 @@ async function saveTrip() {
 }
 
 function clearForm() {
-  ['f-booking','f-base','f-gratuity','f-fuel','f-wait','f-airport','f-tolls'].forEach(id=>document.getElementById(id).value='');
+  ['f-booking','f-base','f-wait','f-carseat','f-eventwait','f-discount','f-expenses','f-gratuity','f-fuel','f-parking','f-airport','f-tolls'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-greet').checked = false;
   document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
   document.getElementById('img-preview').style.display='none';
   document.getElementById('earnings-preview').classList.remove('show');
