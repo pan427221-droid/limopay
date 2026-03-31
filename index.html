@@ -360,7 +360,7 @@
 
 <script>
 const SUPABASE_URL  = 'https://uljmcbrorgjrrvoxzmdb.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsam1jYnJvcmdqcnJ2b3h6bWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQzNzAsImV4cCI6MjA4OTg4MDM3MH0.gzfN9ayldCSF0kRSfSCT9Np02Dpke8ZSS42iJLBhzmA';
+const SUPABASE_ANON = '%%VITE_SUPABASE_ANON_KEY%%';
 const API_URL       = 'https://limopay-production.up.railway.app';
 
 const { createClient } = supabase;
@@ -599,6 +599,11 @@ function calcEarnings() {
 
 // ── SAVE TRIP ─────────────────────────────────────────────────────────────────
 async function saveTrip() {
+  const bookingId = document.getElementById('f-booking').value.trim();
+  if (!bookingId) {
+    setStatus('log','error','Please enter Booking ID before saving.');
+    return;
+  }
   const btn=document.getElementById('btn-save');
   btn.disabled=true; btn.textContent='Saving...';
   try {
@@ -704,7 +709,7 @@ function renderStats() {
         <div class="ltc-row"><div class="ltc-row-label">Fuel</div><div class="ltc-row-val">${fmt(last.fuel_surcharge||0)}</div></div>
         <div class="ltc-row"><div class="ltc-row-label">Wait</div><div class="ltc-row-val">${fmt(last.wait_time||0)}</div></div>
         <div class="ltc-row"><div class="ltc-row-label">Airport</div><div class="ltc-row-val">${fmt(last.airport_fee||0)}</div></div>
-        <div class="ltc-row"><div class="ltc-row-label">Tolls</div><div class="ltc-row-val">${fmt(last.tolls||0)}</div></div>
+        <div class="ltc-row" style="opacity:0.5"><div class="ltc-row-label">Tolls (co.)</div><div class="ltc-row-val">${fmt(last.tolls||0)}</div></div>
       </div>
     </div>`;
 }
