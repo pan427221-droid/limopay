@@ -1,0 +1,327 @@
+import express from 'express';
+import cors from 'cors';
+import { createClient } from '@supabase/supabase-js';
+import Anthropic from '@anthropic-ai/sdk';
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(cors({ origin: true, credentials: true }));
+app.use(express.json({ limit: '10mb' }));
+
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+// ── HEALTH ────────────────────────────────────────────────────────────────────
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
+
+// ── AUTH MIDDLEWARE ───────────────────────────────────────────────────────────
+async function requireAuth(req, res, next) {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'No token' });
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+  if (error || !user) return res.status(401).json({ error: 'Invalid token' });
+  req.user = user;
+  next();
+}
+
+// ── EARNINGS CALCULATOR ───────────────────────────────────────────────────────
+// Uses DB column names as input
+function calcEarningsFromDB(t) {
+  const base       = parseFloat(t.base)       || 0;
+  const wait       = parseFloat(t.wait)       || 0;
+  const greetFee   = parseFloat(t.greet_fee)  || 0;
+  const carSeatFee = parseFloat(t.car_seat_fee)|| 0;
+  const eventWait  = parseFloat(t.event_wait) || 0;
+  const discount   = parseFloat(t.discount)   || 0;
+  const expenses   = parseFloat(t.expenses)   || 0;
+  const gratuity   = parseFloat(t.gratuity)   || 0;
+  const fuel       = parseFloat(t.fuel)       || 0;
+  const parking    = parseFloat(t.parking)    || 0;
+  const airport    = parseFloat(t.airport)    || 0;
+
+  const adjustedBase = base + wait + greetFee + carSeatFee + eventWait - discount + expenses;
+  return Math.round(((adjustedBase * 0.38) + gratuity + fuel + parking + airport) * 100) / 100;
+}
+
+// ── REGISTER ─────────────────────────────────────────────────────────────────
+app.post('/api/register', requireAuth, async (req, res) => {
+  try {
+    const { driver_id } = req.body;
+    if (!driver_id) return res.status(400).json({ error: 'No driver_id provided' });
+    const driverId = driver_id.toString().trim();
+
+    const { data: allowed } = await supabase
+      .from('allowed_drivers').select('driver_id').eq('driver_id', driverId).maybeSingle();
+    if (!allowed) return res.status(403).json({ error: 'Invalid Driver ID. Contact your manager.' });
+
+    const { data: existing } = await supabase
+      .from('profiles').select('id').eq('driver_id', driverId).maybeSingle();
+    if (existing && existing.id !== req.user.id)
+      return res.status(409).json({ error: 'This Driver ID is already in use.' });
+
+    // Get existing profile to preserve role
+    const { data: existingProf } = await supabase
+      .from('profiles').select('role').eq('id', req.user.id).maybeSingle();
+
+    const { data: profile, error: upsertError } = await supabase
+      .from('profiles')
+      .upsert({
+        id: req.user.id,
+        email: req.user.email,
+        full_name: req.user.user_metadata?.full_name || req.user.email,
+        avatar_url: req.user.user_metadata?.avatar_url || null,
+        role: existingProf?.role || 'driver',
+        driver_id: driverId
+      }, { onConflict: 'id' })
+      .select().single();
+
+    if (upsertError) throw upsertError;
+    res.json({ success: true, profile });
+  } catch (err) {
+    console.error('Register error:', err);
+    res.status(500).json({ error: 'Server error: ' + err.message });
+  }
+});
+
+// ── DETECT IMAGE TYPE ─────────────────────────────────────────────────────────
+function detectImageType(base64) {
+  if (base64.startsWith('/9j/'))   return 'image/jpeg';
+  if (base64.startsWith('iVBORw')) return 'image/png';
+  if (base64.startsWith('R0lGOD')) return 'image/gif';
+  if (base64.startsWith('UklGR'))  return 'image/webp';
+  return 'image/jpeg';
+}
+
+// ── PARSE SCREENSHOT PROMPT ───────────────────────────────────────────────────
+const PARSE_PROMPT = `Extract trip payment data from this limo/rideshare booking screenshot.
+Return ONLY valid JSON with these fields (use null if not found):
+{
+  "date": "YYYY-MM-DD",
+  "booking_id": "string",
+  "base_fare": number,
+  "wait_time": number,
+  "greet_fee": number,
+  "car_seat_fee": number,
+  "event_wait": number,
+  "discount": number,
+  "expenses": number,
+  "gratuity": number,
+  "fuel_surcharge": number,
+  "parking": number,
+  "airport_fee": number,
+  "tolls": number,
+  "total": number
+}
+Notes:
+- booking_id: the reservation/booking number - look for a 7-digit number (do NOT use passenger count, seat numbers, or other numbers)
+- base_fare: the base/booking fare before any additions
+- wait_time: waiting charge (billed per 15min at $15 each)
+- greet_fee: meet & greet airport fee ($40 fixed)
+- car_seat_fee: child car seat charge ($20 first, $10 each additional)
+- event_wait: waiting at events (concerts, games) if shown
+- discount: any discount applied (positive number)
+- expenses: expense reimbursement to partially offset discount
+- gratuity: tip/gratuity
+- fuel_surcharge: fuel surcharge
+- parking: parking fee paid by driver
+- airport_fee: airport terminal entry fee
+- tolls: road tolls
+- total: the final "Total Fare" shown at the bottom of the receipt — this is what the client paid`;
+
+// ── MERGE PARSED RESULTS ──────────────────────────────────────────────────────
+// Strategy: first image is the "primary" receipt (base data).
+// Additional images fill in ONLY fields that are null/0 in the primary.
+// This treats multi-photo as "same receipt, different angles" — no summing.
+const NUMERIC_FIELDS = ['base_fare','wait_time','greet_fee','car_seat_fee','event_wait','discount','expenses','gratuity','fuel_surcharge','parking','airport_fee','tolls','total'];
+const STRING_FIELDS  = ['date','booking_id'];
+
+function mergeResults(results) {
+  // Start with first image as base
+  const merged = { ...results[0] };
+  // Fill missing fields from subsequent images (never overwrite existing values)
+  for (let i = 1; i < results.length; i++) {
+    for (const field of STRING_FIELDS) {
+      if (!merged[field] && results[i][field]) merged[field] = results[i][field];
+    }
+    for (const field of NUMERIC_FIELDS) {
+      if ((!merged[field] || merged[field] === 0) && results[i][field]) {
+        merged[field] = results[i][field];
+      }
+    }
+  }
+  return merged;
+}
+
+// ── PARSE SINGLE IMAGE ────────────────────────────────────────────────────────
+async function parseSingleImage(base64) {
+  const response = await anthropic.messages.create({
+    model: 'claude-opus-4-20250514',
+    max_tokens: 1024,
+    messages: [{
+      role: 'user',
+      content: [
+        { type: 'image', source: { type: 'base64', media_type: detectImageType(base64), data: base64 } },
+        { type: 'text', text: PARSE_PROMPT }
+      ]
+    }]
+  });
+  const text = response.content[0].text;
+  const match = text.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('Could not parse image');
+  return JSON.parse(match[0]);
+}
+
+// ── PARSE SCREENSHOT ──────────────────────────────────────────────────────────
+app.post('/api/parse-screenshot', requireAuth, async (req, res) => {
+  try {
+    // Support both single image (legacy) and array of images
+    const { imageBase64, images } = req.body;
+
+    const imageList = images
+      ? (Array.isArray(images) ? images : [images])
+      : (imageBase64 ? [imageBase64] : null);
+
+    if (!imageList || imageList.length === 0)
+      return res.status(400).json({ error: 'No image provided' });
+
+    if (imageList.length === 1) {
+      // Single image — original behaviour
+      const data = await parseSingleImage(imageList[0]);
+      return res.json({ success: true, data });
+    }
+
+    // Multiple images — parse in parallel then merge
+    const results = await Promise.all(imageList.map(img => parseSingleImage(img)));
+    const data = mergeResults(results);
+    res.json({ success: true, data, sources: results.length });
+
+  } catch (err) {
+    console.error('Parse error:', err);
+    res.status(500).json({ error: 'Failed to parse screenshot' });
+  }
+});
+
+// ── GET TRIPS ─────────────────────────────────────────────────────────────────
+app.get('/api/trips', requireAuth, async (req, res) => {
+  try {
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', req.user.id).single();
+    let query = supabase.from('trips').select('*').order('date', { ascending: false }).order('id', { ascending: false });
+    if (!profile || profile.role !== 'manager') query = query.eq('user_id', req.user.id);
+    const { data, error } = await query;
+    if (error) throw error;
+
+    // Normalize DB column names → JS field names used in frontend
+    // DB schema (from Supabase): base, wait, fuel, airport, booking, total_fare
+    // JS/frontend expects:       base_fare, wait_time, fuel_surcharge, airport_fee, booking_id, total
+    const normalized = (data || []).map(t => ({
+      ...t,
+      base_fare:      t.base_fare      ?? t.base      ?? 0,
+      wait_time:      t.wait_time      ?? t.wait      ?? 0,
+      fuel_surcharge: t.fuel_surcharge ?? t.fuel      ?? 0,
+      airport_fee:    t.airport_fee    ?? t.airport   ?? 0,
+      booking_id:     t.booking_id     ?? t.booking   ?? null,
+      total:          t.total          ?? t.total_fare ?? 0,
+    }));
+
+    res.json({ success: true, data: normalized });
+  } catch (err) {
+    console.error('Get trips error:', err);
+    res.status(500).json({ error: 'Failed to fetch trips' });
+  }
+});
+
+// ── CREATE TRIP ───────────────────────────────────────────────────────────────
+app.post('/api/trips', requireAuth, async (req, res) => {
+  try {
+    const {
+      date, booking_id, base_fare, wait_time, greet_fee, car_seat_count,
+      car_seat_fee, event_wait, discount, expenses, gratuity,
+      fuel_surcharge, parking, airport_fee, tolls, total, driver_id
+    } = req.body;
+
+    // Map JS field names → actual DB column names
+    const dbRow = {
+      base:       base_fare      || 0,
+      wait:       wait_time      || 0,
+      greet_fee:  greet_fee      || 0,
+      car_seat_count: car_seat_count || 0,
+      car_seat_fee:   car_seat_fee   || 0,
+      event_wait: event_wait     || 0,
+      discount:   discount       || 0,
+      expenses:   expenses       || 0,
+      gratuity:   gratuity       || 0,
+      fuel:       fuel_surcharge || 0,
+      parking:    parking        || 0,
+      airport:    airport_fee    || 0,
+      tolls:      tolls          || 0,
+    };
+
+    const earnings = calcEarningsFromDB(dbRow);
+
+    // Check for duplicate booking
+    if (booking_id) {
+      const { data: existing } = await supabase
+        .from('trips')
+        .select('id')
+        .eq('booking', booking_id)
+        .eq('user_id', req.user.id)
+        .maybeSingle();
+      if (existing) {
+        return res.status(409).json({ error: 'Trip with this Booking ID already exists.' });
+      }
+    }
+
+    const { data, error } = await supabase.from('trips').insert({
+      user_id:   req.user.id,
+      driver_id: driver_id || null,
+      date:      date || new Date().toISOString().split('T')[0],
+      booking:   booking_id || null,
+      ...dbRow,
+      total_fare: total || 0,
+      cash_tips:  req.body.cash_tips || 0,
+      earnings
+    }).select().single();
+
+    if (error) throw error;
+
+    // Return with normalized JS field names so frontend works correctly
+    res.json({ success: true, data: {
+      ...data,
+      base_fare:      data.base      ?? 0,
+      wait_time:      data.wait      ?? 0,
+      fuel_surcharge: data.fuel      ?? 0,
+      airport_fee:    data.airport   ?? 0,
+      booking_id:     data.booking   ?? null,
+      total:          data.total_fare ?? 0,
+    }});
+  } catch (err) {
+    console.error('Create trip error:', err);
+    res.status(500).json({ error: 'Failed to create trip: ' + err.message });
+  }
+});
+
+// ── DELETE TRIP ───────────────────────────────────────────────────────────────
+app.delete('/api/trips/:id', requireAuth, async (req, res) => {
+  try {
+    const { error } = await supabase.from('trips').delete()
+      .eq('id', req.params.id).eq('user_id', req.user.id);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete trip' });
+  }
+});
+
+// ── GET PROFILE ───────────────────────────────────────────────────────────────
+app.get('/api/profile', requireAuth, async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('profiles').select('*').eq('id', req.user.id).single();
+    if (error) throw error;
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch profile' });
+  }
+});
+
+app.listen(PORT, () => console.log(`LimoPay backend running on port ${PORT}`));
