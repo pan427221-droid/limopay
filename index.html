@@ -195,6 +195,53 @@
   .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
   .section-title { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
 
+  /* DASHBOARD FILTERS */
+  .dash-filters {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin-bottom: 16px;
+  }
+  .filter-group { display: flex; flex-direction: column; gap: 4px; }
+  .filter-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .filter-input {
+    padding: 8px 12px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-family: 'Syne', sans-serif; font-size: 13px;
+    min-width: 130px;
+  }
+  .filter-input:focus { outline: none; border-color: var(--accent); }
+  .filter-reset {
+    padding: 8px 14px; background: transparent; border: 1px solid var(--border);
+    border-radius: 8px; color: var(--muted); font-family: 'Syne', sans-serif;
+    font-size: 12px; cursor: pointer; transition: all 0.2s; align-self: flex-end;
+  }
+  .filter-reset:hover { border-color: var(--danger); color: var(--danger); }
+  .btn-export {
+    padding: 8px 16px; background: var(--accent); border: none; border-radius: 8px;
+    color: #000; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s; align-self: flex-end;
+  }
+  .btn-export:hover { background: #d4f570; }
+
+  /* EXPANDABLE ROWS */
+  .dash-row { cursor: pointer; }
+  .dash-row:hover td { background: rgba(200,240,96,0.05); }
+  .dash-row td:first-child { color: var(--muted); font-size: 12px; }
+  .expand-icon { transition: transform 0.2s; display: inline-block; }
+  .expanded .expand-icon { transform: rotate(90deg); }
+  .breakdown-row td { padding: 0; }
+  .breakdown-content {
+    padding: 12px 16px; background: var(--surface2);
+    border-bottom: 1px solid var(--border); display: none;
+  }
+  .breakdown-content.show { display: block; }
+  .bd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px,1fr)); gap: 8px; }
+  .bd-item { background: var(--surface); border-radius: 6px; padding: 8px 10px; }
+  .bd-item-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+  .bd-item-val { font-size: 13px; font-family: 'DM Mono', monospace; }
+  .bd-item-val.accent { color: var(--accent); }
+  .bd-item-val.muted { color: var(--muted); font-size: 11px; }
+
+  /* FOOTER TOTAL ROW */
+  #dash-foot tr td { border-top: 2px solid var(--border); font-weight: 700; padding-top: 14px; }
+
   @media (max-width: 600px) {
     .content { padding: 16px; }
     header { padding: 12px 16px; }
@@ -340,16 +387,53 @@
 
   <!-- DASHBOARD -->
   <div id="pane-dashboard" class="content" style="display:none">
-    <div class="period-tabs">
-      <button class="period-btn active" onclick="setDashFilter('all',this)">All</button>
-      <button class="period-btn"        onclick="setDashFilter('week',this)">This Week</button>
-      <button class="period-btn"        onclick="setDashFilter('month',this)">This Month</button>
+
+    <!-- FILTERS -->
+    <div class="dash-filters">
+      <div class="filter-group">
+        <label class="filter-label">From</label>
+        <input type="date" id="dash-date-from" class="filter-input" onchange="renderDashboard()">
+      </div>
+      <div class="filter-group">
+        <label class="filter-label">To</label>
+        <input type="date" id="dash-date-to" class="filter-input" onchange="renderDashboard()">
+      </div>
+      <div class="filter-group">
+        <label class="filter-label">Driver ID</label>
+        <select id="dash-driver-filter" class="filter-input" onchange="renderDashboard()">
+          <option value="">All drivers</option>
+        </select>
+      </div>
+      <button class="filter-reset" onclick="resetDashFilters()">Reset</button>
+      <button class="btn-export" onclick="exportCSV()">Export CSV</button>
     </div>
+
+    <!-- QUICK PERIOD BUTTONS -->
+    <div class="period-tabs" style="margin-bottom:16px">
+      <button class="period-btn" onclick="setDashQuick('today',this)">Today</button>
+      <button class="period-btn" onclick="setDashQuick('week',this)">This Week</button>
+      <button class="period-btn" onclick="setDashQuick('month',this)">This Month</button>
+      <button class="period-btn active" onclick="setDashQuick('all',this)">All</button>
+    </div>
+
+    <!-- SUMMARY CARDS -->
     <div class="stats-row" id="dash-stats"></div>
+
+    <!-- TRIPS TABLE -->
     <div class="table-wrap">
-      <table>
-        <thead><tr><th>Date</th><th>Driver ID</th><th>Booking</th><th>Total</th><th>Earnings</th></tr></thead>
+      <table id="dash-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Date</th>
+            <th>Driver</th>
+            <th>Booking</th>
+            <th>Total</th>
+            <th>Earnings</th>
+          </tr>
+        </thead>
         <tbody id="dash-body"></tbody>
+        <tfoot id="dash-foot"></tfoot>
       </table>
     </div>
     <div id="empty-dash" class="empty-state" style="display:none">
@@ -360,7 +444,7 @@
 
 <script>
 const SUPABASE_URL  = 'https://uljmcbrorgjrrvoxzmdb.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsam1jYnJvcmdqcnJ2b3h6bWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQzNzAsImV4cCI6MjA4OTg4MDM3MH0.gzfN9ayldCSF0kRSfSCT9Np02Dpke8ZSS42iJLBhzmA';
+const SUPABASE_ANON = '%%VITE_SUPABASE_ANON_KEY%%';
 const API_URL       = 'https://limopay-production.up.railway.app';
 
 const { createClient } = supabase;
@@ -748,33 +832,163 @@ async function deleteTrip(id) {
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────────────
-function setDashFilter(f,btn) {
-  dashFilter=f;
+function setDashQuick(period, btn) {
   document.querySelectorAll('#pane-dashboard .period-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active'); renderDashboard();
+  btn.classList.add('active');
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  const fromEl = document.getElementById('dash-date-from');
+  const toEl = document.getElementById('dash-date-to');
+  if (period === 'today') { fromEl.value = today; toEl.value = today; }
+  else if (period === 'week') {
+    const w = new Date(now); w.setDate(w.getDate()-6);
+    fromEl.value = w.toISOString().split('T')[0]; toEl.value = today;
+  } else if (period === 'month') {
+    fromEl.value = today.slice(0,7)+'-01'; toEl.value = today;
+  } else { fromEl.value = ''; toEl.value = ''; }
+  renderDashboard();
+}
+
+function resetDashFilters() {
+  document.getElementById('dash-date-from').value = '';
+  document.getElementById('dash-date-to').value = '';
+  document.getElementById('dash-driver-filter').value = '';
+  document.querySelectorAll('#pane-dashboard .period-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelector('#pane-dashboard .period-btn:last-child').classList.add('active');
+  renderDashboard();
+}
+
+function populateDriverFilter() {
+  const sel = document.getElementById('dash-driver-filter');
+  const drivers = [...new Set(allTrips.map(t=>t.driver_id).filter(Boolean))].sort();
+  const current = sel.value;
+  sel.innerHTML = '<option value="">All drivers</option>' +
+    drivers.map(d=>`<option value="${d}"${d===current?' selected':''}>Driver #${d}</option>`).join('');
+}
+
+function getDashFiltered() {
+  const from = document.getElementById('dash-date-from')?.value;
+  const to   = document.getElementById('dash-date-to')?.value;
+  const driver = document.getElementById('dash-driver-filter')?.value;
+  return allTrips.filter(t => {
+    if (from && t.date < from) return false;
+    if (to   && t.date > to)   return false;
+    if (driver && t.driver_id !== driver) return false;
+    return true;
+  });
+}
+
+function toggleBreakdown(id) {
+  const row = document.getElementById('bd-'+id);
+  const tr  = document.getElementById('tr-'+id);
+  if (!row || !tr) return;
+  const isOpen = row.classList.contains('show');
+  row.classList.toggle('show', !isOpen);
+  tr.classList.toggle('expanded', !isOpen);
+}
+
+function breakdownHTML(t) {
+  return `<div class="bd-grid">
+    <div class="bd-item"><div class="bd-item-label">Base Fare</div><div class="bd-item-val">${fmt(t.base_fare||0)}</div></div>
+    <div class="bd-item"><div class="bd-item-label">Wait Time</div><div class="bd-item-val">${fmt(t.wait_time||0)}</div></div>
+    <div class="bd-item"><div class="bd-item-label">Greet Fee</div><div class="bd-item-val">${fmt(t.greet_fee||0)}</div></div>
+    <div class="bd-item"><div class="bd-item-label">Car Seat</div><div class="bd-item-val">${fmt(t.car_seat_fee||0)}</div></div>
+    <div class="bd-item"><div class="bd-item-label">Event Wait</div><div class="bd-item-val">${fmt(t.event_wait||0)}</div></div>
+    <div class="bd-item"><div class="bd-item-label">Discount</div><div class="bd-item-val" style="color:var(--danger)">-${fmt(t.discount||0)}</div></div>
+    <div class="bd-item"><div class="bd-item-label">Expenses</div><div class="bd-item-val">${fmt(t.expenses||0)}</div></div>
+    <div class="bd-item"><div class="bd-item-label">Gratuity</div><div class="bd-item-val">${fmt(t.gratuity||0)}</div></div>
+    <div class="bd-item"><div class="bd-item-label">Fuel</div><div class="bd-item-val">${fmt(t.fuel_surcharge||0)}</div></div>
+    <div class="bd-item"><div class="bd-item-label">Parking</div><div class="bd-item-val">${fmt(t.parking||0)}</div></div>
+    <div class="bd-item"><div class="bd-item-label">Airport Fee</div><div class="bd-item-val">${fmt(t.airport_fee||0)}</div></div>
+    <div class="bd-item"><div class="bd-item-label">Tolls (co.)</div><div class="bd-item-val muted">${fmt(t.tolls||0)}</div></div>
+  </div>`;
 }
 
 function renderDashboard() {
-  const filtered=filterByPeriod(allTrips,dashFilter);
-  const tbody=document.getElementById('dash-body');
-  const empty=document.getElementById('empty-dash');
-  if (!filtered.length) { tbody.innerHTML=''; empty.style.display='block'; document.getElementById('dash-stats').innerHTML=''; return; }
-  empty.style.display='none';
-  const rev=filtered.reduce((s,t)=>s+(t.total||0),0);
-  const pay=filtered.reduce((s,t)=>s+(t.earnings||0),0);
-  document.getElementById('dash-stats').innerHTML=`
+  const filtered = getDashFiltered();
+  const tbody = document.getElementById('dash-body');
+  const tfoot = document.getElementById('dash-foot');
+  const empty = document.getElementById('empty-dash');
+
+  populateDriverFilter();
+
+  if (!filtered.length) {
+    tbody.innerHTML = ''; tfoot.innerHTML = '';
+    empty.style.display = 'block';
+    document.getElementById('dash-stats').innerHTML = '';
+    return;
+  }
+
+  empty.style.display = 'none';
+
+  const rev   = filtered.reduce((s,t)=>s+(t.total||0),0);
+  const pay   = filtered.reduce((s,t)=>s+(t.earnings||0),0);
+  const tolls = filtered.reduce((s,t)=>s+(t.tolls||0),0);
+  const net   = rev - pay - tolls;
+
+  document.getElementById('dash-stats').innerHTML = `
     <div class="stat-card"><div class="stat-label">Total Revenue</div><div class="stat-value">${fmt(rev)}</div></div>
     <div class="stat-card highlight"><div class="stat-label">Total Payroll</div><div class="stat-value">${fmt(pay)}</div></div>
-    <div class="stat-card"><div class="stat-label">Company Net</div><div class="stat-value">${fmt(rev-pay)}</div></div>
-    <div class="stat-card"><div class="stat-label">Trips</div><div class="stat-value neutral">${filtered.length}</div></div>`;
-  tbody.innerHTML=filtered.map(t=>`
-    <tr>
+    <div class="stat-card"><div class="stat-label">i-Pass (Tolls)</div><div class="stat-value">${fmt(tolls)}</div></div>
+    <div class="stat-card"><div class="stat-label">Company Net</div><div class="stat-value">${fmt(net)}</div></div>
+    <div class="stat-card neutral"><div class="stat-label">Trips</div><div class="stat-value neutral">${filtered.length}</div></div>`;
+
+  tbody.innerHTML = filtered.map(t => `
+    <tr class="dash-row" id="tr-${t.id}" onclick="toggleBreakdown('${t.id}')">
+      <td><span class="expand-icon">▶</span></td>
       <td class="mono">${t.date}</td>
       <td><span class="driver-id-badge">#${t.driver_id||'—'}</span></td>
       <td style="color:var(--muted)">${t.booking_id||'—'}</td>
       <td class="mono">${fmt(t.total||0)}</td>
       <td class="earn-val">${fmt(t.earnings||0)}</td>
+    </tr>
+    <tr class="breakdown-row">
+      <td colspan="6">
+        <div class="breakdown-content" id="bd-${t.id}">${breakdownHTML(t)}</div>
+      </td>
     </tr>`).join('');
+
+  // Summary footer row
+  const summaryBD = `<div class="bd-grid">
+    ${['base_fare','wait_time','greet_fee','car_seat_fee','event_wait','discount','expenses','gratuity','fuel_surcharge','parking','airport_fee','tolls'].map(f=>{
+      const sum = filtered.reduce((s,t)=>s+(t[f]||0),0);
+      const label = f.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
+      return `<div class="bd-item"><div class="bd-item-label">${label}</div><div class="bd-item-val">${fmt(sum)}</div></div>`;
+    }).join('')}
+  </div>`;
+
+  tfoot.innerHTML = `
+    <tr class="dash-row" id="tr-total" onclick="toggleBreakdown('total')">
+      <td><span class="expand-icon">▶</span></td>
+      <td colspan="2" style="font-weight:700;color:var(--text)">TOTAL (${filtered.length} trips)</td>
+      <td></td>
+      <td class="mono" style="font-weight:700">${fmt(rev)}</td>
+      <td class="earn-val" style="font-weight:700">${fmt(pay)}</td>
+    </tr>
+    <tr class="breakdown-row">
+      <td colspan="6">
+        <div class="breakdown-content" id="bd-total">${summaryBD}</div>
+      </td>
+    </tr>`;
+}
+
+function exportCSV() {
+  const filtered = getDashFiltered();
+  if (!filtered.length) { alert('No data to export'); return; }
+  const headers = ['Date','Driver ID','Booking ID','Base Fare','Wait Time','Greet Fee','Car Seat Fee','Event Wait','Discount','Expenses','Gratuity','Fuel','Parking','Airport Fee','Tolls','Total','Earnings'];
+  const rows = filtered.map(t=>[
+    t.date, t.driver_id||'—', t.booking_id||'—',
+    t.base_fare||0, t.wait_time||0, t.greet_fee||0, t.car_seat_fee||0,
+    t.event_wait||0, t.discount||0, t.expenses||0, t.gratuity||0,
+    t.fuel_surcharge||0, t.parking||0, t.airport_fee||0, t.tolls||0,
+    t.total||0, t.earnings||0
+  ].join(','));
+  const csv = [headers.join(','),...rows].join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `limopay_export_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click(); URL.revokeObjectURL(url);
 }
 
 function fmt(n) { return '$'+(n||0).toFixed(2); }
