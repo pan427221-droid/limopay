@@ -371,20 +371,22 @@ let statsFilter = 'today', historyFilter = 'all', dashFilter = 'all';
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 async function init() {
-  const { data: { session } } = await sb.auth.getSession();
-  if (session) await onLoggedIn(session.user);
-  else showScreen('login');
-
+  // Listen for auth changes FIRST — catches OAuth redirect token
   sb.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' && session) await onLoggedIn(session.user);
     else if (event === 'SIGNED_OUT') { currentUser = null; allTrips = []; showScreen('login'); }
   });
+
+  // Then check existing session
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) await onLoggedIn(session.user);
+  else showScreen('login');
 }
 
 async function onLoggedIn(user) {
   currentUser = user;
 
-  let { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single();
+  let { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
 
   if (!profile) {
     // New user — show Driver ID screen first
