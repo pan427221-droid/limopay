@@ -493,17 +493,11 @@
 
 <script>
 const SUPABASE_URL  = 'https://uljmcbrorgjrrvoxzmdb.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsam1jYnJvcmdqcnJ2b3h6bWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQzNzAsImV4cCI6MjA4OTg4MDM3MH0.gzfN9ayldCSF0kRSfSCT9Np02Dpke8ZSS42iJLBhzmA';
+const SUPABASE_ANON = '%%VITE_SUPABASE_ANON_KEY%%';
 const API_URL       = 'https://limopay-production.up.railway.app';
 
 const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
-  auth: {
-    storage: window.localStorage,
-    detectSessionInUrl: true,
-    persistSession: true,
-  }
-});
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
 let currentUser = null, currentRole = 'driver', currentDriverId = null, allTrips = [], allTripsManager = [];
 let statsFilter = 'today', historyFilter = 'all', dashFilter = 'all';
@@ -512,8 +506,9 @@ let statsFilter = 'today', historyFilter = 'all', dashFilter = 'all';
 async function init() {
   showScreen('loading');
 
-  // Handle OAuth redirect — Supabase processes #access_token from URL
-  // This must happen before getSession() on mobile
+  // IMPORTANT: onAuthStateChange must be registered BEFORE getSession()
+  // This is required for iOS Safari where the access_token arrives via URL hash
+  // and Supabase processes it asynchronously via onAuthStateChange
   sb.auth.onAuthStateChange(async (event, session) => {
     if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
       if (!currentUser) await onLoggedIn(session.user);
@@ -523,15 +518,14 @@ async function init() {
     }
   });
 
-  // Check existing session (works for returning users)
+  // Check for existing session (desktop / returning users)
   const { data: { session } } = await sb.auth.getSession();
-  if (session) {
+  if (session && !currentUser) {
     await onLoggedIn(session.user);
-  } else if (!window.location.hash.includes('access_token')) {
-    // No session and no OAuth redirect in progress — show login
+  } else if (!session && !window.location.hash.includes('access_token')) {
     showScreen('login');
   }
-  // If access_token is in hash — onAuthStateChange will handle it
+  // If access_token in hash → onAuthStateChange handles it automatically
 }
 
 async function onLoggedIn(user) {
