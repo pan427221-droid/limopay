@@ -375,6 +375,7 @@
       </div>
       <div class="field"><label>Car Seats (qty)</label><input type="number" id="f-carseat" placeholder="0" min="0" max="10" oninput="calcEarnings()"></div>
       <div class="field"><label>Event Wait ($)</label><input type="number" id="f-eventwait" placeholder="0.00" oninput="calcEarnings()"></div>
+      <div class="field"><label>Extra Stop ($15)</label><input type="number" id="f-extrastop" placeholder="0.00" oninput="calcEarnings()"></div>
       <div class="field"><label>Discount ($)</label><input type="number" id="f-discount" placeholder="0.00" oninput="calcEarnings()"></div>
       <div class="field"><label>Expenses ($)</label><input type="number" id="f-expenses" placeholder="0.00" oninput="calcEarnings()"></div>
       <div class="field"><label>Gratuity ($)</label><input type="number" id="f-gratuity" placeholder="0.00" oninput="calcEarnings()"></div>
@@ -388,6 +389,7 @@
     <div class="earnings-preview" id="earnings-preview">
       <div class="ep-title">Earnings Breakdown</div>
       <div class="ep-row"><span>Adjusted Base</span><span class="ep-val" id="ep-adj-base">$0.00</span></div>
+      <div class="ep-row" style="font-size:12px;color:var(--muted)"><span>Extra Stop</span><span class="ep-val" id="ep-extrastop">$0.00</span></div>
       <div class="ep-row"><span>Base × 38%</span><span class="ep-val" id="ep-base-pct">$0.00</span></div>
       <div class="ep-row"><span>Gratuity</span><span class="ep-val" id="ep-gratuity">$0.00</span></div>
       <div class="ep-row"><span>Fuel Surcharge</span><span class="ep-val" id="ep-fuel">$0.00</span></div>
@@ -492,7 +494,7 @@
 
 <script>
 const SUPABASE_URL  = 'https://uljmcbrorgjrrvoxzmdb.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsam1jYnJvcmdqcnJ2b3h6bWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQzNzAsImV4cCI6MjA4OTg4MDM3MH0.gzfN9ayldCSF0kRSfSCT9Np02Dpke8ZSS42iJLBhzmA';
+const SUPABASE_ANON = '%%VITE_SUPABASE_ANON_KEY%%';
 const API_URL       = 'https://limopay-production.up.railway.app';
 
 const { createClient } = supabase;
@@ -733,6 +735,7 @@ function fillForm(d) {
   if (d.greet_fee)      document.getElementById('f-greet').checked   = d.greet_fee > 0;
   if (d.car_seat_fee)   document.getElementById('f-carseat').value   = d.car_seat_count || Math.round((d.car_seat_fee - 10) / 10);
   if (d.event_wait)     document.getElementById('f-eventwait').value = d.event_wait;
+  if (d.extra_stop)     document.getElementById('f-extrastop').value  = d.extra_stop;
   if (d.discount)       document.getElementById('f-discount').value  = d.discount;
   if (d.expenses)       document.getElementById('f-expenses').value  = d.expenses;
   if (d.gratuity)       document.getElementById('f-gratuity').value  = d.gratuity;
@@ -766,6 +769,7 @@ function calcEarnings() {
   const seatQty   = parseInt(document.getElementById('f-carseat').value)    || 0;
   const seatFee   = carSeatFee(seatQty);
   const eventWait = parseFloat(document.getElementById('f-eventwait').value)|| 0;
+  const extraStop = parseFloat(document.getElementById('f-extrastop').value) || 0;
   const discount  = parseFloat(document.getElementById('f-discount').value) || 0;
   const expenses  = parseFloat(document.getElementById('f-expenses').value) || 0;
   const grat      = parseFloat(document.getElementById('f-gratuity').value) || 0;
@@ -774,12 +778,13 @@ function calcEarnings() {
   const air       = parseFloat(document.getElementById('f-airport').value)  || 0;
   const toll      = parseFloat(document.getElementById('f-tolls').value)    || 0;
 
-  const adjBase = base + wait + greet + seatFee + eventWait - discount + expenses;
+  const adjBase = base + wait + greet + seatFee + eventWait + extraStop - discount + expenses;
   const basePct = adjBase * 0.38;
   const total   = basePct + grat + fuel + parking + air;
   // tolls — company expense, not included in driver earnings
 
   document.getElementById('ep-adj-base').textContent  = fmt(adjBase);
+  document.getElementById('ep-extrastop').textContent = fmt(extraStop);
   document.getElementById('ep-base-pct').textContent  = fmt(basePct);
   document.getElementById('ep-gratuity').textContent  = fmt(grat);
   document.getElementById('ep-fuel').textContent      = fmt(fuel);
@@ -830,6 +835,7 @@ async function saveTrip() {
         car_seat_count: seatQty,
         car_seat_fee:   carSeatFee(seatQty),
         event_wait:     parseFloat(document.getElementById('f-eventwait').value)||0,
+        extra_stop:     parseFloat(document.getElementById('f-extrastop').value)||0,
         discount:       parseFloat(document.getElementById('f-discount').value)||0,
         expenses:       parseFloat(document.getElementById('f-expenses').value)||0,
         gratuity:       parseFloat(document.getElementById('f-gratuity').value)||0,
@@ -852,7 +858,7 @@ async function saveTrip() {
 }
 
 function clearForm() {
-  ['f-booking','f-base','f-wait','f-carseat','f-eventwait','f-discount','f-expenses','f-gratuity','f-fuel','f-parking','f-airport','f-tolls','f-total','f-cash-tips'].forEach(id=>document.getElementById(id).value='');
+  ['f-booking','f-base','f-wait','f-carseat','f-eventwait','f-extrastop','f-discount','f-expenses','f-gratuity','f-fuel','f-parking','f-airport','f-tolls','f-total','f-cash-tips'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f-greet').checked = false;
   document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
   // Clear multi-image state
@@ -1078,6 +1084,7 @@ function breakdownHTML(t) {
     <div class="bd-item"><div class="bd-item-label">Greet Fee</div><div class="bd-item-val">${fmt(t.greet_fee||0)}</div></div>
     <div class="bd-item"><div class="bd-item-label">Car Seat</div><div class="bd-item-val">${fmt(t.car_seat_fee||0)}</div></div>
     <div class="bd-item"><div class="bd-item-label">Event Wait</div><div class="bd-item-val">${fmt(t.event_wait||0)}</div></div>
+    <div class="bd-item"><div class="bd-item-label">Extra Stop</div><div class="bd-item-val">${fmt(t.extra_stop||0)}</div></div>
     <div class="bd-item"><div class="bd-item-label">Discount</div><div class="bd-item-val" style="color:var(--danger)">-${fmt(t.discount||0)}</div></div>
     <div class="bd-item"><div class="bd-item-label">Expenses</div><div class="bd-item-val">${fmt(t.expenses||0)}</div></div>
     <div class="bd-item"><div class="bd-item-label">Gratuity</div><div class="bd-item-val">${fmt(t.gratuity||0)}</div></div>
@@ -1198,6 +1205,7 @@ async function exportXLSX() {
     { key: 'greet_fee',     header: 'Greet Fee',     width: 12 },
     { key: 'car_seat_fee',  header: 'Car Seat',      width: 12 },
     { key: 'event_wait',    header: 'Event Wait',    width: 12 },
+    { key: 'extra_stop',    header: 'Extra Stop',    width: 12 },
     { key: 'discount',      header: 'Discount',      width: 12 },
     { key: 'expenses',      header: 'Expenses',      width: 12 },
     { key: 'gratuity',      header: 'Gratuity',      width: 12 },

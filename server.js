@@ -32,6 +32,7 @@ function calcEarnings(t) {
   const greetFee   = parseFloat(t.greet_fee)      || 0;
   const carSeatFee = parseFloat(t.car_seat_fee)   || 0;
   const eventWait  = parseFloat(t.event_wait)     || 0;
+  const extraStop  = parseFloat(t.extra_stop)     || 0;
   const discount   = parseFloat(t.discount)       || 0;
   const expenses   = parseFloat(t.expenses)       || 0;
   const gratuity   = parseFloat(t.gratuity)       || 0;
@@ -39,7 +40,7 @@ function calcEarnings(t) {
   const parking    = parseFloat(t.parking)        || 0;
   const airport    = parseFloat(t.airport_fee)    || 0;
 
-  const adjustedBase = base + wait + greetFee + carSeatFee + eventWait - discount + expenses;
+  const adjustedBase = base + wait + greetFee + carSeatFee + eventWait + extraStop - discount + expenses;
   return Math.round(((adjustedBase * 0.38) + gratuity + fuel + parking + airport) * 100) / 100;
 }
 
@@ -245,7 +246,7 @@ app.post('/api/trips', requireAuth, async (req, res) => {
   try {
     const {
       date, booking_id, base_fare, wait_time, greet_fee, car_seat_count,
-      car_seat_fee, event_wait, discount, expenses, gratuity,
+      car_seat_fee, event_wait, extra_stop, discount, expenses, gratuity,
       fuel_surcharge, parking, airport_fee, tolls, total, driver_id
     } = req.body;
 
@@ -261,6 +262,7 @@ app.post('/api/trips', requireAuth, async (req, res) => {
       car_seat_count: car_seat_count || 0,
       car_seat_fee:   car_seat_fee   || 0,
       event_wait:     event_wait     || 0,
+      extra_stop:     extra_stop     || 0,
       discount:       discount       || 0,
       expenses:       expenses       || 0,
       gratuity:       gratuity       || 0,
