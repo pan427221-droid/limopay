@@ -505,23 +505,26 @@ let statsFilter = 'today', historyFilter = 'all', dashFilter = 'all';
 async function init() {
   showScreen('loading');
 
-  // Check existing session first
-  const { data: { session } } = await sb.auth.getSession();
-  if (session) {
-    await onLoggedIn(session.user);
-  } else {
-    showScreen('login');
-  }
-
-  // Listen for future auth changes
+  // Handle OAuth redirect — Supabase processes #access_token from URL
+  // This must happen before getSession() on mobile
   sb.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_IN' && session && !currentUser) {
-      await onLoggedIn(session.user);
+    if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
+      if (!currentUser) await onLoggedIn(session.user);
     } else if (event === 'SIGNED_OUT') {
-      currentUser = null; allTrips = [];
+      currentUser = null; allTrips = []; allTripsManager = [];
       showScreen('login');
     }
   });
+
+  // Check existing session (works for returning users)
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    await onLoggedIn(session.user);
+  } else if (!window.location.hash.includes('access_token')) {
+    // No session and no OAuth redirect in progress — show login
+    showScreen('login');
+  }
+  // If access_token is in hash — onAuthStateChange will handle it
 }
 
 async function onLoggedIn(user) {
