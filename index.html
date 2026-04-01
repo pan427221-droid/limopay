@@ -493,7 +493,7 @@
 
 <script>
 const SUPABASE_URL  = 'https://uljmcbrorgjrrvoxzmdb.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsam1jYnJvcmdqcnJ2b3h6bWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQzNzAsImV4cCI6MjA4OTg4MDM3MH0.gzfN9ayldCSF0kRSfSCT9Np02Dpke8ZSS42iJLBhzmA';
+const SUPABASE_ANON = '%%VITE_SUPABASE_ANON_KEY%%';
 const API_URL       = 'https://limopay-production.up.railway.app';
 
 const { createClient } = supabase;
@@ -502,7 +502,6 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
     storage: window.localStorage,
     detectSessionInUrl: true,
     persistSession: true,
-    flowType: 'pkce',
   }
 });
 
@@ -875,24 +874,27 @@ function clearForm() {
 }
 
 // ── LOAD TRIPS ────────────────────────────────────────────────────────────────
+let tripsLoading = false;
 async function loadTrips() {
+  if (tripsLoading) return;
+  tripsLoading = true;
   try {
     const { data: { session } } = await sb.auth.getSession();
+    if (!session) return;
     const headers = { 'Authorization': `Bearer ${session.access_token}` };
 
-    // Завжди завантажуємо власні тріпи
     const res = await fetch(`${API_URL}/api/trips`, { headers });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error);
     allTrips = json.data || [];
 
-    // Менеджер додатково завантажує всі тріпи для Dashboard
     const resAll = await fetch(`${API_URL}/api/trips/all`, { headers });
     if (resAll.ok) {
       const jsonAll = await resAll.json();
       allTripsManager = jsonAll.data || [];
     }
   } catch (err) { console.error('Load trips:', err); }
+  finally { tripsLoading = false; }
 }
 
 function filterByPeriod(trips,f) {
