@@ -183,17 +183,43 @@
   .parse-multi-btn.visible { display: block; }
 
   .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 16px; }
-  @media (max-width: 480px) {
-    .form-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-    .field label { font-size: 9px; margin-bottom: 4px; }
-    .field input { padding: 7px 10px; font-size: 13px; }
-    .checkbox-wrap { padding: 7px 10px; }
-    .checkbox-label { font-size: 11px; }
-    .upload-zone { padding: 14px; }
-    .upload-icon { font-size: 22px; margin-bottom: 4px; }
+
+  @media (max-width: 600px) {
+    /* CONTENT */
+    .content { padding: 12px; }
+    .card { padding: 32px 20px; margin: 16px; }
+
+    /* HEADER — всі елементи в один рядок */
+    header { padding: 8px 10px; gap: 4px; }
+    .logo-sm { font-size: 15px; }
+    .header-right { gap: 5px; }
+    .user-info { gap: 4px; }
+    .user-avatar { width: 22px; height: 22px; font-size: 9px; }
+    .user-name-text { display: none; }
+    .driver-id-badge { padding: 2px 5px; font-size: 10px; }
+    .role-badge { padding: 2px 5px; font-size: 9px; letter-spacing: 0.3px; }
+    .btn-signout { padding: 4px 8px; font-size: 11px; }
+
+    /* TABS — рівномірно на всю ширину екрану */
+    .tabs { padding: 0; overflow-x: hidden; }
+    .tab { flex: 1; padding: 10px 2px; font-size: 11px; text-align: center; white-space: nowrap; }
+
+    /* UPLOAD ZONE */
+    .upload-zone { padding: 12px; margin-bottom: 12px; }
+    .upload-icon { font-size: 20px; margin-bottom: 4px; }
     .upload-text { font-size: 12px; }
+
+    /* FORM — рівно 2 колонки на всю ширину, компактні */
+    .form-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+    .field label { font-size: 9px; letter-spacing: 0.2px; margin-bottom: 3px; }
+    .field input { padding: 7px 8px; font-size: 13px; border-radius: 6px; }
+    .checkbox-wrap { padding: 7px 8px; border-radius: 6px; }
+    .checkbox-label { font-size: 10px; line-height: 1.2; }
+    .form-grid .field[style*="grid-column"] { grid-column: 1 / -1; }
+
+    /* SAVE BUTTON */
+    .btn-save { padding: 12px; font-size: 14px; }
   }
-  .field label { display: block; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
   .field input {
     width: 100%; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border);
     border-radius: 8px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 14px; transition: border-color 0.2s;
@@ -288,12 +314,7 @@
   /* FOOTER TOTAL ROW */
   #dash-foot tr td { border-top: 2px solid var(--border); font-weight: 700; padding-top: 14px; }
 
-  @media (max-width: 600px) {
-    .content { padding: 16px; }
-    header { padding: 12px 16px; }
-    .card { padding: 32px 20px; margin: 16px; }
-    .user-name-text { display: none; }
-  }
+  .field label { display: block; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
 </style>
 </head>
 <body>
@@ -392,6 +413,13 @@
       <div class="field"><label>Event Wait ($)</label><input type="number" id="f-eventwait" placeholder="0.00" oninput="calcEarnings()"></div>
       <div class="field"><label>Extra Stop ($15)</label><input type="number" id="f-extrastop" placeholder="0.00" oninput="calcEarnings()"></div>
       <div class="field"><label>Parking ($)</label><input type="number" id="f-parking" placeholder="0.00" oninput="calcEarnings()"></div>
+      <div class="field checkbox-field">
+        <label>Holiday Pay (+$20)</label>
+        <div class="checkbox-wrap">
+          <input type="checkbox" id="f-holiday" onchange="calcEarnings()">
+          <span class="checkbox-label">Holiday rate</span>
+        </div>
+      </div>
       <div class="field" style="grid-column:1/-1;border-top:1px solid var(--border);padding-top:12px"><label style="color:var(--accent)">Total Fare ($) — from receipt</label><input type="number" id="f-total" placeholder="0.00" style="border-color:rgba(200,240,96,0.3)"></div>
       <div class="field"><label style="color:var(--accent2)">Cash Tips ($) — visible only in your stats</label><input type="number" id="f-cash-tips" placeholder="0.00" style="border-color:rgba(96,212,240,0.3)" oninput="calcEarnings()"></div>
     </div>
@@ -405,6 +433,7 @@
       <div class="ep-row"><span>Parking</span><span class="ep-val" id="ep-parking">$0.00</span></div>
       <div class="ep-row"><span>Airport Fee</span><span class="ep-val" id="ep-airport">$0.00</span></div>
       <div class="ep-row" style="color:var(--muted);font-size:12px"><span>Tolls (company)</span><span class="ep-val" id="ep-tolls">$0.00</span></div>
+      <div class="ep-row" style="font-size:12px;color:var(--accent2)" id="ep-holiday-row"><span>Holiday Pay</span><span class="ep-val" id="ep-holiday">$0.00</span></div>
       <div class="ep-row total"><span>Your Earnings</span><span class="ep-val" id="ep-total">$0.00</span></div>
       <div class="ep-row" style="color:var(--accent2);font-size:13px;border-top:1px solid var(--border);margin-top:4px;padding-top:8px"><span>Cash Tips (private)</span><span class="ep-val" id="ep-cash-tips">$0.00</span></div>
     </div>
@@ -787,6 +816,7 @@ function calcEarnings() {
   const seatFee   = carSeatFee(seatQty);
   const eventWait = parseFloat(document.getElementById('f-eventwait').value)|| 0;
   const extraStop = parseFloat(document.getElementById('f-extrastop').value) || 0;
+  const holiday   = document.getElementById('f-holiday').checked ? 20 : 0;
   const discount  = parseFloat(document.getElementById('f-discount').value) || 0;
   const expenses  = parseFloat(document.getElementById('f-expenses').value) || 0;
   const grat      = parseFloat(document.getElementById('f-gratuity').value) || 0;
@@ -797,7 +827,7 @@ function calcEarnings() {
 
   const adjBase = base + wait + greet + seatFee + eventWait + extraStop - discount + expenses;
   const basePct = adjBase * 0.38;
-  const total   = basePct + grat + fuel + parking + air;
+  const total   = basePct + grat + fuel + parking + air + holiday;
   // tolls — company expense, not included in driver earnings
 
   document.getElementById('ep-adj-base').textContent  = fmt(adjBase);
@@ -807,6 +837,8 @@ function calcEarnings() {
   document.getElementById('ep-fuel').textContent      = fmt(fuel);
   document.getElementById('ep-parking').textContent   = fmt(parking);
   document.getElementById('ep-airport').textContent   = fmt(air);
+  document.getElementById('ep-holiday').textContent   = fmt(holiday);
+  document.getElementById('ep-holiday-row').style.display = holiday > 0 ? 'flex' : 'none';
   document.getElementById('ep-total').textContent     = fmt(total);
   const cashTips = parseFloat(document.getElementById('f-cash-tips').value) || 0;
   document.getElementById('ep-cash-tips').textContent = fmt(cashTips);
@@ -853,6 +885,7 @@ async function saveTrip() {
         car_seat_fee:   carSeatFee(seatQty),
         event_wait:     parseFloat(document.getElementById('f-eventwait').value)||0,
         extra_stop:     parseFloat(document.getElementById('f-extrastop').value)||0,
+        holiday_pay:    document.getElementById('f-holiday').checked ? 20 : 0,
         discount:       parseFloat(document.getElementById('f-discount').value)||0,
         expenses:       parseFloat(document.getElementById('f-expenses').value)||0,
         gratuity:       parseFloat(document.getElementById('f-gratuity').value)||0,
@@ -877,6 +910,7 @@ async function saveTrip() {
 function clearForm() {
   ['f-booking','f-base','f-wait','f-carseat','f-eventwait','f-extrastop','f-discount','f-expenses','f-gratuity','f-fuel','f-parking','f-airport','f-tolls','f-total','f-cash-tips'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f-greet').checked = false;
+  document.getElementById('f-holiday').checked = false;
   document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
   // Clear multi-image state
   uploadedImages.forEach(img => URL.revokeObjectURL(img.objectUrl));
@@ -1224,7 +1258,9 @@ async function exportXLSX() {
     { key: 'driver_id',     header: 'Driver',       width: 10 },
     { key: 'booking_id',    header: 'Booking ID',   width: 13 },
     { key: 'base_fare',     header: 'Base Fare',    width: 12 },
+    { key: '_adj_base',     header: 'Adj. Base',    width: 12 }, // розрахункова
     { key: 'gratuity',      header: 'Gratuity',     width: 12 },
+    { key: 'holiday_pay',   header: 'Holiday Pay',  width: 13 },
     { key: 'tolls',         header: 'Tolls',        width: 10 },
     { key: 'airport_fee',   header: 'Airport Fee',  width: 12 },
     { key: 'fuel_surcharge',header: 'Fuel',         width: 10 },
@@ -1239,7 +1275,15 @@ async function exportXLSX() {
     { key: 'total',         header: 'Total Fare',   width: 12 },
     { key: 'earnings',      header: 'Earnings',     width: 12 },
   ];
-  const NUM_KEYS = COLS.filter(c => !['date','driver_id','booking_id'].includes(c.key)).map(c => c.key);
+  const NUM_KEYS = COLS.filter(c => !['date','driver_id','booking_id','_adj_base'].includes(c.key)).map(c => c.key);
+
+  // Helper: compute adjusted base for a trip
+  function adjBase(t) {
+    return (parseFloat(t.base_fare)||0) + (parseFloat(t.wait_time)||0) +
+           (parseFloat(t.greet_fee)||0) + (parseFloat(t.car_seat_fee)||0) +
+           (parseFloat(t.event_wait)||0) + (parseFloat(t.extra_stop)||0) -
+           (parseFloat(t.discount)||0) + (parseFloat(t.expenses)||0);
+  }
 
   ws.columns = COLS.map(c => ({ key: c.key, width: c.width }));
   const numFmt = '$#,##0.00';
@@ -1327,14 +1371,27 @@ async function exportXLSX() {
 
       // Data rows
       trips.forEach(t => {
+        const isDeleted = t.deleted_by === 'driver';
         const rowData = COLS.map(c => {
           if (c.key === 'date') return t.date;
           if (c.key === 'driver_id') return `#${t.driver_id || '—'}`;
-          if (c.key === 'booking_id') return t.deleted_by === 'driver' ? `${t.booking_id || '—'} [del]` : (t.booking_id || '—');
+          if (c.key === 'booking_id') return isDeleted ? `${t.booking_id || '—'} [del]` : (t.booking_id || '—');
+          if (c.key === '_adj_base') return adjBase(t);
           return parseFloat(t[c.key]) || 0;
         });
         const dataRow = ws.addRow(rowData);
-        applyStyle(dataRow, { color: t.deleted_by === 'driver' ? C.danger : C.black, height: 18 });
+        dataRow.height = 18;
+        dataRow.eachCell({ includeEmpty: true }, (cell, colIdx) => {
+          const col = COLS[colIdx - 1];
+          const isAdjBase = col?.key === '_adj_base';
+          const baseColor = isDeleted ? C.danger : C.black;
+          cell.font = { name: 'Arial', size: 10, bold: isAdjBase, color: { argb: isAdjBase ? 'FF4A90D9' : baseColor } };
+          if (isAdjBase) {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F0FA' } };
+          }
+          cell.alignment = { horizontal: colIdx <= 3 ? 'left' : 'right', vertical: 'middle' };
+          if (colIdx > 3) cell.numFmt = numFmt;
+        });
         dayTrips.push(t);
       });
     }
