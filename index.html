@@ -493,16 +493,11 @@
 
 <script>
 const SUPABASE_URL  = 'https://uljmcbrorgjrrvoxzmdb.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsam1jYnJvcmdqcnJ2b3h6bWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQzNzAsImV4cCI6MjA4OTg4MDM3MH0.gzfN9ayldCSF0kRSfSCT9Np02Dpke8ZSS42iJLBhzmA';
+const SUPABASE_ANON = '%%VITE_SUPABASE_ANON_KEY%%';
 const API_URL       = 'https://limopay-production.up.railway.app';
 
 const { createClient } = supabase;
-// Disable navigator.locks — fixes iOS Safari hang on getSession()
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
-  auth: {
-    lock: async (name, acquireTimeout, fn) => fn(),
-  }
-});
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
 let currentUser = null, currentRole = 'driver', currentDriverId = null, allTrips = [], allTripsManager = [];
 let statsFilter = 'today', historyFilter = 'all', dashFilter = 'all';
@@ -511,51 +506,25 @@ let statsFilter = 'today', historyFilter = 'all', dashFilter = 'all';
 async function init() {
   showScreen('loading');
 
-  // onAuthStateChange must be registered BEFORE getSession() — iOS Safari requirement
+  // onAuthStateChange MUST come before getSession() — iOS Safari requirement
+  // It handles both OAuth redirects (access_token in hash) and existing sessions
   sb.auth.onAuthStateChange(async (event, session) => {
-    if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
+    if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') && session) {
       if (!currentUser) await onLoggedIn(session.user);
+    } else if (event === 'INITIAL_SESSION' && !session) {
+      showScreen('login');
     } else if (event === 'SIGNED_OUT') {
       currentUser = null; allTrips = []; allTripsManager = [];
       showScreen('login');
     }
   });
 
-  // getSession() can hang on iOS Safari — use timeout fallback
-  try {
-    const sessionResult = await Promise.race([
-      sb.auth.getSession(),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
-    ]);
-    const session = sessionResult?.data?.session;
-    if (session && !currentUser) {
-      await onLoggedIn(session.user);
-      return;
+  // Fallback: if onAuthStateChange never fires (e.g. network issue), show login after 8s
+  setTimeout(() => {
+    if (!currentUser && document.getElementById('loading-screen').style.display !== 'none') {
+      showScreen('login');
     }
-  } catch (e) {}
-
-  // If we have access_token in URL — Supabase is processing OAuth redirect
-  // Poll for session every 500ms for up to 10 seconds
-  if (window.location.hash.includes('access_token') || window.location.search.includes('code=')) {
-    let attempts = 0;
-    const poll = setInterval(async () => {
-      attempts++;
-      if (currentUser) { clearInterval(poll); return; }
-      try {
-        const { data: { session } } = await sb.auth.getSession();
-        if (session && !currentUser) {
-          clearInterval(poll);
-          await onLoggedIn(session.user);
-        }
-      } catch {}
-      if (attempts >= 20) {
-        clearInterval(poll);
-        if (!currentUser) showScreen('login');
-      }
-    }, 500);
-  } else {
-    if (!currentUser) showScreen('login');
-  }
+  }, 8000);
 }
 
 async function onLoggedIn(user) {
