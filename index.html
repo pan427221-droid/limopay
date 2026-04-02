@@ -506,8 +506,7 @@ let statsFilter = 'today', historyFilter = 'all', dashFilter = 'all';
 async function init() {
   showScreen('loading');
 
-  // IMPORTANT: onAuthStateChange must be registered BEFORE getSession()
-  // Required for iOS Safari OAuth redirect via URL hash
+  // onAuthStateChange must be registered BEFORE getSession() — iOS Safari requirement
   sb.auth.onAuthStateChange(async (event, session) => {
     if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
       if (!currentUser) await onLoggedIn(session.user);
@@ -517,8 +516,7 @@ async function init() {
     }
   });
 
-  // getSession() can hang on iOS Safari due to navigator.locks
-  // Add a timeout fallback so the page doesn't stay on loader forever
+  // getSession() can hang on iOS Safari — use timeout fallback
   try {
     const sessionResult = await Promise.race([
       sb.auth.getSession(),
@@ -527,15 +525,31 @@ async function init() {
     const session = sessionResult?.data?.session;
     if (session && !currentUser) {
       await onLoggedIn(session.user);
-    } else if (!session && !window.location.hash.includes('access_token')) {
-      showScreen('login');
+      return;
     }
-  } catch (e) {
-    // Timeout or error — if no OAuth redirect in progress, show login
-    if (!window.location.hash.includes('access_token')) {
-      showScreen('login');
-    }
-    // onAuthStateChange will handle OAuth redirect case
+  } catch (e) {}
+
+  // If we have access_token in URL — Supabase is processing OAuth redirect
+  // Poll for session every 500ms for up to 10 seconds
+  if (window.location.hash.includes('access_token') || window.location.search.includes('code=')) {
+    let attempts = 0;
+    const poll = setInterval(async () => {
+      attempts++;
+      if (currentUser) { clearInterval(poll); return; }
+      try {
+        const { data: { session } } = await sb.auth.getSession();
+        if (session && !currentUser) {
+          clearInterval(poll);
+          await onLoggedIn(session.user);
+        }
+      } catch {}
+      if (attempts >= 20) {
+        clearInterval(poll);
+        if (!currentUser) showScreen('login');
+      }
+    }, 500);
+  } else {
+    if (!currentUser) showScreen('login');
   }
 }
 
