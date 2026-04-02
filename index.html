@@ -185,8 +185,13 @@
   .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 16px; }
   @media (max-width: 480px) {
     .form-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-    .form-grid .field:has(#f-date) { grid-column: 1; }
-    .form-grid .field:has(#f-booking) { grid-column: 2; }
+    .field label { font-size: 9px; margin-bottom: 4px; }
+    .field input { padding: 7px 10px; font-size: 13px; }
+    .checkbox-wrap { padding: 7px 10px; }
+    .checkbox-label { font-size: 11px; }
+    .upload-zone { padding: 14px; }
+    .upload-icon { font-size: 22px; margin-bottom: 4px; }
+    .upload-text { font-size: 12px; }
   }
   .field label { display: block; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
   .field input {
