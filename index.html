@@ -365,7 +365,6 @@
       <div class="field"><label>Booking ID</label><input type="text" id="f-booking" placeholder="BK-12345"></div>
       <div class="field"><label>Base Fare ($)</label><input type="number" id="f-base" placeholder="0.00" oninput="calcEarnings()"></div>
       <div class="field"><label>Gratuity ($)</label><input type="number" id="f-gratuity" placeholder="0.00" oninput="calcEarnings()"></div>
-      <div class="field"><label>Extra Stop ($15)</label><input type="number" id="f-extrastop" placeholder="0.00" oninput="calcEarnings()"></div>
       <div class="field"><label>Tolls ($)</label><input type="number" id="f-tolls" placeholder="0.00" oninput="calcEarnings()"></div>
       <div class="field"><label>Airport Fee ($)</label><input type="number" id="f-airport" placeholder="0.00" oninput="calcEarnings()"></div>
       <div class="field"><label>Fuel Surcharge ($)</label><input type="number" id="f-fuel" placeholder="0.00" oninput="calcEarnings()"></div>
@@ -381,6 +380,7 @@
       </div>
       <div class="field"><label>Car Seats (qty)</label><input type="number" id="f-carseat" placeholder="0" min="0" max="10" oninput="calcEarnings()"></div>
       <div class="field"><label>Event Wait ($)</label><input type="number" id="f-eventwait" placeholder="0.00" oninput="calcEarnings()"></div>
+      <div class="field"><label>Extra Stop ($15)</label><input type="number" id="f-extrastop" placeholder="0.00" oninput="calcEarnings()"></div>
       <div class="field"><label>Parking ($)</label><input type="number" id="f-parking" placeholder="0.00" oninput="calcEarnings()"></div>
       <div class="field" style="grid-column:1/-1;border-top:1px solid var(--border);padding-top:12px"><label style="color:var(--accent)">Total Fare ($) — from receipt</label><input type="number" id="f-total" placeholder="0.00" style="border-color:rgba(200,240,96,0.3)"></div>
       <div class="field"><label style="color:var(--accent2)">Cash Tips ($) — visible only in your stats</label><input type="number" id="f-cash-tips" placeholder="0.00" style="border-color:rgba(96,212,240,0.3)" oninput="calcEarnings()"></div>
@@ -1201,7 +1201,6 @@ async function exportXLSX() {
     { key: 'booking_id',    header: 'Booking ID',   width: 13 },
     { key: 'base_fare',     header: 'Base Fare',    width: 12 },
     { key: 'gratuity',      header: 'Gratuity',     width: 12 },
-    { key: 'extra_stop',    header: 'Extra Stop',   width: 12 },
     { key: 'tolls',         header: 'Tolls',        width: 10 },
     { key: 'airport_fee',   header: 'Airport Fee',  width: 12 },
     { key: 'fuel_surcharge',header: 'Fuel',         width: 10 },
@@ -1211,6 +1210,7 @@ async function exportXLSX() {
     { key: 'greet_fee',     header: 'Greet Fee',    width: 11 },
     { key: 'car_seat_fee',  header: 'Car Seat',     width: 11 },
     { key: 'event_wait',    header: 'Event Wait',   width: 11 },
+    { key: 'extra_stop',    header: 'Extra Stop',   width: 12 },
     { key: 'parking',       header: 'Parking',      width: 10 },
     { key: 'total',         header: 'Total Fare',   width: 12 },
     { key: 'earnings',      header: 'Earnings',     width: 12 },
@@ -1296,12 +1296,10 @@ async function exportXLSX() {
     const dayTrips = [];
 
     for (const [driverId, trips] of Object.entries(drivers)) {
-      // If multiple drivers — show driver sub-header
-      if (Object.keys(drivers).length > 1) {
-        ws.mergeCells(ws.rowCount + 1, 1, ws.rowCount + 1, COLS.length);
-        const drvRow = ws.addRow([`  Driver #${driverId}`]);
-        applyStyle(drvRow, { bold: false, size: 10, color: 'FF888888', height: 18 });
-      }
+      // Always show driver sub-header (even for single driver — consistent layout)
+      ws.mergeCells(ws.rowCount + 1, 1, ws.rowCount + 1, COLS.length);
+      const drvRow = ws.addRow([`  Driver #${driverId}`]);
+      applyStyle(drvRow, { bold: false, size: 10, color: 'FF888888', height: 18 });
 
       // Data rows
       trips.forEach(t => {
@@ -1351,6 +1349,25 @@ function setStatus(pane,type,msg) {
   const el=document.getElementById(`status-${pane}`);
   el.className=`status-bar ${type} show`; el.textContent=msg;
   if (type==='success') setTimeout(()=>el.classList.remove('show'),3000);
+}
+
+// ── SERVICE WORKER — auto-update on deploy ────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').then(reg => {
+    reg.update();
+    reg.addEventListener('updatefound', () => {
+      const nw = reg.installing;
+      nw.addEventListener('statechange', () => {
+        if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+          nw.postMessage({ type: 'SKIP_WAITING' });
+        }
+      });
+    });
+  });
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!refreshing) { refreshing = true; window.location.reload(); }
+  });
 }
 
 init();
