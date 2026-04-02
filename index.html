@@ -449,6 +449,17 @@
       <button class="period-btn"        onclick="setStatsPeriod('all',this)">All Time</button>
     </div>
     <div class="stats-row" id="stats-numbers"></div>
+    <div id="stats-fuel-section" style="margin-bottom:16px">
+      <div class="section-title" style="color:var(--muted)">Fuel Expense</div>
+      <div style="display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px">
+        <span style="font-size:12px;color:var(--muted);white-space:nowrap">Today's fuel cost:</span>
+        <input type="number" id="stats-fuel-input" placeholder="0.00" min="0" step="0.01"
+          style="flex:1;background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:15px;padding:2px 4px;outline:none"
+          oninput="saveFuelExpense(parseFloat(this.value)||0);renderStats()">
+        <span style="font-size:12px;color:var(--muted)">$</span>
+      </div>
+    </div>
+    <div id="stats-net"></div>
     <div id="stats-cash"></div>
     <div class="section-title">Last Trip</div>
     <div id="last-trip-container"></div>
@@ -462,9 +473,21 @@
       <button class="period-btn"        onclick="setHistoryFilter('week',this)">This Week</button>
       <button class="period-btn"        onclick="setHistoryFilter('month',this)">This Month</button>
     </div>
+    <!-- Date range filter -->
+    <div class="dash-filters" style="margin-bottom:12px">
+      <div class="filter-group">
+        <label class="filter-label">From</label>
+        <input type="date" id="hist-date-from" class="filter-input" onchange="renderHistory()">
+      </div>
+      <div class="filter-group">
+        <label class="filter-label">To</label>
+        <input type="date" id="hist-date-to" class="filter-input" onchange="renderHistory()">
+      </div>
+      <button class="filter-reset" onclick="resetHistoryDates()">Reset</button>
+    </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Date</th><th>Booking</th><th>Total</th><th>Earnings</th><th style="color:var(--accent2)">Cash Tips</th><th></th></tr></thead>
+        <thead><tr><th></th><th>Date</th><th>Booking</th><th>Total</th><th>Earnings</th><th></th></tr></thead>
         <tbody id="trips-body"></tbody>
       </table>
     </div>
@@ -538,7 +561,7 @@ const API_URL       = 'https://limopay-production.up.railway.app';
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
-let currentUser = null, currentRole = 'driver', currentDriverId = null, allTrips = [], allTripsManager = [];
+let currentUser = null, currentRole = 'driver', currentDriverId = null, allTrips = [], allTripsManager = [], fuelExpenses = [];
 let statsFilter = 'today', historyFilter = 'all', dashFilter = 'all';
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
@@ -552,7 +575,7 @@ async function init() {
     } else if (event === 'INITIAL_SESSION' && !session) {
       showScreen('login');
     } else if (event === 'SIGNED_OUT') {
-      currentUser = null; allTrips = []; allTripsManager = [];
+      currentUser = null; allTrips = []; allTripsManager = []; fuelExpenses = [];
       showScreen('login');
     }
   });
@@ -944,8 +967,38 @@ async function loadTrips(accessToken) {
       const jsonAll = await resAll.json();
       allTripsManager = jsonAll.data || [];
     }
+
+    // Load fuel expenses
+    const resFuel = await fetch(`${API_URL}/api/fuel`, { headers });
+    if (resFuel.ok) {
+      const jsonFuel = await resFuel.json();
+      fuelExpenses = jsonFuel.data || [];
+    }
   } catch (err) { console.error('Load trips:', err); }
   finally { tripsLoading = false; }
+}
+
+// ── FUEL EXPENSE SAVE ─────────────────────────────────────────────────────────
+let fuelSaveTimer = null;
+async function saveFuelExpense(amount) {
+  const today = new Date().toISOString().split('T')[0];
+  // Debounce — save 800ms after user stops typing
+  clearTimeout(fuelSaveTimer);
+  fuelSaveTimer = setTimeout(async () => {
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) return;
+      await fetch(`${API_URL}/api/fuel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({ date: today, amount, driver_id: currentDriverId })
+      });
+      // Update local cache
+      const existing = fuelExpenses.findIndex(f => f.date === today);
+      if (existing >= 0) fuelExpenses[existing].amount = amount;
+      else fuelExpenses.unshift({ date: today, amount, driver_id: currentDriverId });
+    } catch (err) { console.error('Save fuel:', err); }
+  }, 800);
 }
 
 function filterByPeriod(trips,f) {
@@ -962,32 +1015,94 @@ function filterByPeriod(trips,f) {
 function setStatsPeriod(f,btn) {
   statsFilter=f;
   document.querySelectorAll('#pane-stats .period-btn').forEach(b=>b.classList.remove('active'));
+  // Reset fuel input so it reloads for new period
+  const fi = document.getElementById('stats-fuel-input');
+  if (fi) { fi.dataset.loaded = ''; fi.value = ''; }
   btn.classList.add('active'); renderStats();
 }
 
 function renderStats() {
-  const filtered=filterByPeriod(allTrips,statsFilter);
-  const numEl=document.getElementById('stats-numbers');
-  const ltEl=document.getElementById('last-trip-container');
+  const filtered = filterByPeriod(allTrips, statsFilter);
+  const numEl = document.getElementById('stats-numbers');
+  const ltEl  = document.getElementById('last-trip-container');
+  const netEl = document.getElementById('stats-net');
+
+  // Get fuel for current period from DB
+  const today = new Date().toISOString().split('T')[0];
+  const now = new Date();
+
+  // Populate today's fuel input from DB
+  const fuelInput = document.getElementById('stats-fuel-input');
+  if (fuelInput && !fuelInput.dataset.loaded) {
+    const todayFuel = fuelExpenses.find(f => f.date === today);
+    if (todayFuel && todayFuel.amount > 0) fuelInput.value = todayFuel.amount;
+    fuelInput.dataset.loaded = '1';
+  }
+
+  // Sum fuel for current period
+  let periodFuelDates = [];
+  if (statsFilter === 'today') periodFuelDates = [today];
+  else if (statsFilter === 'week') {
+    const w = new Date(now); w.setDate(w.getDate() - 7);
+    periodFuelDates = fuelExpenses.filter(f => new Date(f.date) >= w).map(f => f.date);
+  } else if (statsFilter === 'month') {
+    periodFuelDates = fuelExpenses.filter(f => {
+      const d = new Date(f.date);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }).map(f => f.date);
+  } else {
+    periodFuelDates = fuelExpenses.map(f => f.date);
+  }
+
+  // For today — use input value (most fresh); for other periods — use DB
+  let fuelCost = 0;
+  if (statsFilter === 'today') {
+    fuelCost = parseFloat(fuelInput?.value) || 0;
+  } else {
+    fuelCost = fuelExpenses
+      .filter(f => periodFuelDates.includes(f.date))
+      .reduce((s, f) => s + (parseFloat(f.amount) || 0), 0);
+  }
+
   if (!filtered.length) {
-    numEl.innerHTML=`<div class="stat-card"><div class="stat-label">Earnings</div><div class="stat-value">$0.00</div></div>`;
-    ltEl.innerHTML=`<div class="empty-state"><div class="icon">🚗</div><div>No trips in this period.</div></div>`;
+    numEl.innerHTML = `<div class="stat-card"><div class="stat-label">Earnings</div><div class="stat-value">$0.00</div></div>`;
+    ltEl.innerHTML  = `<div class="empty-state"><div class="icon">🚗</div><div>No trips in this period.</div></div>`;
+    if (netEl) netEl.innerHTML = '';
     return;
   }
-  const tot=filtered.reduce((s,t)=>s+(t.earnings||0),0);
-  const avg=tot/filtered.length;
-  const best=Math.max(...filtered.map(t=>t.earnings||0));
-  numEl.innerHTML=`
+
+  const tot  = filtered.reduce((s,t) => s + (t.earnings||0), 0);
+  const avg  = tot / filtered.length;
+  const best = Math.max(...filtered.map(t => t.earnings||0));
+  const net  = tot - fuelCost;
+
+  numEl.innerHTML = `
     <div class="stat-card highlight"><div class="stat-label">Total Earned</div><div class="stat-value">${fmt(tot)}</div></div>
     <div class="stat-card"><div class="stat-label">Avg Per Trip</div><div class="stat-value">${fmt(avg)}</div></div>
     <div class="stat-card"><div class="stat-label">Best Trip</div><div class="stat-value">${fmt(best)}</div></div>
     <div class="stat-card"><div class="stat-label">Trips</div><div class="stat-value neutral">${filtered.length}</div></div>`;
-  // Cash tips analytics
+
+  // Net income after fuel
+  if (netEl) {
+    netEl.innerHTML = fuelCost > 0 ? `
+      <div class="stats-row" style="margin-bottom:16px">
+        <div class="stat-card" style="border-color:rgba(240,96,96,0.3)">
+          <div class="stat-label">Fuel Cost</div>
+          <div class="stat-value" style="color:var(--danger)">-${fmt(fuelCost)}</div>
+        </div>
+        <div class="stat-card" style="border-color:rgba(200,240,96,0.5);background:rgba(200,240,96,0.05)">
+          <div class="stat-label">Net Income</div>
+          <div class="stat-value" style="color:var(--accent)">${fmt(net)}</div>
+        </div>
+      </div>` : '';
+  }
+
+  // Cash tips
   const cashEl = document.getElementById('stats-cash');
   if (cashEl) {
-    const totalCash = filtered.reduce((s,t)=>s+(t.cash_tips||0),0);
-    const avgCash = filtered.length ? totalCash/filtered.length : 0;
-    const bestCash = Math.max(...filtered.map(t=>t.cash_tips||0));
+    const totalCash = filtered.reduce((s,t) => s + (t.cash_tips||0), 0);
+    const avgCash   = filtered.length ? totalCash/filtered.length : 0;
+    const bestCash  = Math.max(...filtered.map(t => t.cash_tips||0));
     cashEl.innerHTML = totalCash > 0 ? `
       <div class="section-title" style="margin-top:8px;color:var(--accent2)">Cash Tips (private)</div>
       <div class="stats-row">
@@ -997,9 +1112,9 @@ function renderStats() {
       </div>` : '';
   }
 
-  const last=allTrips[0];
-  if (!last) { ltEl.innerHTML=''; return; }
-  ltEl.innerHTML=`
+  const last = allTrips[0];
+  if (!last) { ltEl.innerHTML = ''; return; }
+  ltEl.innerHTML = `
     <div class="last-trip-card">
       <div class="ltc-header">
         <div class="ltc-title">Most Recent Trip</div>
@@ -1024,28 +1139,69 @@ function setHistoryFilter(f,btn) {
   btn.classList.add('active'); renderHistory();
 }
 
+function resetHistoryDates() {
+  document.getElementById('hist-date-from').value='';
+  document.getElementById('hist-date-to').value='';
+  renderHistory();
+}
+
 function renderHistory() {
-  const filtered=filterByPeriod(allTrips,historyFilter);
-  const tbody=document.getElementById('trips-body');
-  const empty=document.getElementById('empty-history');
+  let filtered = filterByPeriod(allTrips, historyFilter);
+  // Apply custom date range on top
+  const from = document.getElementById('hist-date-from')?.value;
+  const to   = document.getElementById('hist-date-to')?.value;
+  if (from) filtered = filtered.filter(t => t.date >= from);
+  if (to)   filtered = filtered.filter(t => t.date <= to);
+
+  const tbody = document.getElementById('trips-body');
+  const empty = document.getElementById('empty-history');
   if (!filtered.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
   empty.style.display='none';
-  tbody.innerHTML=filtered.map(t=>{
-    const cashCell = t.cash_tips > 0
-      ? `<span style="color:var(--accent2);font-family:'DM Mono',monospace;font-weight:600">${fmt(t.cash_tips)}</span>`
-      : `<span style="color:var(--muted)">—</span>`;
-    const actionCell = t.deleted_by === 'manager'
-      ? `<span style="font-size:10px;color:var(--danger);border:1px solid var(--danger);border-radius:4px;padding:2px 6px">Deleted by manager</span>`
-      : `<button class="btn-delete" onclick="deleteTrip('${t.id}')">✕</button>`;
-    return `<tr>
-      <td class="mono">${t.date}</td>
-      <td style="color:var(--muted)">${t.booking_id||'—'}</td>
-      <td class="mono">${fmt(t.total||0)}</td>
-      <td class="earn-val">${fmt(t.earnings||0)}</td>
-      <td>${cashCell}</td>
-      <td>${actionCell}</td>
-    </tr>`;
+
+  tbody.innerHTML = filtered.map(t => {
+    const isDeleted = t.deleted_by === 'manager';
+    const actionCell = isDeleted
+      ? `<span style="font-size:10px;color:var(--danger);border:1px solid var(--danger);border-radius:4px;padding:2px 5px">Del. by mgr</span>`
+      : `<button class="btn-delete" onclick="event.stopPropagation();deleteTrip('${t.id}')">✕</button>`;
+
+    // Breakdown details (hidden by default)
+    const adjB = (t.base_fare||0)+(t.wait_time||0)+(t.greet_fee||0)+(t.car_seat_fee||0)+(t.event_wait||0)+(t.extra_stop||0)-(t.discount||0)+(t.expenses||0);
+    const details = `
+      <div class="bd-grid" style="padding:10px 0 4px">
+        ${[
+          ['Base Fare', t.base_fare], ['Adj. Base', adjB], ['Gratuity', t.gratuity],
+          ['Wait Time', t.wait_time], ['Greet Fee', t.greet_fee], ['Car Seat', t.car_seat_fee],
+          ['Event Wait', t.event_wait], ['Extra Stop', t.extra_stop], ['Holiday Pay', t.holiday_pay],
+          ['Fuel', t.fuel_surcharge], ['Parking', t.parking], ['Airport', t.airport_fee],
+          ['Discount', t.discount], ['Expenses', t.expenses], ['Tolls (co.)', t.tolls],
+        ].filter(([,v])=>v>0).map(([label,val])=>
+          `<div class="bd-item"><div class="bd-item-label">${label}</div><div class="bd-item-val">${fmt(val||0)}</div></div>`
+        ).join('')}
+        ${t.cash_tips>0?`<div class="bd-item" style="border-color:rgba(96,212,240,0.3)"><div class="bd-item-label" style="color:var(--accent2)">Cash Tips</div><div class="bd-item-val" style="color:var(--accent2)">${fmt(t.cash_tips)}</div></div>`:''}
+      </div>`;
+
+    return `
+      <tr class="dash-row" onclick="toggleHistoryRow('hbd-${t.id}', this)">
+        <td><span class="expand-icon" id="hexp-${t.id}">▶</span></td>
+        <td class="mono">${t.date}</td>
+        <td style="color:var(--muted);font-size:12px">${t.booking_id||'—'}</td>
+        <td class="mono">${fmt(t.total||0)}</td>
+        <td class="earn-val">${fmt(t.earnings||0)}</td>
+        <td>${actionCell}</td>
+      </tr>
+      <tr><td colspan="6" style="padding:0">
+        <div class="breakdown-content" id="hbd-${t.id}">${details}</div>
+      </td></tr>`;
   }).join('');
+}
+
+function toggleHistoryRow(bdId, row) {
+  const bd = document.getElementById(bdId);
+  if (!bd) return;
+  const isOpen = bd.classList.toggle('show');
+  // find expand icon in this row
+  const icon = row.querySelector('.expand-icon');
+  if (icon) icon.style.transform = isOpen ? 'rotate(90deg)' : '';
 }
 
 async function deleteTripManager(id, bookingId) {
@@ -1144,6 +1300,7 @@ function breakdownHTML(t) {
     <div class="bd-item"><div class="bd-item-label">Car Seat</div><div class="bd-item-val">${fmt(t.car_seat_fee||0)}</div></div>
     <div class="bd-item"><div class="bd-item-label">Event Wait</div><div class="bd-item-val">${fmt(t.event_wait||0)}</div></div>
     <div class="bd-item"><div class="bd-item-label">Extra Stop</div><div class="bd-item-val">${fmt(t.extra_stop||0)}</div></div>
+    ${t.holiday_pay>0?`<div class="bd-item"><div class="bd-item-label">Holiday Pay</div><div class="bd-item-val" style="color:var(--accent2)">${fmt(t.holiday_pay||0)}</div></div>`:''}
     <div class="bd-item"><div class="bd-item-label">Discount</div><div class="bd-item-val" style="color:var(--danger)">-${fmt(t.discount||0)}</div></div>
     <div class="bd-item"><div class="bd-item-label">Expenses</div><div class="bd-item-val">${fmt(t.expenses||0)}</div></div>
     <div class="bd-item"><div class="bd-item-label">Gratuity</div><div class="bd-item-val">${fmt(t.gratuity||0)}</div></div>
@@ -1206,8 +1363,9 @@ function renderDashboard() {
 
   // Summary footer row
   const summaryBD = `<div class="bd-grid">
-    ${['base_fare','wait_time','greet_fee','car_seat_fee','event_wait','discount','expenses','gratuity','fuel_surcharge','parking','airport_fee','tolls'].map(f=>{
+    ${['base_fare','wait_time','greet_fee','car_seat_fee','event_wait','extra_stop','holiday_pay','discount','expenses','gratuity','fuel_surcharge','parking','airport_fee','tolls'].map(f=>{
       const sum = filtered.reduce((s,t)=>s+(t[f]||0),0);
+      if (!sum) return '';
       const label = f.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
       return `<div class="bd-item"><div class="bd-item-label">${label}</div><div class="bd-item-val">${fmt(sum)}</div></div>`;
     }).join('')}
@@ -1301,6 +1459,8 @@ async function exportXLSX() {
   function sumCols(trips) {
     const s = {};
     NUM_KEYS.forEach(k => s[k] = trips.reduce((a, t) => a + (parseFloat(t[k]) || 0), 0));
+    // Adj. Base — розраховується, не береться з БД
+    s['_adj_base'] = trips.reduce((a, t) => a + adjBase(t), 0);
     return s;
   }
 

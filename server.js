@@ -348,4 +348,39 @@ app.get('/api/profile', requireAuth, async (req, res) => {
   }
 });
 
+// ── FUEL EXPENSES ─────────────────────────────────────────────────────────────
+app.get('/api/fuel', requireAuth, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('fuel_expenses')
+      .select('*')
+      .eq('user_id', req.user.id)
+      .order('date', { ascending: false });
+    if (error) throw error;
+    res.json({ success: true, data: data || [] });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch fuel expenses' });
+  }
+});
+
+app.post('/api/fuel', requireAuth, async (req, res) => {
+  try {
+    const { date, amount, driver_id } = req.body;
+    if (!date) return res.status(400).json({ error: 'Date is required' });
+    const { data, error } = await supabase
+      .from('fuel_expenses')
+      .upsert({
+        user_id:   req.user.id,
+        driver_id: driver_id || null,
+        date,
+        amount:    parseFloat(amount) || 0,
+      }, { onConflict: 'user_id,date' })
+      .select().single();
+    if (error) throw error;
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to save fuel expense' });
+  }
+});
+
 app.listen(PORT, () => console.log(`LimoPay backend running on port ${PORT}`));
