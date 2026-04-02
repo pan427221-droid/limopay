@@ -514,7 +514,7 @@ async function init() {
   sb.auth.onAuthStateChange(async (event, session) => {
     dbg('authStateChange: ' + event + ' session=' + !!session);
     if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') && session) {
-      if (!currentUser) await onLoggedIn(session.user);
+      if (!currentUser) await onLoggedIn(session.user, session.access_token);
     } else if (event === 'INITIAL_SESSION' && !session) {
       dbg('INITIAL_SESSION no session → login');
       showScreen('login');
@@ -533,27 +533,21 @@ async function init() {
   }, 8000);
 }
 
-async function onLoggedIn(user) {
+async function onLoggedIn(user, accessToken) {
   dbg('onLoggedIn: ' + user.email);
   currentUser = user;
 
   dbg('fetching profile via API...');
   let profile = null;
   try {
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) { dbg('no session for profile fetch'); showScreen('login'); return; }
-
     const res = await fetch(`${API_URL}/api/profile`, {
-      headers: { 'Authorization': `Bearer ${session.access_token}` }
+      headers: { 'Authorization': `Bearer ${accessToken}` }
     });
     dbg('profile API status=' + res.status);
     if (res.ok) {
       const json = await res.json();
       profile = json.data;
       dbg('profile: driver_id=' + profile?.driver_id + ' role=' + profile?.role);
-    } else if (res.status === 500) {
-      // Profile doesn't exist yet — new user
-      dbg('profile not found → driverid screen');
     }
   } catch(e) {
     dbg('profile fetch ERROR: ' + e.message);
@@ -571,10 +565,10 @@ async function onLoggedIn(user) {
     return;
   }
 
-  await loadApp(user, profile);
+  await loadApp(user, profile, accessToken);
 }
 
-async function loadApp(user, profile) {
+async function loadApp(user, profile, accessToken) {
   dbg('loadApp role=' + profile?.role);
   currentRole     = profile?.role || 'driver';
   currentDriverId = profile?.driver_id || null;
@@ -599,7 +593,7 @@ async function loadApp(user, profile) {
   dbg('showScreen app...');
   showScreen('app');
   dbg('loadTrips...');
-  await loadTrips();
+  await loadTrips(accessToken);
   dbg('loadTrips done');
 }
 
@@ -901,15 +895,19 @@ function clearForm() {
 
 // ── LOAD TRIPS ────────────────────────────────────────────────────────────────
 let tripsLoading = false;
-async function loadTrips() {
+async function loadTrips(accessToken) {
   if (tripsLoading) return;
   tripsLoading = true;
   try {
-    dbg('loadTrips: getSession...');
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) { dbg('loadTrips: no session!'); return; }
+    let token = accessToken;
+    if (!token) {
+      // fallback якщо викликається не з init (напр. з visibilitychange)
+      const { data: { session } } = await sb.auth.getSession();
+      token = session?.access_token;
+    }
+    if (!token) { dbg('loadTrips: no token!'); return; }
     dbg('loadTrips: fetching /api/trips...');
-    const headers = { 'Authorization': `Bearer ${session.access_token}` };
+    const headers = { 'Authorization': `Bearer ${token}` };
 
     const res = await fetch(`${API_URL}/api/trips`, { headers });
     dbg('loadTrips: /api/trips status=' + res.status);
