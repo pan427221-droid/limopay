@@ -182,7 +182,12 @@
   .parse-multi-btn:hover { background: rgba(200,240,96,0.2); }
   .parse-multi-btn.visible { display: block; }
 
-  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  @media (max-width: 480px) {
+    .form-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .form-grid .field:has(#f-date) { grid-column: 1; }
+    .form-grid .field:has(#f-booking) { grid-column: 2; }
+  }
   .field label { display: block; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
   .field input {
     width: 100%; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border);
