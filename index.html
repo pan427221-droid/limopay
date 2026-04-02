@@ -291,6 +291,9 @@
 <!-- LOADING -->
 <div id="loading-screen"><div class="spinner"></div></div>
 
+<!-- DEBUG OVERLAY — remove after fix -->
+<div id="debug-overlay" style="display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,0.92);color:#c8f060;font-family:monospace;font-size:11px;padding:12px;z-index:9999;max-height:40vh;overflow-y:auto;border-top:1px solid #c8f060;white-space:pre-wrap;word-break:break-all"></div>
+
 <!-- LOGIN -->
 <div id="login-screen" class="screen" style="display:none">
   <div class="card">
@@ -505,13 +508,15 @@ let statsFilter = 'today', historyFilter = 'all', dashFilter = 'all';
 // ── INIT ──────────────────────────────────────────────────────────────────────
 async function init() {
   showScreen('loading');
+  dbg('init() started');
 
   // onAuthStateChange MUST come before getSession() — iOS Safari requirement
-  // It handles both OAuth redirects (access_token in hash) and existing sessions
   sb.auth.onAuthStateChange(async (event, session) => {
+    dbg('authStateChange: ' + event + ' session=' + !!session);
     if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') && session) {
       if (!currentUser) await onLoggedIn(session.user);
     } else if (event === 'INITIAL_SESSION' && !session) {
+      dbg('INITIAL_SESSION no session → login');
       showScreen('login');
     } else if (event === 'SIGNED_OUT') {
       currentUser = null; allTrips = []; allTripsManager = [];
@@ -519,9 +524,10 @@ async function init() {
     }
   });
 
-  // Fallback: if onAuthStateChange never fires (e.g. network issue), show login after 8s
+  // Fallback: if onAuthStateChange never fires, show login after 8s
   setTimeout(() => {
     if (!currentUser && document.getElementById('loading-screen').style.display !== 'none') {
+      dbg('TIMEOUT 8s — forcing login screen');
       showScreen('login');
     }
   }, 8000);
@@ -1350,6 +1356,17 @@ function setStatus(pane,type,msg) {
   el.className=`status-bar ${type} show`; el.textContent=msg;
   if (type==='success') setTimeout(()=>el.classList.remove('show'),3000);
 }
+
+// ── DEBUG (тимчасово) ─────────────────────────────────────────────────────────
+const _dbg = [];
+function dbg(msg) {
+  _dbg.push(`[${new Date().toISOString().slice(11,23)}] ${msg}`);
+  const el = document.getElementById('debug-overlay');
+  if (el) { el.style.display = 'block'; el.textContent = _dbg.join('\n'); el.scrollTop = el.scrollHeight; }
+  console.log('[DBG]', msg);
+}
+window.addEventListener('error', e => dbg('ERROR: ' + e.message + ' @ ' + e.filename + ':' + e.lineno));
+window.addEventListener('unhandledrejection', e => dbg('PROMISE: ' + (e.reason?.message || e.reason)));
 
 // ── SERVICE WORKER — auto-update on deploy ────────────────────────────────────
 if ('serviceWorker' in navigator) {
