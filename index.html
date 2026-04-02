@@ -1377,21 +1377,11 @@ const _dbg = [];
 function dbg(msg) {
   _dbg.push(`[${new Date().toISOString().slice(11,23)}] ${msg}`);
   const el = document.getElementById('debug-overlay');
-  if (el) { el.style.display = 'block'; el.textContent = _dbg.join('\n'); el.scrollTop = el.scrollHeight; }
+  if (el) { el.style.display = 'block'; el.textContent = _dbg.slice(-15).join('\n'); }
   console.log('[DBG]', msg);
 }
 window.addEventListener('error', e => dbg('❌ ERROR: ' + e.message + ' @ ' + (e.filename||'').split('/').pop() + ':' + e.lineno));
 window.addEventListener('unhandledrejection', e => dbg('❌ PROMISE: ' + (e.reason?.message || String(e.reason))));
-
-// Ticker — показує що JS живий кожні 2 сек поки спінер
-const _ticker = setInterval(() => {
-  const loading = document.getElementById('loading-screen');
-  if (loading && loading.style.display !== 'none') {
-    dbg('⏳ still loading... currentUser=' + !!currentUser);
-  } else {
-    clearInterval(_ticker);
-  }
-}, 2000);
 
 dbg('📱 script start, UA=' + navigator.userAgent.slice(0,60));
 
