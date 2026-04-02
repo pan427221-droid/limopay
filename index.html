@@ -364,6 +364,13 @@
       <div class="field"><label>Date</label><input type="date" id="f-date"></div>
       <div class="field"><label>Booking ID</label><input type="text" id="f-booking" placeholder="BK-12345"></div>
       <div class="field"><label>Base Fare ($)</label><input type="number" id="f-base" placeholder="0.00" oninput="calcEarnings()"></div>
+      <div class="field"><label>Gratuity ($)</label><input type="number" id="f-gratuity" placeholder="0.00" oninput="calcEarnings()"></div>
+      <div class="field"><label>Extra Stop ($15)</label><input type="number" id="f-extrastop" placeholder="0.00" oninput="calcEarnings()"></div>
+      <div class="field"><label>Tolls ($)</label><input type="number" id="f-tolls" placeholder="0.00" oninput="calcEarnings()"></div>
+      <div class="field"><label>Airport Fee ($)</label><input type="number" id="f-airport" placeholder="0.00" oninput="calcEarnings()"></div>
+      <div class="field"><label>Fuel Surcharge ($)</label><input type="number" id="f-fuel" placeholder="0.00" oninput="calcEarnings()"></div>
+      <div class="field"><label>Discount ($)</label><input type="number" id="f-discount" placeholder="0.00" oninput="calcEarnings()"></div>
+      <div class="field"><label>Expenses ($)</label><input type="number" id="f-expenses" placeholder="0.00" oninput="calcEarnings()"></div>
       <div class="field"><label>Wait Time ($)</label><input type="number" id="f-wait" placeholder="0.00" oninput="calcEarnings()"></div>
       <div class="field checkbox-field">
         <label>Greet Fee (+$40)</label>
@@ -374,14 +381,7 @@
       </div>
       <div class="field"><label>Car Seats (qty)</label><input type="number" id="f-carseat" placeholder="0" min="0" max="10" oninput="calcEarnings()"></div>
       <div class="field"><label>Event Wait ($)</label><input type="number" id="f-eventwait" placeholder="0.00" oninput="calcEarnings()"></div>
-      <div class="field"><label>Extra Stop ($15)</label><input type="number" id="f-extrastop" placeholder="0.00" oninput="calcEarnings()"></div>
-      <div class="field"><label>Discount ($)</label><input type="number" id="f-discount" placeholder="0.00" oninput="calcEarnings()"></div>
-      <div class="field"><label>Expenses ($)</label><input type="number" id="f-expenses" placeholder="0.00" oninput="calcEarnings()"></div>
-      <div class="field"><label>Gratuity ($)</label><input type="number" id="f-gratuity" placeholder="0.00" oninput="calcEarnings()"></div>
-      <div class="field"><label>Fuel Surcharge ($)</label><input type="number" id="f-fuel" placeholder="0.00" oninput="calcEarnings()"></div>
       <div class="field"><label>Parking ($)</label><input type="number" id="f-parking" placeholder="0.00" oninput="calcEarnings()"></div>
-      <div class="field"><label>Airport Fee ($)</label><input type="number" id="f-airport" placeholder="0.00" oninput="calcEarnings()"></div>
-      <div class="field"><label>Tolls ($)</label><input type="number" id="f-tolls" placeholder="0.00" oninput="calcEarnings()"></div>
       <div class="field" style="grid-column:1/-1;border-top:1px solid var(--border);padding-top:12px"><label style="color:var(--accent)">Total Fare ($) — from receipt</label><input type="number" id="f-total" placeholder="0.00" style="border-color:rgba(200,240,96,0.3)"></div>
       <div class="field"><label style="color:var(--accent2)">Cash Tips ($) — visible only in your stats</label><input type="number" id="f-cash-tips" placeholder="0.00" style="border-color:rgba(96,212,240,0.3)" oninput="calcEarnings()"></div>
     </div>
@@ -493,7 +493,7 @@
 
 <script>
 const SUPABASE_URL  = 'https://uljmcbrorgjrrvoxzmdb.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsam1jYnJvcmdqcnJ2b3h6bWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQzNzAsImV4cCI6MjA4OTg4MDM3MH0.gzfN9ayldCSF0kRSfSCT9Np02Dpke8ZSS42iJLBhzmA';
+const SUPABASE_ANON = '%%VITE_SUPABASE_ANON_KEY%%';
 const API_URL       = 'https://limopay-production.up.railway.app';
 
 const { createClient } = supabase;
@@ -1175,8 +1175,7 @@ async function exportXLSX() {
   const filtered = getDashFiltered();
   if (!filtered.length) { alert('No data to export'); return; }
 
-  // Load ExcelJS dynamically only when needed
-  if (!window.ExcelJS) {
+  if (typeof ExcelJS === 'undefined') {
     await new Promise((resolve, reject) => {
       const s = document.createElement('script');
       s.src = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
@@ -1185,196 +1184,154 @@ async function exportXLSX() {
     });
   }
 
-  const fromVal = document.getElementById('dash-date-from').value;
-  const toVal   = document.getElementById('dash-date-to').value;
+  const fromVal   = document.getElementById('dash-date-from').value;
+  const toVal     = document.getElementById('dash-date-to').value;
   const driverVal = document.getElementById('dash-driver-filter').value;
 
   const wb = new ExcelJS.Workbook();
   wb.creator = 'LimoPay';
-  wb.created = new Date();
   const ws = wb.addWorksheet('LimoPay Export');
 
-  // ── COLORS ──────────────────────────────────────────────────────────────────
-  const C = {
-    black:      '00000000',
-    white:      '00FFFFFF',
-    accent:     '00C8F060', // lime green
-    accent2:    '0060D4F0', // blue
-    dark:       '00111118',
-    surface:    '001A1A24',
-    border:     '002A2A38',
-    muted:      '006A6A80',
-    danger:     '00F06060',
-  };
+  const C = { white: 'FFFFFFFF', black: 'FF000000', accent: 'FFC8F060', dark: 'FF111118', surface: 'FF1A1A24', danger: 'FFF06060', subtotal: 'FFE8F5C8', daytotal: 'FF2A2A38' };
 
-  // ── COLUMN DEFINITIONS ───────────────────────────────────────────────────────
+  // ── COLUMNS in requested order ───────────────────────────────────────────────
   const COLS = [
-    { key: 'date',          header: 'Date',          width: 14 },
-    { key: 'booking_id',    header: 'Booking ID',    width: 14 },
-    { key: 'base_fare',     header: 'Base Fare',     width: 12 },
-    { key: 'wait_time',     header: 'Wait Time',     width: 12 },
-    { key: 'greet_fee',     header: 'Greet Fee',     width: 12 },
-    { key: 'car_seat_fee',  header: 'Car Seat',      width: 12 },
-    { key: 'event_wait',    header: 'Event Wait',    width: 12 },
-    { key: 'extra_stop',    header: 'Extra Stop',    width: 12 },
-    { key: 'discount',      header: 'Discount',      width: 12 },
-    { key: 'expenses',      header: 'Expenses',      width: 12 },
-    { key: 'gratuity',      header: 'Gratuity',      width: 12 },
-    { key: 'fuel_surcharge',header: 'Fuel',          width: 10 },
-    { key: 'parking',       header: 'Parking',       width: 10 },
-    { key: 'airport_fee',   header: 'Airport Fee',   width: 12 },
-    { key: 'tolls',         header: 'Tolls',         width: 10 },
-    { key: 'total',         header: 'Total Fare',    width: 12 },
-    { key: 'earnings',      header: 'Earnings',      width: 12 },
+    { key: 'date',          header: 'Date',         width: 13 },
+    { key: 'driver_id',     header: 'Driver',       width: 10 },
+    { key: 'booking_id',    header: 'Booking ID',   width: 13 },
+    { key: 'base_fare',     header: 'Base Fare',    width: 12 },
+    { key: 'gratuity',      header: 'Gratuity',     width: 12 },
+    { key: 'extra_stop',    header: 'Extra Stop',   width: 12 },
+    { key: 'tolls',         header: 'Tolls',        width: 10 },
+    { key: 'airport_fee',   header: 'Airport Fee',  width: 12 },
+    { key: 'fuel_surcharge',header: 'Fuel',         width: 10 },
+    { key: 'discount',      header: 'Discount',     width: 11 },
+    { key: 'expenses',      header: 'Expenses',     width: 11 },
+    { key: 'wait_time',     header: 'Wait Time',    width: 11 },
+    { key: 'greet_fee',     header: 'Greet Fee',    width: 11 },
+    { key: 'car_seat_fee',  header: 'Car Seat',     width: 11 },
+    { key: 'event_wait',    header: 'Event Wait',   width: 11 },
+    { key: 'parking',       header: 'Parking',      width: 10 },
+    { key: 'total',         header: 'Total Fare',   width: 12 },
+    { key: 'earnings',      header: 'Earnings',     width: 12 },
   ];
-  const NUM_COLS = COLS.filter(c => c.key !== 'date' && c.key !== 'booking_id').map(c => c.key);
+  const NUM_KEYS = COLS.filter(c => !['date','driver_id','booking_id'].includes(c.key)).map(c => c.key);
 
   ws.columns = COLS.map(c => ({ key: c.key, width: c.width }));
-
   const numFmt = '$#,##0.00';
 
-  function styleHeader(row) {
-    row.eachCell(cell => {
-      cell.font = { bold: true, color: { argb: C.black }, size: 10, name: 'Arial' };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: C.accent } };
-      cell.alignment = { horizontal: 'center', vertical: 'middle' };
-      cell.border = {
-        bottom: { style: 'thin', color: { argb: C.border } },
-      };
+  function applyStyle(row, opts) {
+    row.eachCell({ includeEmpty: true }, (cell, col) => {
+      cell.font = { name: 'Arial', size: opts.size || 10, bold: opts.bold || false, color: { argb: opts.color || C.black } };
+      if (opts.bg) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: opts.bg } };
+      cell.alignment = { horizontal: col <= 3 ? 'left' : 'right', vertical: 'middle' };
+      if (col > 3) cell.numFmt = numFmt;
     });
+    if (opts.height) row.height = opts.height;
   }
 
-  function styleDataRow(row, isDeleted) {
-    row.eachCell({ includeEmpty: true }, (cell, colNum) => {
-      cell.font = { size: 10, name: 'Arial', color: { argb: isDeleted ? C.danger : C.black } };
-      cell.alignment = { horizontal: colNum <= 2 ? 'left' : 'right', vertical: 'middle' };
-      if (colNum > 2) cell.numFmt = numFmt;
-    });
-    row.height = 18;
+  function sumCols(trips) {
+    const s = {};
+    NUM_KEYS.forEach(k => s[k] = trips.reduce((a, t) => a + (parseFloat(t[k]) || 0), 0));
+    return s;
   }
 
-  function styleSubtotal(row) {
-    row.eachCell({ includeEmpty: true }, (cell, colNum) => {
-      cell.font = { bold: true, size: 10, name: 'Arial', color: { argb: C.black } };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F5C8' } };
-      cell.alignment = { horizontal: colNum <= 2 ? 'left' : 'right', vertical: 'middle' };
-      if (colNum > 2) cell.numFmt = numFmt;
-      cell.border = {
-        top:    { style: 'thin', color: { argb: C.border } },
-        bottom: { style: 'medium', color: { argb: C.border } },
-      };
+  function addTotalRow(label, sums, style) {
+    const rowData = COLS.map((c, i) => {
+      if (i === 0) return label;
+      if (i === 1 || i === 2) return '';
+      return sums[c.key] || 0;
     });
-    row.height = 20;
+    const row = ws.addRow(rowData);
+    applyStyle(row, style);
+    ws.mergeCells(row.number, 1, row.number, 3);
+    return row;
   }
 
-  function styleGrandTotal(row) {
-    row.eachCell({ includeEmpty: true }, (cell, colNum) => {
-      cell.font = { bold: true, size: 11, name: 'Arial', color: { argb: C.white } };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: C.dark } };
-      cell.alignment = { horizontal: colNum <= 2 ? 'left' : 'right', vertical: 'middle' };
-      if (colNum > 2) cell.numFmt = numFmt;
-      cell.border = {
-        top:    { style: 'medium', color: { argb: C.accent } },
-        bottom: { style: 'medium', color: { argb: C.accent } },
-      };
-    });
-    row.height = 24;
-  }
-
-  function styleDriverHeader(row) {
-    row.eachCell({ includeEmpty: true }, cell => {
-      cell.font = { bold: true, size: 11, name: 'Arial', color: { argb: C.accent } };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: C.surface } };
-      cell.alignment = { vertical: 'middle' };
-    });
-    row.height = 22;
-  }
-
-  // ── TITLE ROW ────────────────────────────────────────────────────────────────
-  const titleText = [
-    'LimoPay Export',
-    fromVal && toVal ? `${fromVal} — ${toVal}` : fromVal ? `From ${fromVal}` : toVal ? `To ${toVal}` : 'All Time',
-    driverVal ? `Driver #${driverVal}` : 'All Drivers',
-  ].join('   |   ');
+  // ── TITLE ────────────────────────────────────────────────────────────────────
+  const titleParts = ['LimoPay Export'];
+  if (fromVal && toVal) titleParts.push(`${fromVal} — ${toVal}`);
+  else if (fromVal) titleParts.push(`From ${fromVal}`);
+  else if (toVal) titleParts.push(`To ${toVal}`);
+  else titleParts.push('All Time');
+  if (driverVal) titleParts.push(`Driver #${driverVal}`);
 
   ws.mergeCells(1, 1, 1, COLS.length);
   const titleCell = ws.getCell('A1');
-  titleCell.value = titleText;
+  titleCell.value = titleParts.join('   |   ');
   titleCell.font = { bold: true, size: 13, name: 'Arial', color: { argb: C.white } };
   titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: C.dark } };
   titleCell.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 };
   ws.getRow(1).height = 28;
-  ws.addRow([]); // spacer
+  ws.addRow([]);
 
-  // ── COLUMN HEADERS ───────────────────────────────────────────────────────────
+  // ── HEADER ROW ───────────────────────────────────────────────────────────────
   const headerRow = ws.addRow(COLS.map(c => c.header));
-  styleHeader(headerRow);
+  applyStyle(headerRow, { bold: true, bg: C.accent, size: 10 });
+  headerRow.height = 20;
 
-  // ── GROUP BY DRIVER ──────────────────────────────────────────────────────────
-  // Sort: by driver_id, then by date
+  // ── SORT: chronological by date, then driver ─────────────────────────────────
   const sorted = [...filtered].sort((a, b) =>
-    (a.driver_id||'').localeCompare(b.driver_id||'') || a.date.localeCompare(b.date)
+    a.date.localeCompare(b.date) || (a.driver_id || '').localeCompare(b.driver_id || '')
   );
 
-  const groups = {};
+  // ── GROUP BY DATE ────────────────────────────────────────────────────────────
+  const byDate = {};
   sorted.forEach(t => {
-    const key = t.driver_id || '—';
-    if (!groups[key]) groups[key] = [];
-    groups[key].push(t);
+    if (!byDate[t.date]) byDate[t.date] = {};
+    const drv = t.driver_id || '—';
+    if (!byDate[t.date][drv]) byDate[t.date][drv] = [];
+    byDate[t.date][drv].push(t);
   });
 
-  const grandTotals = {};
-  NUM_COLS.forEach(k => grandTotals[k] = 0);
+  const grandSums = {};
+  NUM_KEYS.forEach(k => grandSums[k] = 0);
 
-  for (const [driverId, trips] of Object.entries(groups)) {
-    // Driver header row
+  for (const [date, drivers] of Object.entries(byDate)) {
+    // Day header
     ws.mergeCells(ws.rowCount + 1, 1, ws.rowCount + 1, COLS.length);
-    const driverRow = ws.addRow([`Driver #${driverId}`]);
-    styleDriverHeader(driverRow);
+    const dayHeaderRow = ws.addRow([date]);
+    applyStyle(dayHeaderRow, { bold: true, size: 11, bg: C.surface, color: C.accent, height: 22 });
 
-    // Data rows
-    const subtotals = {};
-    NUM_COLS.forEach(k => subtotals[k] = 0);
+    const dayTrips = [];
 
-    trips.forEach(t => {
-      const rowData = COLS.map(c => {
-        if (c.key === 'date') return t.date;
-        if (c.key === 'booking_id') return t.booking_id || '—';
-        return parseFloat(t[c.key]) || 0;
-      });
-      const dataRow = ws.addRow(rowData);
-      styleDataRow(dataRow, t.deleted_by === 'driver');
-      if (t.deleted_by === 'driver') {
-        // Add note to booking cell
-        const bookingCell = dataRow.getCell(2);
-        bookingCell.value = (t.booking_id || '—') + ' [deleted by driver]';
+    for (const [driverId, trips] of Object.entries(drivers)) {
+      // If multiple drivers — show driver sub-header
+      if (Object.keys(drivers).length > 1) {
+        ws.mergeCells(ws.rowCount + 1, 1, ws.rowCount + 1, COLS.length);
+        const drvRow = ws.addRow([`  Driver #${driverId}`]);
+        applyStyle(drvRow, { bold: false, size: 10, color: 'FF888888', height: 18 });
       }
-      NUM_COLS.forEach(k => subtotals[k] += parseFloat(t[k]) || 0);
+
+      // Data rows
+      trips.forEach(t => {
+        const rowData = COLS.map(c => {
+          if (c.key === 'date') return t.date;
+          if (c.key === 'driver_id') return `#${t.driver_id || '—'}`;
+          if (c.key === 'booking_id') return t.deleted_by === 'driver' ? `${t.booking_id || '—'} [del]` : (t.booking_id || '—');
+          return parseFloat(t[c.key]) || 0;
+        });
+        const dataRow = ws.addRow(rowData);
+        applyStyle(dataRow, { color: t.deleted_by === 'driver' ? C.danger : C.black, height: 18 });
+        dayTrips.push(t);
+      });
+    }
+
+    // Day total
+    const daySums = sumCols(dayTrips);
+    const count = dayTrips.length;
+    addTotalRow(`Total ${date} (${count} trip${count > 1 ? 's' : ''})`, daySums, {
+      bold: true, size: 10, bg: C.daytotal, color: C.white, height: 20
     });
 
-    // Subtotal row
-    const subtotalData = COLS.map((c, i) => {
-      if (i === 0) return `Subtotal — Driver #${driverId} (${trips.length} trip${trips.length > 1 ? 's' : ''})`;
-      if (i === 1) return '';
-      return subtotals[c.key] || 0;
-    });
-    const subRow = ws.addRow(subtotalData);
-    styleSubtotal(subRow);
-    ws.mergeCells(subRow.number, 1, subRow.number, 2);
-
-    NUM_COLS.forEach(k => grandTotals[k] += subtotals[k]);
-    ws.addRow([]); // spacer between drivers
+    NUM_KEYS.forEach(k => grandSums[k] += daySums[k]);
+    ws.addRow([]);
   }
 
   // ── GRAND TOTAL ──────────────────────────────────────────────────────────────
-  const grandData = COLS.map((c, i) => {
-    if (i === 0) return `GRAND TOTAL (${filtered.length} trips)`;
-    if (i === 1) return '';
-    return grandTotals[c.key] || 0;
+  addTotalRow(`GRAND TOTAL (${filtered.length} trips)`, grandSums, {
+    bold: true, size: 11, bg: C.dark, color: C.accent, height: 24
   });
-  const grandRow = ws.addRow(grandData);
-  styleGrandTotal(grandRow);
-  ws.mergeCells(grandRow.number, 1, grandRow.number, 2);
 
   // ── DOWNLOAD ─────────────────────────────────────────────────────────────────
   const buf = await wb.xlsx.writeBuffer();
@@ -1383,7 +1340,7 @@ async function exportXLSX() {
   const a = document.createElement('a');
   const dateStr = new Date().toISOString().split('T')[0];
   a.href = url;
-  a.download = `limopay_${driverVal ? 'driver'+driverVal+'_' : ''}${dateStr}.xlsx`;
+  a.download = `limopay_${driverVal ? 'driver' + driverVal + '_' : ''}${dateStr}.xlsx`;
   a.click();
   URL.revokeObjectURL(url);
 }
