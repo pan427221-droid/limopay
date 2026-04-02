@@ -534,17 +534,18 @@ async function init() {
 }
 
 async function onLoggedIn(user) {
+  dbg('onLoggedIn: ' + user.email);
   currentUser = user;
 
-  let { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
+  dbg('fetching profile...');
+  let { data: profile, error } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
+  dbg('profile result: ' + JSON.stringify(profile) + ' err=' + JSON.stringify(error));
 
   if (!profile) {
-    // New user — show Driver ID screen first
     showScreen('driverid');
     return;
   }
 
-  // Existing user — check if they have a driver_id
   if (!profile.driver_id && currentRole !== 'manager') {
     showScreen('driverid');
     return;
@@ -554,6 +555,7 @@ async function onLoggedIn(user) {
 }
 
 async function loadApp(user, profile) {
+  dbg('loadApp role=' + profile?.role);
   currentRole     = profile?.role || 'driver';
   currentDriverId = profile?.driver_id || null;
 
@@ -574,8 +576,11 @@ async function loadApp(user, profile) {
   if (currentRole === 'manager') document.getElementById('tab-dashboard').style.display = '';
 
   document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+  dbg('showScreen app...');
   showScreen('app');
+  dbg('loadTrips...');
   await loadTrips();
+  dbg('loadTrips done');
 }
 
 // ── DRIVER ID VERIFICATION ────────────────────────────────────────────────────
@@ -618,6 +623,7 @@ document.getElementById('driver-id-input').addEventListener('keydown', e => {
 
 // ── SCREENS ───────────────────────────────────────────────────────────────────
 function showScreen(s) {
+  dbg('showScreen: ' + s);
   document.getElementById('loading-screen').style.display  = s==='loading'  ? 'flex'  : 'none';
   document.getElementById('login-screen').style.display    = s==='login'    ? 'flex'  : 'none';
   document.getElementById('driverid-screen').style.display = s==='driverid' ? 'flex'  : 'none';
@@ -640,6 +646,7 @@ async function signOut() {
 
 // ── TABS ──────────────────────────────────────────────────────────────────────
 function showTab(name) {
+  dbg('showTab: ' + name);
   ['log','stats','history','dashboard'].forEach(t => {
     const p=document.getElementById(`pane-${t}`), b=document.getElementById(`tab-${t}`);
     if (p) p.style.display=t===name?'block':'none';
@@ -878,21 +885,26 @@ async function loadTrips() {
   if (tripsLoading) return;
   tripsLoading = true;
   try {
+    dbg('loadTrips: getSession...');
     const { data: { session } } = await sb.auth.getSession();
-    if (!session) return;
+    if (!session) { dbg('loadTrips: no session!'); return; }
+    dbg('loadTrips: fetching /api/trips...');
     const headers = { 'Authorization': `Bearer ${session.access_token}` };
 
     const res = await fetch(`${API_URL}/api/trips`, { headers });
+    dbg('loadTrips: /api/trips status=' + res.status);
     const json = await res.json();
     if (!res.ok) throw new Error(json.error);
     allTrips = json.data || [];
+    dbg('loadTrips: got ' + allTrips.length + ' trips');
 
     const resAll = await fetch(`${API_URL}/api/trips/all`, { headers });
+    dbg('loadTrips: /api/trips/all status=' + resAll.status);
     if (resAll.ok) {
       const jsonAll = await resAll.json();
       allTripsManager = jsonAll.data || [];
     }
-  } catch (err) { console.error('Load trips:', err); }
+  } catch (err) { dbg('loadTrips ERROR: ' + err.message); console.error('Load trips:', err); }
   finally { tripsLoading = false; }
 }
 
@@ -914,6 +926,7 @@ function setStatsPeriod(f,btn) {
 }
 
 function renderStats() {
+  dbg('renderStats()...');
   const filtered=filterByPeriod(allTrips,statsFilter);
   const numEl=document.getElementById('stats-numbers');
   const ltEl=document.getElementById('last-trip-container');
@@ -973,6 +986,7 @@ function setHistoryFilter(f,btn) {
 }
 
 function renderHistory() {
+  dbg('renderHistory()...');
   const filtered=filterByPeriod(allTrips,historyFilter);
   const tbody=document.getElementById('trips-body');
   const empty=document.getElementById('empty-history');
@@ -1103,6 +1117,7 @@ function breakdownHTML(t) {
 }
 
 function renderDashboard() {
+  dbg('renderDashboard()...');
   const filtered = getDashFiltered();
   const tbody = document.getElementById('dash-body');
   const tfoot = document.getElementById('dash-foot');
@@ -1365,26 +1380,45 @@ function dbg(msg) {
   if (el) { el.style.display = 'block'; el.textContent = _dbg.join('\n'); el.scrollTop = el.scrollHeight; }
   console.log('[DBG]', msg);
 }
-window.addEventListener('error', e => dbg('ERROR: ' + e.message + ' @ ' + e.filename + ':' + e.lineno));
-window.addEventListener('unhandledrejection', e => dbg('PROMISE: ' + (e.reason?.message || e.reason)));
+window.addEventListener('error', e => dbg('❌ ERROR: ' + e.message + ' @ ' + (e.filename||'').split('/').pop() + ':' + e.lineno));
+window.addEventListener('unhandledrejection', e => dbg('❌ PROMISE: ' + (e.reason?.message || String(e.reason))));
+
+// Ticker — показує що JS живий кожні 2 сек поки спінер
+const _ticker = setInterval(() => {
+  const loading = document.getElementById('loading-screen');
+  if (loading && loading.style.display !== 'none') {
+    dbg('⏳ still loading... currentUser=' + !!currentUser);
+  } else {
+    clearInterval(_ticker);
+  }
+}, 2000);
+
+dbg('📱 script start, UA=' + navigator.userAgent.slice(0,60));
 
 // ── SERVICE WORKER — auto-update on deploy ────────────────────────────────────
 if ('serviceWorker' in navigator) {
+  dbg('SW: registering...');
   navigator.serviceWorker.register('/sw.js').then(reg => {
+    dbg('SW: registered, state=' + (reg.active?.state || 'none'));
     reg.update();
     reg.addEventListener('updatefound', () => {
+      dbg('SW: update found');
       const nw = reg.installing;
       nw.addEventListener('statechange', () => {
+        dbg('SW: installing state=' + nw.state);
         if (nw.state === 'installed' && navigator.serviceWorker.controller) {
           nw.postMessage({ type: 'SKIP_WAITING' });
         }
       });
     });
-  });
+  }).catch(e => dbg('SW: register FAILED: ' + e.message));
   let refreshing = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
+    dbg('SW: controllerchange → reload');
     if (!refreshing) { refreshing = true; window.location.reload(); }
   });
+} else {
+  dbg('SW: not supported');
 }
 
 init();
