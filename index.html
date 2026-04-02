@@ -126,6 +126,8 @@
     font-size: clamp(9px, 2vw, 12px); cursor: pointer; transition: all 0.2s; white-space: nowrap; flex-shrink: 0;
   }
   .btn-signout:hover { border-color: var(--danger); color: var(--danger); }
+  .btn-signout .signout-text { display: none; }
+  @media (min-width: 480px) { .btn-signout .signout-text { display: inline; } }
 
   /* ── TABS ────────────────────────────────────────────────────────────────── */
   .tabs {
@@ -234,6 +236,16 @@
     border-radius: var(--radius); color: var(--text);
     font-family: 'DM Mono', monospace; font-size: var(--field-fs);
     transition: border-color 0.2s;
+  }
+  .field input[type="date"] {
+    /* Override browser default date picker padding that makes it taller */
+    padding: var(--field-pad);
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .field input[type="date"]::-webkit-calendar-picker-indicator {
+    opacity: 0.4; cursor: pointer; margin-left: 0;
+    width: clamp(12px, 3vw, 16px); height: clamp(12px, 3vw, 16px);
   }
   .field input:focus { outline: none; border-color: var(--accent); }
   .form-grid .field[style*="grid-column"] { grid-column: 1 / -1; }
@@ -382,7 +394,7 @@
         <span class="driver-id-badge" id="driver-id-display"></span>
         <span class="role-badge driver" id="role-badge">driver</span>
       </div>
-      <button class="btn-signout" onclick="signOut()">Sign out</button>
+      <button class="btn-signout" onclick="signOut()">⏻<span class="signout-text"> Sign out</span></button>
     </div>
   </header>
 
