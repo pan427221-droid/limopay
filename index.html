@@ -537,9 +537,29 @@ async function onLoggedIn(user) {
   dbg('onLoggedIn: ' + user.email);
   currentUser = user;
 
-  dbg('fetching profile...');
-  let { data: profile, error } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
-  dbg('profile result: ' + JSON.stringify(profile) + ' err=' + JSON.stringify(error));
+  dbg('fetching profile via API...');
+  let profile = null;
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { dbg('no session for profile fetch'); showScreen('login'); return; }
+
+    const res = await fetch(`${API_URL}/api/profile`, {
+      headers: { 'Authorization': `Bearer ${session.access_token}` }
+    });
+    dbg('profile API status=' + res.status);
+    if (res.ok) {
+      const json = await res.json();
+      profile = json.data;
+      dbg('profile: driver_id=' + profile?.driver_id + ' role=' + profile?.role);
+    } else if (res.status === 500) {
+      // Profile doesn't exist yet — new user
+      dbg('profile not found → driverid screen');
+    }
+  } catch(e) {
+    dbg('profile fetch ERROR: ' + e.message);
+    showScreen('login');
+    return;
+  }
 
   if (!profile) {
     showScreen('driverid');

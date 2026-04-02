@@ -338,9 +338,9 @@ app.delete('/api/trips/:id', requireAuth, async (req, res) => {
 // ── GET PROFILE ───────────────────────────────────────────────────────────────
 app.get('/api/profile', requireAuth, async (req, res) => {
   try {
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', req.user.id).single();
+    const { data, error } = await supabase.from('profiles').select('*').eq('id', req.user.id).maybeSingle();
     if (error) throw error;
-    res.json({ success: true, data });
+    res.json({ success: true, data: data || null });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch profile' });
   }
