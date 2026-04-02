@@ -184,12 +184,24 @@
 
   .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 16px; }
 
+  /* BASE FORM STYLES */
+  .field label { display: block; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .field input {
+    width: 100%; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 14px; transition: border-color 0.2s;
+  }
+  .field input:focus { outline: none; border-color: var(--accent); }
+  .checkbox-field { display: flex; flex-direction: column; }
+  .checkbox-wrap { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: border-color 0.2s; }
+  .checkbox-wrap:has(input:checked) { border-color: var(--accent); background: rgba(200,240,96,0.05); }
+  .checkbox-wrap input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+  .checkbox-label { font-size: 13px; color: var(--text); }
+
+  /* MOBILE OVERRIDES — must come AFTER base styles */
   @media (max-width: 600px) {
-    /* CONTENT */
     .content { padding: 12px; }
     .card { padding: 32px 20px; margin: 16px; }
 
-    /* HEADER — всі елементи в один рядок */
     header { padding: 8px 10px; gap: 4px; }
     .logo-sm { font-size: 15px; }
     .header-right { gap: 5px; }
@@ -200,37 +212,22 @@
     .role-badge { padding: 2px 5px; font-size: 9px; letter-spacing: 0.3px; }
     .btn-signout { padding: 4px 8px; font-size: 11px; }
 
-    /* TABS — рівномірно на всю ширину екрану */
     .tabs { padding: 0; overflow-x: hidden; }
     .tab { flex: 1; padding: 10px 2px; font-size: 11px; text-align: center; white-space: nowrap; }
 
-    /* UPLOAD ZONE */
     .upload-zone { padding: 12px; margin-bottom: 12px; }
     .upload-icon { font-size: 20px; margin-bottom: 4px; }
     .upload-text { font-size: 12px; }
 
-    /* FORM — рівно 2 колонки на всю ширину, компактні */
     .form-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
     .field label { font-size: 9px; letter-spacing: 0.2px; margin-bottom: 3px; }
-    .field input { padding: 7px 8px; font-size: 13px; border-radius: 6px; }
-    .checkbox-wrap { padding: 7px 8px; border-radius: 6px; }
+    .field input { padding: 8px 8px; font-size: 13px; border-radius: 6px; }
+    .checkbox-wrap { padding: 8px 8px; border-radius: 6px; gap: 6px; }
     .checkbox-label { font-size: 10px; line-height: 1.2; }
     .form-grid .field[style*="grid-column"] { grid-column: 1 / -1; }
 
-    /* SAVE BUTTON */
     .btn-save { padding: 12px; font-size: 14px; }
   }
-  .field input {
-    width: 100%; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border);
-    border-radius: 8px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 14px; transition: border-color 0.2s;
-  }
-  .field input:focus { outline: none; border-color: var(--accent); }
-
-  .checkbox-field { display: flex; flex-direction: column; }
-  .checkbox-wrap { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: border-color 0.2s; }
-  .checkbox-wrap:has(input:checked) { border-color: var(--accent); background: rgba(200,240,96,0.05); }
-  .checkbox-wrap input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
-  .checkbox-label { font-size: 13px; color: var(--text); }
 
   .earnings-preview { background: var(--surface); border: 1px solid rgba(200,240,96,0.2); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; display: none; }
   .earnings-preview.show { display: block; }
@@ -313,8 +310,6 @@
 
   /* FOOTER TOTAL ROW */
   #dash-foot tr td { border-top: 2px solid var(--border); font-weight: 700; padding-top: 14px; }
-
-  .field label { display: block; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
 </style>
 </head>
 <body>
