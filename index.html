@@ -291,9 +291,6 @@
 <!-- LOADING -->
 <div id="loading-screen"><div class="spinner"></div></div>
 
-<!-- DEBUG OVERLAY — remove after fix -->
-<div id="debug-overlay" style="display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,0.92);color:#c8f060;font-family:monospace;font-size:11px;padding:12px;z-index:9999;max-height:40vh;overflow-y:auto;border-top:1px solid #c8f060;white-space:pre-wrap;word-break:break-all"></div>
-
 <!-- LOGIN -->
 <div id="login-screen" class="screen" style="display:none">
   <div class="card">
@@ -508,15 +505,12 @@ let statsFilter = 'today', historyFilter = 'all', dashFilter = 'all';
 // ── INIT ──────────────────────────────────────────────────────────────────────
 async function init() {
   showScreen('loading');
-  dbg('init() started');
 
   // onAuthStateChange MUST come before getSession() — iOS Safari requirement
   sb.auth.onAuthStateChange(async (event, session) => {
-    dbg('authStateChange: ' + event + ' session=' + !!session);
     if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') && session) {
       if (!currentUser) await onLoggedIn(session.user, session.access_token);
     } else if (event === 'INITIAL_SESSION' && !session) {
-      dbg('INITIAL_SESSION no session → login');
       showScreen('login');
     } else if (event === 'SIGNED_OUT') {
       currentUser = null; allTrips = []; allTripsManager = [];
@@ -527,30 +521,24 @@ async function init() {
   // Fallback: if onAuthStateChange never fires, show login after 8s
   setTimeout(() => {
     if (!currentUser && document.getElementById('loading-screen').style.display !== 'none') {
-      dbg('TIMEOUT 8s — forcing login screen');
       showScreen('login');
     }
   }, 8000);
 }
 
 async function onLoggedIn(user, accessToken) {
-  dbg('onLoggedIn: ' + user.email);
   currentUser = user;
 
-  dbg('fetching profile via API...');
   let profile = null;
   try {
     const res = await fetch(`${API_URL}/api/profile`, {
       headers: { 'Authorization': `Bearer ${accessToken}` }
     });
-    dbg('profile API status=' + res.status);
     if (res.ok) {
       const json = await res.json();
       profile = json.data;
-      dbg('profile: driver_id=' + profile?.driver_id + ' role=' + profile?.role);
     }
   } catch(e) {
-    dbg('profile fetch ERROR: ' + e.message);
     showScreen('login');
     return;
   }
@@ -569,7 +557,6 @@ async function onLoggedIn(user, accessToken) {
 }
 
 async function loadApp(user, profile, accessToken) {
-  dbg('loadApp role=' + profile?.role);
   currentRole     = profile?.role || 'driver';
   currentDriverId = profile?.driver_id || null;
 
@@ -590,11 +577,8 @@ async function loadApp(user, profile, accessToken) {
   if (currentRole === 'manager') document.getElementById('tab-dashboard').style.display = '';
 
   document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
-  dbg('showScreen app...');
   showScreen('app');
-  dbg('loadTrips...');
   await loadTrips(accessToken);
-  dbg('loadTrips done');
 }
 
 // ── DRIVER ID VERIFICATION ────────────────────────────────────────────────────
@@ -637,7 +621,6 @@ document.getElementById('driver-id-input').addEventListener('keydown', e => {
 
 // ── SCREENS ───────────────────────────────────────────────────────────────────
 function showScreen(s) {
-  dbg('showScreen: ' + s);
   document.getElementById('loading-screen').style.display  = s==='loading'  ? 'flex'  : 'none';
   document.getElementById('login-screen').style.display    = s==='login'    ? 'flex'  : 'none';
   document.getElementById('driverid-screen').style.display = s==='driverid' ? 'flex'  : 'none';
@@ -660,7 +643,6 @@ async function signOut() {
 
 // ── TABS ──────────────────────────────────────────────────────────────────────
 function showTab(name) {
-  dbg('showTab: ' + name);
   ['log','stats','history','dashboard'].forEach(t => {
     const p=document.getElementById(`pane-${t}`), b=document.getElementById(`tab-${t}`);
     if (p) p.style.display=t===name?'block':'none';
@@ -905,24 +887,20 @@ async function loadTrips(accessToken) {
       const { data: { session } } = await sb.auth.getSession();
       token = session?.access_token;
     }
-    if (!token) { dbg('loadTrips: no token!'); return; }
-    dbg('loadTrips: fetching /api/trips...');
+    if (!token) { console.warn('loadTrips: no token'); return; }
     const headers = { 'Authorization': `Bearer ${token}` };
 
     const res = await fetch(`${API_URL}/api/trips`, { headers });
-    dbg('loadTrips: /api/trips status=' + res.status);
     const json = await res.json();
     if (!res.ok) throw new Error(json.error);
     allTrips = json.data || [];
-    dbg('loadTrips: got ' + allTrips.length + ' trips');
 
     const resAll = await fetch(`${API_URL}/api/trips/all`, { headers });
-    dbg('loadTrips: /api/trips/all status=' + resAll.status);
     if (resAll.ok) {
       const jsonAll = await resAll.json();
       allTripsManager = jsonAll.data || [];
     }
-  } catch (err) { dbg('loadTrips ERROR: ' + err.message); console.error('Load trips:', err); }
+  } catch (err) { console.error('Load trips:', err); }
   finally { tripsLoading = false; }
 }
 
@@ -944,7 +922,6 @@ function setStatsPeriod(f,btn) {
 }
 
 function renderStats() {
-  dbg('renderStats()...');
   const filtered=filterByPeriod(allTrips,statsFilter);
   const numEl=document.getElementById('stats-numbers');
   const ltEl=document.getElementById('last-trip-container');
@@ -1004,7 +981,6 @@ function setHistoryFilter(f,btn) {
 }
 
 function renderHistory() {
-  dbg('renderHistory()...');
   const filtered=filterByPeriod(allTrips,historyFilter);
   const tbody=document.getElementById('trips-body');
   const empty=document.getElementById('empty-history');
@@ -1135,7 +1111,6 @@ function breakdownHTML(t) {
 }
 
 function renderDashboard() {
-  dbg('renderDashboard()...');
   const filtered = getDashFiltered();
   const tbody = document.getElementById('dash-body');
   const tfoot = document.getElementById('dash-foot');
@@ -1390,43 +1365,23 @@ function setStatus(pane,type,msg) {
   if (type==='success') setTimeout(()=>el.classList.remove('show'),3000);
 }
 
-// ── DEBUG (тимчасово) ─────────────────────────────────────────────────────────
-const _dbg = [];
-function dbg(msg) {
-  _dbg.push(`[${new Date().toISOString().slice(11,23)}] ${msg}`);
-  const el = document.getElementById('debug-overlay');
-  if (el) { el.style.display = 'block'; el.textContent = _dbg.slice(-15).join('\n'); }
-  console.log('[DBG]', msg);
-}
-window.addEventListener('error', e => dbg('❌ ERROR: ' + e.message + ' @ ' + (e.filename||'').split('/').pop() + ':' + e.lineno));
-window.addEventListener('unhandledrejection', e => dbg('❌ PROMISE: ' + (e.reason?.message || String(e.reason))));
-
-dbg('📱 script start, UA=' + navigator.userAgent.slice(0,60));
-
 // ── SERVICE WORKER — auto-update on deploy ────────────────────────────────────
 if ('serviceWorker' in navigator) {
-  dbg('SW: registering...');
   navigator.serviceWorker.register('/sw.js').then(reg => {
-    dbg('SW: registered, state=' + (reg.active?.state || 'none'));
     reg.update();
     reg.addEventListener('updatefound', () => {
-      dbg('SW: update found');
       const nw = reg.installing;
       nw.addEventListener('statechange', () => {
-        dbg('SW: installing state=' + nw.state);
         if (nw.state === 'installed' && navigator.serviceWorker.controller) {
           nw.postMessage({ type: 'SKIP_WAITING' });
         }
       });
     });
-  }).catch(e => dbg('SW: register FAILED: ' + e.message));
+  });
   let refreshing = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    dbg('SW: controllerchange → reload');
     if (!refreshing) { refreshing = true; window.location.reload(); }
   });
-} else {
-  dbg('SW: not supported');
 }
 
 init();
