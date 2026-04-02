@@ -493,11 +493,16 @@
 
 <script>
 const SUPABASE_URL  = 'https://uljmcbrorgjrrvoxzmdb.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsam1jYnJvcmdqcnJ2b3h6bWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQzNzAsImV4cCI6MjA4OTg4MDM3MH0.gzfN9ayldCSF0kRSfSCT9Np02Dpke8ZSS42iJLBhzmA';
+const SUPABASE_ANON = '%%VITE_SUPABASE_ANON_KEY%%';
 const API_URL       = 'https://limopay-production.up.railway.app';
 
 const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+// Disable navigator.locks — fixes iOS Safari hang on getSession()
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
+  auth: {
+    lock: async (name, acquireTimeout, fn) => fn(),
+  }
+});
 
 let currentUser = null, currentRole = 'driver', currentDriverId = null, allTrips = [], allTripsManager = [];
 let statsFilter = 'today', historyFilter = 'all', dashFilter = 'all';
