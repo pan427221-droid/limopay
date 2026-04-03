@@ -331,8 +331,9 @@
   .dash-row { cursor: pointer; }
   .dash-row:hover td { background: rgba(200,240,96,0.05); }
   .dash-row td:first-child { color: var(--muted); font-size: var(--fs-xs); }
-  .expand-icon { transition: transform 0.2s; display: inline-block; }
-  .expanded .expand-icon { transform: rotate(90deg); }
+  .expand-icon { transition: transform 0.2s; display: inline-block; color: var(--muted); vertical-align: middle; }
+  .expand-icon svg { transition: transform 0.2s; display: block; }
+  .expanded .expand-icon svg, .expand-icon[style*="rotate"] { transform: rotate(90deg); }
   .breakdown-row td { padding: 0; }
   .breakdown-content { padding: clamp(8px, 2vw, 12px) clamp(10px, 2.5vw, 16px); background: var(--surface2); border-bottom: 1px solid var(--border); display: none; }
   .breakdown-content.show { display: block; }
@@ -455,7 +456,7 @@
     </div>
     <div class="earnings-preview" id="earnings-preview">
       <div class="ep-title">Earnings Breakdown</div>
-      <div class="ep-row"><span>Adjusted Base</span><span class="ep-val" id="ep-adj-base">$0.00</span></div>
+      <div class="ep-row"><span>Adjusted Base<br><span style="font-size:10px;color:var(--muted);font-weight:400">Base + wait + fees − discount + expenses</span></span><span class="ep-val" id="ep-adj-base">$0.00</span></div>
       <div class="ep-row" style="font-size:12px;color:var(--muted)"><span>Extra Stop</span><span class="ep-val" id="ep-extrastop">$0.00</span></div>
       <div class="ep-row"><span>Base × 38%</span><span class="ep-val" id="ep-base-pct">$0.00</span></div>
       <div class="ep-row"><span>Gratuity</span><span class="ep-val" id="ep-gratuity">$0.00</span></div>
@@ -467,7 +468,10 @@
       <div class="ep-row total"><span>Your Earnings</span><span class="ep-val" id="ep-total">$0.00</span></div>
       <div class="ep-row" style="color:var(--accent2);font-size:13px;border-top:1px solid var(--border);margin-top:4px;padding-top:8px"><span>Cash Tips (private)</span><span class="ep-val" id="ep-cash-tips">$0.00</span></div>
     </div>
-    <button class="btn-save" id="btn-save" onclick="saveTrip()">Save Trip</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn-save" id="btn-save" onclick="saveTrip()" style="flex:1">Save Trip</button>
+      <button id="btn-cancel-edit" onclick="cancelEdit()" style="display:none;padding:14px 16px;background:transparent;border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);font-family:'Syne',sans-serif;font-size:14px;cursor:pointer;white-space:nowrap">Cancel</button>
+    </div>
   </div>
 
   <!-- MY STATS -->
@@ -503,26 +507,36 @@
       <button class="period-btn"        onclick="setHistoryFilter('week',this)">This Week</button>
       <button class="period-btn"        onclick="setHistoryFilter('month',this)">This Month</button>
     </div>
-    <!-- Date range filter -->
-    <div class="dash-filters" style="margin-bottom:12px">
-      <div class="filter-group">
-        <label class="filter-label">From</label>
-        <input type="date" id="hist-date-from" class="filter-input" onchange="renderHistory()">
+    <!-- Booking ID search -->
+    <div style="margin-bottom:10px;position:relative">
+      <input type="text" id="hist-search" placeholder="Search by Booking ID…" maxlength="7"
+        oninput="this.value=this.value.replace(/[^0-9]/g,'');renderHistory()"
+        style="width:100%;padding:8px 12px 8px 34px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:'DM Mono',monospace;font-size:13px">
+      <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:0.4" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    </div>
+    <!-- Date range filter — compact row -->
+    <div style="display:flex;gap:6px;align-items:flex-end;margin-bottom:12px">
+      <div style="flex:1;min-width:0">
+        <div class="filter-label" style="margin-bottom:3px">From</div>
+        <input type="date" id="hist-date-from" class="filter-input" style="width:100%;min-width:0" onchange="renderHistory()">
       </div>
-      <div class="filter-group">
-        <label class="filter-label">To</label>
-        <input type="date" id="hist-date-to" class="filter-input" onchange="renderHistory()">
+      <div style="flex:1;min-width:0">
+        <div class="filter-label" style="margin-bottom:3px">To</div>
+        <input type="date" id="hist-date-to" class="filter-input" style="width:100%;min-width:0" onchange="renderHistory()">
       </div>
-      <button class="filter-reset" onclick="resetHistoryDates()">Reset</button>
+      <button class="filter-reset" style="flex-shrink:0;align-self:flex-end" onclick="resetHistoryDates()">Reset</button>
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th></th><th>Date</th><th>Booking</th><th>Total</th><th>Earnings</th><th></th></tr></thead>
+        <thead><tr><th style="width:24px"></th><th>Date</th><th>Booking</th><th>Total</th><th>Earnings</th><th style="width:52px"></th></tr></thead>
         <tbody id="trips-body"></tbody>
       </table>
     </div>
     <div id="empty-history" class="empty-state" style="display:none">
-      <div class="icon">🚗</div><div>No trips yet. Log your first trip!</div>
+      <div class="icon" style="font-size:28px;opacity:0.4">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1.5" fill="currentColor" stroke="none"/></svg>
+      </div>
+      <div style="margin-top:8px">No trips yet. Log your first trip!</div>
     </div>
   </div>
 
@@ -547,6 +561,13 @@
       </div>
       <button class="filter-reset" onclick="resetDashFilters()">Reset</button>
       <button class="btn-export" onclick="exportXLSX()">Export XLSX</button>
+    </div>
+    <!-- Booking ID search -->
+    <div style="margin-bottom:10px;position:relative">
+      <input type="text" id="dash-search" placeholder="Search by Booking ID…" maxlength="7"
+        oninput="this.value=this.value.replace(/[^0-9]/g,'');renderDashboard()"
+        style="width:100%;padding:8px 12px 8px 34px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:'DM Mono',monospace;font-size:13px">
+      <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:0.4" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
     </div>
 
     <!-- QUICK PERIOD BUTTONS -->
@@ -593,6 +614,7 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
 let currentUser = null, currentRole = 'driver', currentDriverId = null, allTrips = [], allTripsManager = [], fuelExpenses = [];
 let statsFilter = 'today', historyFilter = 'all', dashFilter = 'all';
+let editingTripId = null; // null = new trip, id = editing existing
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 async function init() {
@@ -668,7 +690,7 @@ async function loadApp(user, profile, accessToken) {
 
   if (currentRole === 'manager') document.getElementById('tab-dashboard').style.display = '';
 
-  document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('f-date').value = localToday();
   showScreen('app');
   await loadTrips(accessToken);
 }
@@ -809,6 +831,8 @@ function removeImage(idx) {
 async function parseAllImages() {
   if (!uploadedImages.length) return;
   setStatus('log', 'loading', `Parsing ${uploadedImages.length} screenshot${uploadedImages.length>1?'s':''} with AI...`);
+  // Save user's manually entered date before parsing
+  const userDate = document.getElementById('f-date').value;
   try {
     const { data: { session } } = await sb.auth.getSession();
     const res = await fetch(`${API_URL}/api/parse-screenshot`, {
@@ -818,7 +842,7 @@ async function parseAllImages() {
     });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error);
-    fillForm(json.data);
+    fillForm(json.data, userDate);
     const msg = uploadedImages.length > 1
       ? `✓ ${uploadedImages.length} screenshots merged successfully`
       : '✓ Screenshot parsed successfully';
@@ -826,8 +850,15 @@ async function parseAllImages() {
   } catch { setStatus('log', 'error', 'Could not parse screenshot(s). Fill in manually.'); }
 }
 
-function fillForm(d) {
-  if (d.date)           document.getElementById('f-date').value      = d.date;
+function fillForm(d, preserveDate) {
+  // Only set date from AI if user hasn't manually changed it from today's default
+  const currentDate = document.getElementById('f-date').value;
+  const todayDefault = localToday();
+  if (d.date && !preserveDate && currentDate === todayDefault) {
+    document.getElementById('f-date').value = d.date;
+  } else if (preserveDate) {
+    document.getElementById('f-date').value = preserveDate;
+  }
   if (d.booking_id && /^\d{7}$/.test(String(d.booking_id)))   document.getElementById('f-booking').value   = d.booking_id;
   if (d.base_fare)      document.getElementById('f-base').value      = d.base_fare;
   if (d.wait_time)      document.getElementById('f-wait').value      = d.wait_time;
@@ -898,65 +929,117 @@ function calcEarnings() {
   document.getElementById('earnings-preview').classList.toggle('show', base > 0);
 }
 
+// ── EDIT TRIP ─────────────────────────────────────────────────────────────────
+function startEditTrip(id) {
+  const t = [...allTrips, ...allTripsManager].find(x => x.id === id);
+  if (!t) return;
+  editingTripId = id;
+
+  // Fill form with trip data
+  document.getElementById('f-date').value      = t.date || localToday();
+  document.getElementById('f-booking').value   = t.booking_id || '';
+  document.getElementById('f-base').value      = t.base_fare || '';
+  document.getElementById('f-wait').value      = t.wait_time || '';
+  document.getElementById('f-greet').checked   = (t.greet_fee || 0) > 0;
+  document.getElementById('f-carseat').value   = t.car_seat_count || 0;
+  document.getElementById('f-eventwait').value = t.event_wait || '';
+  document.getElementById('f-extrastop').value = t.extra_stop || '';
+  document.getElementById('f-holiday').checked = (t.holiday_pay || 0) > 0;
+  document.getElementById('f-discount').value  = t.discount || '';
+  document.getElementById('f-expenses').value  = t.expenses || '';
+  document.getElementById('f-gratuity').value  = t.gratuity || '';
+  document.getElementById('f-fuel').value      = t.fuel_surcharge || '';
+  document.getElementById('f-parking').value   = t.parking || '';
+  document.getElementById('f-airport').value   = t.airport_fee || '';
+  document.getElementById('f-tolls').value     = t.tolls || '';
+  document.getElementById('f-total').value     = t.total || '';
+  document.getElementById('f-cash-tips').value = t.cash_tips || '';
+
+  // Update UI to show edit mode
+  document.getElementById('btn-save').textContent = 'Update Trip';
+  document.getElementById('btn-cancel-edit').style.display = 'block';
+  setStatus('log', 'loading', `Editing booking #${t.booking_id}`);
+  calcEarnings();
+  showTab('log');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function cancelEdit() {
+  editingTripId = null;
+  document.getElementById('btn-save').textContent = 'Save Trip';
+  document.getElementById('btn-cancel-edit').style.display = 'none';
+  clearForm();
+  setStatus('log', 'success', '');
+}
+
 // ── SAVE TRIP ─────────────────────────────────────────────────────────────────
 async function saveTrip() {
   const bookingId = document.getElementById('f-booking').value.trim();
   const baseFare  = parseFloat(document.getElementById('f-base').value) || 0;
   const total     = parseFloat(document.getElementById('f-total').value) || 0;
 
-  if (!bookingId) {
-    setStatus('log','error','Booking ID є обов\'язковим.');
-    return;
-  }
-  if (!/^\d{7}$/.test(bookingId)) {
-    setStatus('log','error','Booking ID must be exactly 7 digits.');
-    return;
-  }
-  if (baseFare <= 0) {
-    setStatus('log','error','Base Fare є обов\'язковим.');
-    return;
-  }
-  if (total <= 0) {
-    setStatus('log','error','Total Fare є обов\'язковим.');
-    return;
-  }
-  const btn=document.getElementById('btn-save');
-  btn.disabled=true; btn.textContent='Saving...';
+  if (!bookingId) { setStatus('log','error','Booking ID є обов\'язковим.'); return; }
+  if (!/^\d{7}$/.test(bookingId)) { setStatus('log','error','Booking ID must be exactly 7 digits.'); return; }
+  if (baseFare <= 0) { setStatus('log','error','Base Fare є обов\'язковим.'); return; }
+  if (total <= 0) { setStatus('log','error','Total Fare є обов\'язковим.'); return; }
+
+  const btn = document.getElementById('btn-save');
+  btn.disabled = true; btn.textContent = editingTripId ? 'Updating...' : 'Saving...';
+
   try {
     const { data: { session } } = await sb.auth.getSession();
     const seatQty = parseInt(document.getElementById('f-carseat').value)||0;
-    const res = await fetch(`${API_URL}/api/trips`, {
-      method: 'POST',
+    const payload = {
+      date:           document.getElementById('f-date').value,
+      booking_id:     bookingId,
+      base_fare:      parseFloat(document.getElementById('f-base').value)||0,
+      wait_time:      parseFloat(document.getElementById('f-wait').value)||0,
+      greet_fee:      document.getElementById('f-greet').checked ? 40 : 0,
+      car_seat_count: seatQty,
+      car_seat_fee:   carSeatFee(seatQty),
+      event_wait:     parseFloat(document.getElementById('f-eventwait').value)||0,
+      extra_stop:     parseFloat(document.getElementById('f-extrastop').value)||0,
+      holiday_pay:    document.getElementById('f-holiday').checked ? 20 : 0,
+      discount:       parseFloat(document.getElementById('f-discount').value)||0,
+      expenses:       parseFloat(document.getElementById('f-expenses').value)||0,
+      gratuity:       parseFloat(document.getElementById('f-gratuity').value)||0,
+      fuel_surcharge: parseFloat(document.getElementById('f-fuel').value)||0,
+      parking:        parseFloat(document.getElementById('f-parking').value)||0,
+      airport_fee:    parseFloat(document.getElementById('f-airport').value)||0,
+      tolls:          parseFloat(document.getElementById('f-tolls').value)||0,
+      total,
+      cash_tips:      parseFloat(document.getElementById('f-cash-tips').value)||0,
+      driver_id:      currentDriverId,
+    };
+
+    const isEdit = !!editingTripId;
+    const url    = isEdit ? `${API_URL}/api/trips/${editingTripId}` : `${API_URL}/api/trips`;
+    const method = isEdit ? 'PUT' : 'POST';
+
+    const res = await fetch(url, {
+      method,
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-      body: JSON.stringify({
-        date:           document.getElementById('f-date').value,
-        booking_id:     document.getElementById('f-booking').value,
-        base_fare:      parseFloat(document.getElementById('f-base').value)||0,
-        wait_time:      parseFloat(document.getElementById('f-wait').value)||0,
-        greet_fee:      document.getElementById('f-greet').checked ? 40 : 0,
-        car_seat_count: seatQty,
-        car_seat_fee:   carSeatFee(seatQty),
-        event_wait:     parseFloat(document.getElementById('f-eventwait').value)||0,
-        extra_stop:     parseFloat(document.getElementById('f-extrastop').value)||0,
-        holiday_pay:    document.getElementById('f-holiday').checked ? 20 : 0,
-        discount:       parseFloat(document.getElementById('f-discount').value)||0,
-        expenses:       parseFloat(document.getElementById('f-expenses').value)||0,
-        gratuity:       parseFloat(document.getElementById('f-gratuity').value)||0,
-        fuel_surcharge: parseFloat(document.getElementById('f-fuel').value)||0,
-        parking:        parseFloat(document.getElementById('f-parking').value)||0,
-        airport_fee:    parseFloat(document.getElementById('f-airport').value)||0,
-        tolls:          parseFloat(document.getElementById('f-tolls').value)||0,
-        total:          parseFloat(document.getElementById('f-total').value)||0,
-        cash_tips:      parseFloat(document.getElementById('f-cash-tips').value)||0,
-        driver_id:      currentDriverId,
-      })
+      body: JSON.stringify(payload)
     });
-    const json=await res.json();
+    const json = await res.json();
     if (!res.ok) throw new Error(json.error);
-    setStatus('log','success','✓ Trip saved!');
-    allTrips.unshift(json.data);
+
+    if (isEdit) {
+      // Update in local arrays
+      const updated = json.data;
+      allTrips = allTrips.map(t => t.id === editingTripId ? updated : t);
+      allTripsManager = allTripsManager.map(t => t.id === editingTripId ? updated : t);
+      setStatus('log','success','✓ Trip updated!');
+    } else {
+      allTrips.unshift(json.data);
+      setStatus('log','success','✓ Trip saved!');
+    }
+
+    editingTripId = null;
+    document.getElementById('btn-cancel-edit').style.display = 'none';
     clearForm();
-  } catch(err) { setStatus('log','error','Failed to save: '+err.message); }
+    renderHistory(); renderStats(); renderDashboard();
+  } catch(err) { setStatus('log','error','Failed: '+err.message); }
   finally { btn.disabled=false; btn.textContent='Save Trip'; }
 }
 
@@ -964,7 +1047,7 @@ function clearForm() {
   ['f-booking','f-base','f-wait','f-carseat','f-eventwait','f-extrastop','f-discount','f-expenses','f-gratuity','f-fuel','f-parking','f-airport','f-tolls','f-total','f-cash-tips'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f-greet').checked = false;
   document.getElementById('f-holiday').checked = false;
-  document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('f-date').value=localToday();
   // Clear multi-image state
   uploadedImages.forEach(img => URL.revokeObjectURL(img.objectUrl));
   uploadedImages = [];
@@ -1011,7 +1094,7 @@ async function loadTrips(accessToken) {
 // ── FUEL EXPENSE SAVE ─────────────────────────────────────────────────────────
 let fuelSaveTimer = null;
 async function saveFuelExpense(amount) {
-  const today = new Date().toISOString().split('T')[0];
+  const today = localToday();
   // Debounce — save 800ms after user stops typing
   clearTimeout(fuelSaveTimer);
   fuelSaveTimer = setTimeout(async () => {
@@ -1031,14 +1114,42 @@ async function saveFuelExpense(amount) {
   }, 800);
 }
 
-function filterByPeriod(trips,f) {
-  const now=new Date(),today=now.toISOString().split('T')[0];
-  return trips.filter(t=>{
-    if (f==='today') return t.date===today;
-    if (f==='week')  { const d=new Date(t.date),w=new Date(now); w.setDate(w.getDate()-7); return d>=w; }
-    if (f==='month') { const d=new Date(t.date); return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear(); }
-    return true;
-  });
+// ── DATE HELPERS ──────────────────────────────────────────────────────────────
+function localToday() {
+  // Use local date (not UTC) to avoid timezone mismatch on mobile
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+
+function startOfWeek() {
+  // Monday of current calendar week (local time)
+  const d = new Date();
+  const dayOfWeek = d.getDay(); // 0=Sun, 1=Mon...
+  const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // days back to Monday
+  d.setDate(d.getDate() + diff);
+  d.setHours(0,0,0,0);
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+
+function startOfMonth() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  return `${y}-${m}-01`;
+}
+
+function filterByPeriod(trips, f) {
+  const today = localToday();
+  if (f === 'today') return trips.filter(t => t.date === today);
+  if (f === 'week')  return trips.filter(t => t.date >= startOfWeek() && t.date <= today);
+  if (f === 'month') return trips.filter(t => t.date >= startOfMonth() && t.date <= today);
+  return trips;
 }
 
 // ── MY STATS ──────────────────────────────────────────────────────────────────
@@ -1058,7 +1169,7 @@ function renderStats() {
   const netEl = document.getElementById('stats-net');
 
   // Get fuel for current period from DB
-  const today = new Date().toISOString().split('T')[0];
+  const today = localToday();
   const now = new Date();
 
   // Populate today's fuel input from DB
@@ -1177,11 +1288,12 @@ function resetHistoryDates() {
 
 function renderHistory() {
   let filtered = filterByPeriod(allTrips, historyFilter);
-  // Apply custom date range on top
-  const from = document.getElementById('hist-date-from')?.value;
-  const to   = document.getElementById('hist-date-to')?.value;
+  const from   = document.getElementById('hist-date-from')?.value;
+  const to     = document.getElementById('hist-date-to')?.value;
+  const search = (document.getElementById('hist-search')?.value || '').trim();
   if (from) filtered = filtered.filter(t => t.date >= from);
   if (to)   filtered = filtered.filter(t => t.date <= to);
+  if (search) filtered = filtered.filter(t => (t.booking_id||'').includes(search));
 
   const tbody = document.getElementById('trips-body');
   const empty = document.getElementById('empty-history');
@@ -1190,12 +1302,39 @@ function renderHistory() {
 
   tbody.innerHTML = filtered.map(t => {
     const isDeleted = t.deleted_by === 'manager';
+    const isEdited  = !!t.edited_at;
+
     const actionCell = isDeleted
       ? `<span style="font-size:10px;color:var(--danger);border:1px solid var(--danger);border-radius:4px;padding:2px 5px">Del. by mgr</span>`
-      : `<button class="btn-delete" onclick="event.stopPropagation();deleteTrip('${t.id}')">✕</button>`;
+      : `<div style="display:flex;gap:4px;align-items:center">
+           <button class="btn-delete" style="padding:3px 6px;font-size:10px" onclick="event.stopPropagation();startEditTrip('${t.id}')">✏️</button>
+           <button class="btn-delete" onclick="event.stopPropagation();deleteTrip('${t.id}')">✕</button>
+         </div>`;
 
-    // Breakdown details (hidden by default)
+    const editedBadge = isEdited
+      ? `<span style="font-size:9px;color:var(--accent2);border:1px solid rgba(96,212,240,0.4);border-radius:3px;padding:1px 4px;margin-left:4px">edited</span>`
+      : '';
+
     const adjB = (t.base_fare||0)+(t.wait_time||0)+(t.greet_fee||0)+(t.car_seat_fee||0)+(t.event_wait||0)+(t.extra_stop||0)-(t.discount||0)+(t.expenses||0);
+
+    // Diff section if edited
+    let diffSection = '';
+    if (isEdited && t.edit_diff) {
+      const diffItems = Object.entries(t.edit_diff).map(([field, {was, now}]) =>
+        `<div class="bd-item" style="border-color:rgba(96,212,240,0.2)">
+          <div class="bd-item-label" style="color:var(--accent2)">${field.replace(/_/g,' ')}</div>
+          <div class="bd-item-val" style="font-size:11px">
+            <span style="color:var(--danger);text-decoration:line-through">${typeof was==='number'?fmt(was):was}</span>
+            <span style="color:var(--accent)"> → ${typeof now==='number'?fmt(now):now}</span>
+          </div>
+        </div>`
+      ).join('');
+      diffSection = `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+        <div class="bd-item-label" style="color:var(--accent2);margin-bottom:6px">Changes from original:</div>
+        <div class="bd-grid">${diffItems}</div>
+      </div>`;
+    }
+
     const details = `
       <div class="bd-grid" style="padding:10px 0 4px">
         ${[
@@ -1208,16 +1347,16 @@ function renderHistory() {
           `<div class="bd-item"><div class="bd-item-label">${label}</div><div class="bd-item-val">${fmt(val||0)}</div></div>`
         ).join('')}
         ${t.cash_tips>0?`<div class="bd-item" style="border-color:rgba(96,212,240,0.3)"><div class="bd-item-label" style="color:var(--accent2)">Cash Tips</div><div class="bd-item-val" style="color:var(--accent2)">${fmt(t.cash_tips)}</div></div>`:''}
-      </div>`;
+      </div>${diffSection}`;
 
     return `
       <tr class="dash-row" onclick="toggleHistoryRow('hbd-${t.id}', this)">
-        <td><span class="expand-icon" id="hexp-${t.id}">▶</span></td>
-        <td class="mono">${t.date}</td>
-        <td style="color:var(--muted);font-size:12px">${t.booking_id||'—'}</td>
-        <td class="mono">${fmt(t.total||0)}</td>
-        <td class="earn-val">${fmt(t.earnings||0)}</td>
-        <td>${actionCell}</td>
+        <td><span class="expand-icon" id="hexp-${t.id}"><svg class="expand-icon" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 2l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+        <td class="mono" style="font-size:11px">${t.date}</td>
+        <td style="color:var(--muted);font-size:11px">${t.booking_id||'—'}${editedBadge}</td>
+        <td class="mono" style="font-size:11px">${fmt(t.total||0)}</td>
+        <td class="earn-val" style="font-size:11px">${fmt(t.earnings||0)}</td>
+        <td onclick="event.stopPropagation()">${actionCell}</td>
       </tr>
       <tr><td colspan="6" style="padding:0">
         <div class="breakdown-content" id="hbd-${t.id}">${details}</div>
@@ -1229,9 +1368,8 @@ function toggleHistoryRow(bdId, row) {
   const bd = document.getElementById(bdId);
   if (!bd) return;
   const isOpen = bd.classList.toggle('show');
-  // find expand icon in this row
-  const icon = row.querySelector('.expand-icon');
-  if (icon) icon.style.transform = isOpen ? 'rotate(90deg)' : '';
+  const svg = row.querySelector('.expand-icon svg');
+  if (svg) svg.style.transform = isOpen ? 'rotate(90deg)' : '';
 }
 
 async function deleteTripManager(id, bookingId) {
@@ -1270,17 +1408,13 @@ async function deleteTrip(id) {
 function setDashQuick(period, btn) {
   document.querySelectorAll('#pane-dashboard .period-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  const now = new Date();
-  const today = now.toISOString().split('T')[0];
+  const today = localToday();
   const fromEl = document.getElementById('dash-date-from');
   const toEl = document.getElementById('dash-date-to');
   if (period === 'today') { fromEl.value = today; toEl.value = today; }
-  else if (period === 'week') {
-    const w = new Date(now); w.setDate(w.getDate()-6);
-    fromEl.value = w.toISOString().split('T')[0]; toEl.value = today;
-  } else if (period === 'month') {
-    fromEl.value = today.slice(0,7)+'-01'; toEl.value = today;
-  } else { fromEl.value = ''; toEl.value = ''; }
+  else if (period === 'week') { fromEl.value = startOfWeek(); toEl.value = today; }
+  else if (period === 'month') { fromEl.value = startOfMonth(); toEl.value = today; }
+  else { fromEl.value = ''; toEl.value = ''; }
   renderDashboard();
 }
 
@@ -1305,10 +1439,12 @@ function getDashFiltered() {
   const from   = document.getElementById('dash-date-from')?.value;
   const to     = document.getElementById('dash-date-to')?.value;
   const driver = document.getElementById('dash-driver-filter')?.value;
+  const search = (document.getElementById('dash-search')?.value || '').trim();
   return allTripsManager.filter(t => {
     if (from && t.date < from) return false;
     if (to   && t.date > to)   return false;
     if (driver && t.driver_id !== driver) return false;
+    if (search && !(t.booking_id||'').includes(search)) return false;
     return true;
   });
 }
@@ -1323,6 +1459,22 @@ function toggleBreakdown(id) {
 }
 
 function breakdownHTML(t) {
+  let diffSection = '';
+  if (t.edited_at && t.edit_diff) {
+    const diffItems = Object.entries(t.edit_diff).map(([field, {was, now}]) =>
+      `<div class="bd-item" style="border-color:rgba(96,212,240,0.2)">
+        <div class="bd-item-label" style="color:var(--accent2)">${field.replace(/_/g,' ')}</div>
+        <div class="bd-item-val" style="font-size:11px">
+          <span style="color:var(--danger);text-decoration:line-through">${typeof was==='number'?fmt(was):was}</span>
+          <span style="color:var(--accent)"> → ${typeof now==='number'?fmt(now):now}</span>
+        </div>
+      </div>`
+    ).join('');
+    diffSection = `<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">
+      <div class="bd-item-label" style="color:var(--accent2);margin-bottom:6px">Changes from original:</div>
+      <div class="bd-grid">${diffItems}</div>
+    </div>`;
+  }
   return `<div class="bd-grid">
     <div class="bd-item"><div class="bd-item-label">Base Fare</div><div class="bd-item-val">${fmt(t.base_fare||0)}</div></div>
     <div class="bd-item"><div class="bd-item-label">Wait Time</div><div class="bd-item-val">${fmt(t.wait_time||0)}</div></div>
@@ -1338,7 +1490,7 @@ function breakdownHTML(t) {
     <div class="bd-item"><div class="bd-item-label">Parking</div><div class="bd-item-val">${fmt(t.parking||0)}</div></div>
     <div class="bd-item"><div class="bd-item-label">Airport Fee</div><div class="bd-item-val">${fmt(t.airport_fee||0)}</div></div>
     <div class="bd-item"><div class="bd-item-label">Tolls (co.)</div><div class="bd-item-val muted">${fmt(t.tolls||0)}</div></div>
-  </div>`;
+  </div>${diffSection}`;
 }
 
 function renderDashboard() {
@@ -1372,17 +1524,21 @@ function renderDashboard() {
 
   tbody.innerHTML = filtered.map(t => `
     <tr class="dash-row" id="tr-${t.id}" onclick="toggleBreakdown('${t.id}')">
-      <td><span class="expand-icon">▶</span></td>
-      <td class="mono">${t.date}</td>
+      <td><span class="expand-icon"><svg class="expand-icon" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 2l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+      <td class="mono" style="font-size:11px">${t.date}</td>
       <td><span class="driver-id-badge">#${t.driver_id||'—'}</span></td>
-      <td style="color:var(--muted)">
+      <td style="color:var(--muted);font-size:11px">
         ${t.booking_id||'—'}
-        ${t.deleted_by === 'driver' ? '<span style="font-size:10px;color:var(--danger);border:1px solid var(--danger);border-radius:4px;padding:2px 5px;margin-left:6px">Deleted by driver</span>' : ''}
+        ${t.deleted_by === 'driver' ? '<span style="font-size:9px;color:var(--danger);border:1px solid var(--danger);border-radius:3px;padding:1px 4px;margin-left:4px">del by driver</span>' : ''}
+        ${t.edited_at ? '<span style="font-size:9px;color:var(--accent2);border:1px solid rgba(96,212,240,0.4);border-radius:3px;padding:1px 4px;margin-left:4px">edited</span>' : ''}
       </td>
-      <td class="mono">${fmt(t.total||0)}</td>
-      <td class="earn-val">${fmt(t.earnings||0)}</td>
+      <td class="mono" style="font-size:11px">${fmt(t.total||0)}</td>
+      <td class="earn-val" style="font-size:11px">${fmt(t.earnings||0)}</td>
       <td onclick="event.stopPropagation()">
-        <button class="btn-delete" onclick="deleteTripManager('${t.id}', '${t.booking_id||''}')">✕</button>
+        <div style="display:flex;gap:3px">
+          <button class="btn-delete" style="padding:3px 6px;font-size:10px" onclick="startEditTrip('${t.id}')">✏️</button>
+          <button class="btn-delete" onclick="deleteTripManager('${t.id}', '${t.booking_id||''}')">✕</button>
+        </div>
       </td>
     </tr>
     <tr class="breakdown-row">
@@ -1403,7 +1559,7 @@ function renderDashboard() {
 
   tfoot.innerHTML = `
     <tr class="dash-row" id="tr-total" onclick="toggleBreakdown('total')">
-      <td><span class="expand-icon">▶</span></td>
+      <td><span class="expand-icon"><svg class="expand-icon" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 2l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
       <td colspan="2" style="font-weight:700;color:var(--text)">TOTAL (${filtered.length} trips)</td>
       <td></td>
       <td class="mono" style="font-weight:700">${fmt(rev)}</td>
@@ -1607,7 +1763,7 @@ async function exportXLSX() {
   const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  const dateStr = new Date().toISOString().split('T')[0];
+  const dateStr = localToday();
   a.href = url;
   a.download = `limopay_${driverVal ? 'driver' + driverVal + '_' : ''}${dateStr}.xlsx`;
   a.click();

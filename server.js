@@ -115,7 +115,7 @@ Return ONLY valid JSON with these fields (use null if not found):
   "total": number
 }
 Notes:
-- booking_id: the reservation/booking number - look for a 7-digit number (do NOT use passenger count, seat numbers, or other numbers)
+- booking_id: look specifically for the word "Reservation" followed by a 7-digit number (e.g. "Reservation 3909603" → "3909603"). Do NOT use passenger count, seat numbers, phone numbers, or any other 7-digit number that is not preceded by "Reservation".
 - base_fare: the base/booking fare before any additions
 - wait_time: waiting charge (billed per 15min at $15 each)
 - greet_fee: meet & greet airport fee ($40 fixed)
@@ -307,7 +307,75 @@ app.post('/api/trips', requireAuth, async (req, res) => {
   }
 });
 
-// ── DELETE TRIP (soft delete) ─────────────────────────────────────────────────
+// ── EDIT TRIP ─────────────────────────────────────────────────────────────────
+app.put('/api/trips/:id', requireAuth, async (req, res) => {
+  try {
+    const { data: existing, error: fetchErr } = await supabase
+      .from('trips').select('*').eq('id', req.params.id).single();
+    if (fetchErr || !existing) return res.status(404).json({ error: 'Trip not found' });
+
+    // Only owner or manager can edit
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', req.user.id).single();
+    const isManager = profile?.role === 'manager';
+    if (!isManager && existing.user_id !== req.user.id)
+      return res.status(403).json({ error: 'Access denied' });
+
+    const NUMERIC_FIELDS = ['base_fare','wait_time','greet_fee','car_seat_fee','event_wait',
+      'extra_stop','holiday_pay','discount','expenses','gratuity','fuel_surcharge',
+      'parking','airport_fee','tolls','total','cash_tips'];
+    const STRING_FIELDS = ['date','booking_id'];
+
+    // Build diff — compare only changed fields
+    const diff = {};
+    [...NUMERIC_FIELDS, ...STRING_FIELDS].forEach(field => {
+      if (req.body[field] !== undefined) {
+        const oldVal = existing[field];
+        const newVal = NUMERIC_FIELDS.includes(field) ? (parseFloat(req.body[field]) || 0) : req.body[field];
+        if (String(oldVal) !== String(newVal)) {
+          diff[field] = { was: oldVal, now: newVal };
+        }
+      }
+    });
+
+    if (Object.keys(diff).length === 0)
+      return res.status(400).json({ error: 'No changes detected.' });
+
+    const {
+      date, booking_id, base_fare, wait_time, greet_fee, car_seat_count,
+      car_seat_fee, event_wait, extra_stop, holiday_pay, discount, expenses, gratuity,
+      fuel_surcharge, parking, airport_fee, tolls, total, cash_tips
+    } = req.body;
+
+    const tripData = {
+      base_fare: parseFloat(base_fare)||0, wait_time: parseFloat(wait_time)||0,
+      greet_fee: parseFloat(greet_fee)||0, car_seat_fee: parseFloat(car_seat_fee)||0,
+      event_wait: parseFloat(event_wait)||0, extra_stop: parseFloat(extra_stop)||0,
+      holiday_pay: parseFloat(holiday_pay)||0, discount: parseFloat(discount)||0,
+      expenses: parseFloat(expenses)||0, gratuity: parseFloat(gratuity)||0,
+      fuel_surcharge: parseFloat(fuel_surcharge)||0, parking: parseFloat(parking)||0,
+      airport_fee: parseFloat(airport_fee)||0, tolls: parseFloat(tolls)||0,
+    };
+    const earnings = calcEarnings(tripData);
+
+    const { data, error } = await supabase.from('trips').update({
+      date, booking_id,
+      ...tripData,
+      car_seat_count: car_seat_count || 0,
+      total: parseFloat(total)||0,
+      cash_tips: parseFloat(cash_tips)||0,
+      earnings,
+      edited_at: new Date().toISOString(),
+      // Only save diff on first edit (preserve original diff)
+      edit_diff: existing.edit_diff || diff,
+    }).eq('id', req.params.id).select().single();
+
+    if (error) throw error;
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error('Edit trip error:', err);
+    res.status(500).json({ error: 'Failed to edit trip: ' + err.message });
+  }
+});
 app.delete('/api/trips/:id', requireAuth, async (req, res) => {
   try {
     const { data: profile } = await supabase
