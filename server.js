@@ -240,6 +240,51 @@ app.post('/api/trips', requireAuth, async (req, res) => {
   }
 });
 
+// ── UPDATE TRIP ───────────────────────────────────────────────────────────────
+app.patch('/api/trips/:id', requireAuth, async (req, res) => {
+  try {
+    const {
+      date, booking_id, base_fare, wait_time, greet_fee, car_seat_count,
+      car_seat_fee, event_wait, extra_stop, discount, expenses, gratuity,
+      fuel_surcharge, parking, airport_fee, tolls, total
+    } = req.body;
+
+    const tripData = {
+      base_fare:      base_fare      || 0,
+      wait_time:      wait_time      || 0,
+      greet_fee:      greet_fee      || 0,
+      car_seat_count: car_seat_count || 0,
+      car_seat_fee:   car_seat_fee   || 0,
+      event_wait:     event_wait     || 0,
+      extra_stop:     extra_stop     || 0,
+      discount:       discount       || 0,
+      expenses:       expenses       || 0,
+      gratuity:       gratuity       || 0,
+      fuel_surcharge: fuel_surcharge || 0,
+      parking:        parking        || 0,
+      airport_fee:    airport_fee    || 0,
+      tolls:          tolls          || 0,
+    };
+
+    const earnings = calcEarnings(tripData);
+
+    // Drivers can only edit their own trips
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', req.user.id).single();
+    let query = supabase.from('trips')
+      .update({ date, booking_id, ...tripData, total: total || 0, cash_tips: req.body.cash_tips || 0, earnings, edited_at: new Date().toISOString() })
+      .eq('id', req.params.id);
+    if (!profile || profile.role !== 'manager') query = query.eq('user_id', req.user.id);
+
+    const { data, error } = await query.select().single();
+    if (error) throw error;
+    if (!data) return res.status(404).json({ error: 'Trip not found or access denied.' });
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error('Update trip error:', err);
+    res.status(500).json({ error: 'Failed to update trip: ' + err.message });
+  }
+});
+
 // ── DELETE TRIP ───────────────────────────────────────────────────────────────
 app.delete('/api/trips/:id', requireAuth, async (req, res) => {
   try {
