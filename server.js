@@ -27,22 +27,33 @@ async function requireAuth(req, res, next) {
 
 // ── EARNINGS CALCULATOR ───────────────────────────────────────────────────────
 function calcEarnings(t) {
-  const base       = parseFloat(t.base_fare)      || 0;
-  const wait       = parseFloat(t.wait_time)      || 0;
-  const greetFee   = parseFloat(t.greet_fee)      || 0;
-  const carSeatFee = parseFloat(t.car_seat_fee)   || 0;
-  const eventWait  = parseFloat(t.event_wait)     || 0;
-  const extraStop  = parseFloat(t.extra_stop)     || 0;
-  const holidayPay = parseFloat(t.holiday_pay)    || 0;
-  const discount   = parseFloat(t.discount)       || 0;
-  const expenses   = parseFloat(t.expenses)       || 0;
-  const gratuity   = parseFloat(t.gratuity)       || 0;
-  const fuel       = parseFloat(t.fuel_surcharge) || 0;
-  const parking    = parseFloat(t.parking)        || 0;
-  const airport    = parseFloat(t.airport_fee)    || 0;
+  const base        = t.base_fare       || 0;
+  const waitTime    = t.wait_time       || 0;
+  const greetFee    = t.greet_fee       || 0;
+  const carSeatFee  = t.car_seat_fee    || 0;
+  const eventWait   = t.event_wait      || 0;
+  const extraStop   = t.extra_stop      || 0;
+  const discount    = t.discount        || 0;
+  const expenses    = t.expenses        || 0;
+  const gratuity    = t.gratuity        || 0;
+  const fuel        = t.fuel_surcharge  || 0;
+  const parking     = t.parking         || 0;
+  const airportFee  = t.airport_fee     || 0;
+  const tolls       = t.tolls           || 0;
 
-  const adjustedBase = base + wait + greetFee + carSeatFee + eventWait + extraStop - discount + expenses;
-  return Math.round(((adjustedBase * 0.38) + gratuity + fuel + parking + airport + holidayPay) * 100) / 100;
+  // Adjusted base: everything that affects the 38%
+  const adjustedBase = base + waitTime + greetFee + carSeatFee + eventWait + extraStop - discount + expenses;
+
+  // Driver earnings
+  const earnings =
+    (adjustedBase * 0.38) +
+    gratuity +    // 100% to driver
+    fuel +        // 100% to driver (= 5% of base, already calculated)
+    parking +     // 100% to driver
+    airportFee;   // 100% to driver
+    // tolls — company expense (i-Pass), NOT paid to driver
+
+  return Math.round(earnings * 100) / 100;
 }
 
 // ── REGISTER ─────────────────────────────────────────────────────────────────
@@ -94,8 +105,20 @@ function detectImageType(base64) {
   return 'image/jpeg';
 }
 
-// ── PARSE SCREENSHOT PROMPT ───────────────────────────────────────────────────
-const PARSE_PROMPT = `Extract trip payment data from this limo/rideshare booking screenshot.
+// ── PARSE SCREENSHOT ──────────────────────────────────────────────────────────
+app.post('/api/parse-screenshot', requireAuth, async (req, res) => {
+  try {
+    const { imageBase64 } = req.body;
+    if (!imageBase64) return res.status(400).json({ error: 'No image' });
+
+    const response = await anthropic.messages.create({
+      model: 'claude-opus-4-20250514',
+      max_tokens: 1024,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: detectImageType(imageBase64), data: imageBase64 } },
+          { type: 'text', text: `Extract trip payment data from this limo/rideshare booking screenshot.
 Return ONLY valid JSON with these fields (use null if not found):
 {
   "date": "YYYY-MM-DD",
@@ -115,7 +138,7 @@ Return ONLY valid JSON with these fields (use null if not found):
   "total": number
 }
 Notes:
-- booking_id: look specifically for the word "Reservation" followed by a 7-digit number (e.g. "Reservation 3909603" → "3909603"). Do NOT use passenger count, seat numbers, phone numbers, or any other 7-digit number that is not preceded by "Reservation".
+- booking_id: the reservation/booking number - look for a 7-digit number (do NOT use passenger count, seat numbers, or other numbers)
 - base_fare: the base/booking fare before any additions
 - wait_time: waiting charge (billed per 15min at $15 each)
 - greet_fee: meet & greet airport fee ($40 fixed)
@@ -128,116 +151,31 @@ Notes:
 - parking: parking fee paid by driver
 - airport_fee: airport terminal entry fee
 - tolls: road tolls
-- total: the final "Total Fare" shown at the bottom of the receipt — this is what the client paid`;
+- total: the final "Total Fare" shown at the bottom of the receipt — this is what the client paid` }
+        ]
+      }]
+    });
 
-// ── MERGE PARSED RESULTS ──────────────────────────────────────────────────────
-// Strategy: first image is the "primary" receipt (base data).
-// Additional images fill in ONLY fields that are null/0 in the primary.
-// This treats multi-photo as "same receipt, different angles" — no summing.
-const NUMERIC_FIELDS = ['base_fare','wait_time','greet_fee','car_seat_fee','event_wait','discount','expenses','gratuity','fuel_surcharge','parking','airport_fee','tolls','total'];
-const STRING_FIELDS  = ['date','booking_id'];
-
-function mergeResults(results) {
-  // Start with first image as base
-  const merged = { ...results[0] };
-  // Fill missing fields from subsequent images (never overwrite existing values)
-  for (let i = 1; i < results.length; i++) {
-    for (const field of STRING_FIELDS) {
-      if (!merged[field] && results[i][field]) merged[field] = results[i][field];
-    }
-    for (const field of NUMERIC_FIELDS) {
-      if ((!merged[field] || merged[field] === 0) && results[i][field]) {
-        merged[field] = results[i][field];
-      }
-    }
-  }
-  return merged;
-}
-
-// ── PARSE SINGLE IMAGE ────────────────────────────────────────────────────────
-async function parseSingleImage(base64) {
-  const response = await anthropic.messages.create({
-    model: 'claude-opus-4-20250514',
-    max_tokens: 1024,
-    messages: [{
-      role: 'user',
-      content: [
-        { type: 'image', source: { type: 'base64', media_type: detectImageType(base64), data: base64 } },
-        { type: 'text', text: PARSE_PROMPT }
-      ]
-    }]
-  });
-  const text = response.content[0].text;
-  const match = text.match(/\{[\s\S]*\}/);
-  if (!match) throw new Error('Could not parse image');
-  return JSON.parse(match[0]);
-}
-
-// ── PARSE SCREENSHOT ──────────────────────────────────────────────────────────
-app.post('/api/parse-screenshot', requireAuth, async (req, res) => {
-  try {
-    // Support both single image (legacy) and array of images
-    const { imageBase64, images } = req.body;
-
-    const imageList = images
-      ? (Array.isArray(images) ? images : [images])
-      : (imageBase64 ? [imageBase64] : null);
-
-    if (!imageList || imageList.length === 0)
-      return res.status(400).json({ error: 'No image provided' });
-
-    if (imageList.length === 1) {
-      // Single image — original behaviour
-      const data = await parseSingleImage(imageList[0]);
-      return res.json({ success: true, data });
-    }
-
-    // Multiple images — parse in parallel then merge
-    const results = await Promise.all(imageList.map(img => parseSingleImage(img)));
-    const data = mergeResults(results);
-    res.json({ success: true, data, sources: results.length });
-
+    const text = response.content[0].text;
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) return res.status(422).json({ error: 'Could not parse image' });
+    res.json({ success: true, data: JSON.parse(match[0]) });
   } catch (err) {
     console.error('Parse error:', err);
     res.status(500).json({ error: 'Failed to parse screenshot' });
   }
 });
 
-// ── GET TRIPS (власні тріпи — для всіх включно з менеджером) ─────────────────
+// ── GET TRIPS ─────────────────────────────────────────────────────────────────
 app.get('/api/trips', requireAuth, async (req, res) => {
   try {
-    const { data, error } = await supabase
-      .from('trips')
-      .select('*')
-      .eq('user_id', req.user.id)
-      .or('deleted_by.is.null,deleted_by.eq.manager') // показуємо NULL і 'manager', але не 'driver'
-      .order('date', { ascending: false })
-      .order('id', { ascending: false });
-    if (error) throw error;
-    res.json({ success: true, data: data || [] });
-  } catch (err) {
-    console.error('Get trips error:', err);
-    res.status(500).json({ error: 'Failed to fetch trips' });
-  }
-});
-
-// ── GET ALL TRIPS (тільки для менеджера — Dashboard) ─────────────────────────
-app.get('/api/trips/all', requireAuth, async (req, res) => {
-  try {
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', req.user.id).single();
-    if (!profile || profile.role !== 'manager')
-      return res.status(403).json({ error: 'Access denied' });
-
-    const { data, error } = await supabase
-      .from('trips')
-      .select('*')
-      .or('deleted_by.is.null,deleted_by.eq.driver') // показуємо NULL і 'driver', але не 'manager'
-      .order('date', { ascending: false })
-      .order('id', { ascending: false });
+    let query = supabase.from('trips').select('*').order('date', { ascending: false });
+    if (!profile || profile.role !== 'manager') query = query.eq('user_id', req.user.id);
+    const { data, error } = await query;
     if (error) throw error;
-    res.json({ success: true, data: data || [] });
+    res.json({ success: true, data });
   } catch (err) {
-    console.error('Get all trips error:', err);
     res.status(500).json({ error: 'Failed to fetch trips' });
   }
 });
@@ -247,14 +185,9 @@ app.post('/api/trips', requireAuth, async (req, res) => {
   try {
     const {
       date, booking_id, base_fare, wait_time, greet_fee, car_seat_count,
-      car_seat_fee, event_wait, extra_stop, holiday_pay, discount, expenses, gratuity,
+      car_seat_fee, event_wait, extra_stop, discount, expenses, gratuity,
       fuel_surcharge, parking, airport_fee, tolls, total, driver_id
     } = req.body;
-
-    // Required fields validation
-    if (!booking_id) return res.status(400).json({ error: 'Booking ID is required.' });
-    if (!base_fare || base_fare <= 0) return res.status(400).json({ error: 'Base Fare is required.' });
-    if (!total || total <= 0) return res.status(400).json({ error: 'Total Fare is required.' });
 
     const tripData = {
       base_fare:      base_fare      || 0,
@@ -264,7 +197,6 @@ app.post('/api/trips', requireAuth, async (req, res) => {
       car_seat_fee:   car_seat_fee   || 0,
       event_wait:     event_wait     || 0,
       extra_stop:     extra_stop     || 0,
-      holiday_pay:    holiday_pay    || 0,
       discount:       discount       || 0,
       expenses:       expenses       || 0,
       gratuity:       gratuity       || 0,
@@ -277,26 +209,27 @@ app.post('/api/trips', requireAuth, async (req, res) => {
     const earnings = calcEarnings(tripData);
 
     // Check for duplicate booking
-    const { data: existing } = await supabase
-      .from('trips')
-      .select('id')
-      .eq('booking_id', booking_id)
-      .eq('user_id', req.user.id)
-      .maybeSingle();
-    if (existing) {
-      return res.status(409).json({ error: 'Trip with this Booking ID already exists.' });
+    if (booking_id) {
+      const { data: existing } = await supabase
+        .from('trips')
+        .select('id')
+        .eq('booking_id', booking_id)
+        .eq('user_id', req.user.id)
+        .maybeSingle();
+      if (existing) {
+        return res.status(409).json({ error: 'Trip with this Booking ID already exists.' });
+      }
     }
 
     const { data, error } = await supabase.from('trips').insert({
-      user_id:   req.user.id,
+      user_id: req.user.id,
       driver_id: driver_id || null,
-      date:      date || new Date().toISOString().split('T')[0],
+      date: date || new Date().toISOString().split('T')[0],
       booking_id,
       ...tripData,
-      total:     total,
+      total: total || 0,
       cash_tips: req.body.cash_tips || 0,
-      earnings,
-      deleted_by: null
+      earnings
     }).select().single();
 
     if (error) throw error;
@@ -307,99 +240,18 @@ app.post('/api/trips', requireAuth, async (req, res) => {
   }
 });
 
-// ── EDIT TRIP ─────────────────────────────────────────────────────────────────
-app.put('/api/trips/:id', requireAuth, async (req, res) => {
-  try {
-    const { data: existing, error: fetchErr } = await supabase
-      .from('trips').select('*').eq('id', req.params.id).single();
-    if (fetchErr || !existing) return res.status(404).json({ error: 'Trip not found' });
-
-    // Only owner or manager can edit
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', req.user.id).single();
-    const isManager = profile?.role === 'manager';
-    if (!isManager && existing.user_id !== req.user.id)
-      return res.status(403).json({ error: 'Access denied' });
-
-    const NUMERIC_FIELDS = ['base_fare','wait_time','greet_fee','car_seat_fee','event_wait',
-      'extra_stop','holiday_pay','discount','expenses','gratuity','fuel_surcharge',
-      'parking','airport_fee','tolls','total','cash_tips'];
-    const STRING_FIELDS = ['date','booking_id'];
-
-    // Build diff — compare only changed fields
-    const diff = {};
-    [...NUMERIC_FIELDS, ...STRING_FIELDS].forEach(field => {
-      if (req.body[field] !== undefined) {
-        const oldVal = existing[field];
-        const newVal = NUMERIC_FIELDS.includes(field) ? (parseFloat(req.body[field]) || 0) : req.body[field];
-        if (String(oldVal) !== String(newVal)) {
-          diff[field] = { was: oldVal, now: newVal };
-        }
-      }
-    });
-
-    if (Object.keys(diff).length === 0)
-      return res.status(400).json({ error: 'No changes detected.' });
-
-    const {
-      date, booking_id, base_fare, wait_time, greet_fee, car_seat_count,
-      car_seat_fee, event_wait, extra_stop, holiday_pay, discount, expenses, gratuity,
-      fuel_surcharge, parking, airport_fee, tolls, total, cash_tips
-    } = req.body;
-
-    const tripData = {
-      base_fare: parseFloat(base_fare)||0, wait_time: parseFloat(wait_time)||0,
-      greet_fee: parseFloat(greet_fee)||0, car_seat_fee: parseFloat(car_seat_fee)||0,
-      event_wait: parseFloat(event_wait)||0, extra_stop: parseFloat(extra_stop)||0,
-      holiday_pay: parseFloat(holiday_pay)||0, discount: parseFloat(discount)||0,
-      expenses: parseFloat(expenses)||0, gratuity: parseFloat(gratuity)||0,
-      fuel_surcharge: parseFloat(fuel_surcharge)||0, parking: parseFloat(parking)||0,
-      airport_fee: parseFloat(airport_fee)||0, tolls: parseFloat(tolls)||0,
-    };
-    const earnings = calcEarnings(tripData);
-
-    const { data, error } = await supabase.from('trips').update({
-      date, booking_id,
-      ...tripData,
-      car_seat_count: car_seat_count || 0,
-      total: parseFloat(total)||0,
-      cash_tips: parseFloat(cash_tips)||0,
-      earnings,
-      edited_at: new Date().toISOString(),
-      // Only save diff on first edit (preserve original diff)
-      edit_diff: existing.edit_diff || diff,
-    }).eq('id', req.params.id).select().single();
-
-    if (error) throw error;
-    res.json({ success: true, data });
-  } catch (err) {
-    console.error('Edit trip error:', err);
-    res.status(500).json({ error: 'Failed to edit trip: ' + err.message });
-  }
-});
+// ── DELETE TRIP ───────────────────────────────────────────────────────────────
 app.delete('/api/trips/:id', requireAuth, async (req, res) => {
   try {
-    const { data: profile } = await supabase
-      .from('profiles').select('role').eq('id', req.user.id).single();
-    const role = profile?.role || 'driver';
-
-    // Get trip to verify access
-    const { data: trip } = await supabase
-      .from('trips').select('id, user_id, deleted_by').eq('id', req.params.id).maybeSingle();
-    if (!trip) return res.status(404).json({ error: 'Trip not found' });
-
-    // Driver can only delete own trips; manager can delete any
-    if (role !== 'manager' && trip.user_id !== req.user.id)
-      return res.status(403).json({ error: 'Access denied' });
-
-    // Soft delete — mark who deleted it
-    const deletedBy = role === 'manager' ? 'manager' : 'driver';
-    const { error } = await supabase
-      .from('trips')
-      .update({ deleted_by: deletedBy })
-      .eq('id', req.params.id);
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', req.user.id).single();
+    let query = supabase.from('trips').delete().eq('id', req.params.id);
+    // Drivers can only delete their own trips; managers can delete any
+    if (!profile || profile.role !== 'manager') {
+      query = query.eq('user_id', req.user.id);
+    }
+    const { error } = await query;
     if (error) throw error;
-
-    res.json({ success: true, deleted_by: deletedBy });
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Failed to delete trip' });
   }
@@ -408,46 +260,41 @@ app.delete('/api/trips/:id', requireAuth, async (req, res) => {
 // ── GET PROFILE ───────────────────────────────────────────────────────────────
 app.get('/api/profile', requireAuth, async (req, res) => {
   try {
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', req.user.id).maybeSingle();
+    const { data, error } = await supabase.from('profiles').select('*').eq('id', req.user.id).single();
     if (error) throw error;
-    res.json({ success: true, data: data || null });
+    res.json({ success: true, data });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch profile' });
   }
 });
 
 // ── FUEL EXPENSES ─────────────────────────────────────────────────────────────
-app.get('/api/fuel', requireAuth, async (req, res) => {
+app.post('/api/fuel-expenses', requireAuth, async (req, res) => {
   try {
-    const { data, error } = await supabase
-      .from('fuel_expenses')
-      .select('*')
-      .eq('user_id', req.user.id)
-      .order('date', { ascending: false });
-    if (error) throw error;
-    res.json({ success: true, data: data || [] });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch fuel expenses' });
-  }
-});
-
-app.post('/api/fuel', requireAuth, async (req, res) => {
-  try {
-    const { date, amount, driver_id } = req.body;
-    if (!date) return res.status(400).json({ error: 'Date is required' });
-    const { data, error } = await supabase
-      .from('fuel_expenses')
-      .upsert({
-        user_id:   req.user.id,
-        driver_id: driver_id || null,
-        date,
-        amount:    parseFloat(amount) || 0,
-      }, { onConflict: 'user_id,date' })
+    const { date, amount } = req.body;
+    if (!date || !amount || amount <= 0) {
+      return res.status(400).json({ error: 'date and amount (>0) are required' });
+    }
+    // Upsert by user_id + date (one fuel entry per driver per day)
+    const { data, error } = await supabase.from('fuel_expenses')
+      .upsert({ user_id: req.user.id, date, amount }, { onConflict: 'user_id,date' })
       .select().single();
     if (error) throw error;
     res.json({ success: true, data });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to save fuel expense' });
+    console.error('Fuel expense error:', err);
+    res.status(500).json({ error: 'Failed to save fuel expense: ' + err.message });
+  }
+});
+
+app.get('/api/fuel-expenses', requireAuth, async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('fuel_expenses')
+      .select('*').eq('user_id', req.user.id).order('date', { ascending: false });
+    if (error) throw error;
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch fuel expenses' });
   }
 });
 

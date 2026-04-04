@@ -9,346 +9,272 @@
 <style>
   :root {
     --bg: #0a0a0f; --surface: #111118; --surface2: #1a1a24; --border: #2a2a38;
-    --accent: #c8f060; --accent2: #60d4f0; --danger: #f06060; --text: #e8e8f0; --muted: #6a6a80;
-    --radius: clamp(6px, 2vw, 12px);
-
-    /* Fluid spacing — scales from mobile to desktop automatically */
-    --sp-xs: clamp(3px, 0.8vw, 6px);
-    --sp-sm: clamp(5px, 1.2vw, 10px);
-    --sp-md: clamp(8px, 2vw, 16px);
-    --sp-lg: clamp(12px, 3vw, 24px);
-
-    /* Fluid font sizes */
-    --fs-xs:  clamp(8px,  1.8vw, 10px);
-    --fs-sm:  clamp(10px, 2.2vw, 13px);
-    --fs-md:  clamp(12px, 2.8vw, 15px);
-    --fs-lg:  clamp(14px, 3.5vw, 18px);
-    --fs-xl:  clamp(16px, 4.5vw, 32px);
-
-    /* Field height — compact but touchable */
-    --field-h: clamp(32px, 8vw, 44px);
-    --field-pad: clamp(5px, 1.5vw, 10px) clamp(6px, 2vw, 12px);
-    --field-fs: clamp(12px, 3vw, 14px);
+    --accent: #c8f060; --accent2: #60d4f0; --danger: #f06060; --text: #e8e8f0; --muted: #6a6a80; --radius: 12px;
   }
-
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { max-width: 100%; overflow-x: hidden; }
-  body { font-family: 'Syne', sans-serif; background: var(--bg); color: var(--text); min-height: 100dvh; }
+  body { font-family: 'Syne', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-  /* ── SCREENS ─────────────────────────────────────────────────────────────── */
-  .screen { min-height: 100dvh; display: flex; align-items: center; justify-content: center;
-    background: radial-gradient(ellipse at 20% 50%, #1a1a2e 0%, var(--bg) 60%); }
+  /* SCREENS */
+  .screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+  .screen { background: radial-gradient(ellipse at 20% 50%, #1a1a2e 0%, var(--bg) 60%); }
 
   .card {
     background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
-    padding: clamp(24px, 6vw, 48px) clamp(16px, 5vw, 40px);
-    width: min(400px, 90vw); text-align: center;
+    padding: 48px 40px; width: 100%; max-width: 400px; text-align: center;
   }
-  .logo { font-size: var(--fs-xl); font-weight: 800; letter-spacing: -1px; margin-bottom: 8px; }
+
+  .logo { font-size: 32px; font-weight: 800; letter-spacing: -1px; margin-bottom: 8px; }
   .logo span { color: var(--accent); }
-  .card-sub { color: var(--muted); font-size: var(--fs-sm); margin-bottom: clamp(20px, 5vw, 40px); }
-  .card-note { margin-top: 20px; font-size: var(--fs-xs); color: var(--muted); }
+  .card-sub { color: var(--muted); font-size: 14px; margin-bottom: 40px; }
 
   .btn-google {
-    display: flex; align-items: center; justify-content: center; gap: 10px;
-    width: 100%; padding: clamp(10px, 2.5vw, 14px) clamp(12px, 3vw, 24px);
-    background: var(--surface2); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    width: 100%; padding: 14px 24px; background: var(--surface2); border: 1px solid var(--border);
     border-radius: var(--radius); color: var(--text); font-family: 'Syne', sans-serif;
-    font-size: var(--fs-md); font-weight: 600; cursor: pointer; transition: all 0.2s;
+    font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s;
   }
   .btn-google:hover { border-color: var(--accent); background: rgba(200,240,96,0.05); }
+  .card-note { margin-top: 24px; font-size: 12px; color: var(--muted); }
 
-  /* ── DRIVER ID ───────────────────────────────────────────────────────────── */
-  .driver-id-label { font-size: var(--fs-xs); color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: block; }
+  /* DRIVER ID SCREEN */
+  .driver-id-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: block; }
+
   .driver-id-input {
-    width: 100%; padding: clamp(10px, 2.5vw, 16px); background: var(--surface2); border: 2px solid var(--border);
+    width: 100%; padding: 16px; background: var(--surface2); border: 2px solid var(--border);
     border-radius: var(--radius); color: var(--text); font-family: 'DM Mono', monospace;
-    font-size: clamp(20px, 5vw, 28px); font-weight: 700; text-align: center; letter-spacing: 8px;
+    font-size: 28px; font-weight: 700; text-align: center; letter-spacing: 8px;
     transition: border-color 0.2s; margin-bottom: 16px;
   }
   .driver-id-input:focus { outline: none; border-color: var(--accent); }
-  .driver-id-input::placeholder { letter-spacing: 4px; font-size: clamp(14px, 4vw, 20px); }
+  .driver-id-input::placeholder { letter-spacing: 4px; font-size: 20px; }
 
   .btn-primary {
-    width: 100%; padding: clamp(10px, 2.5vw, 14px); background: var(--accent); border: none;
-    border-radius: var(--radius); color: #000; font-family: 'Syne', sans-serif;
-    font-size: var(--fs-md); font-weight: 700; cursor: pointer; transition: all 0.2s;
+    width: 100%; padding: 14px; background: var(--accent); border: none; border-radius: var(--radius);
+    color: #000; font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s;
   }
   .btn-primary:hover { background: #d4f570; transform: translateY(-1px); }
   .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-  .error-msg { color: var(--danger); font-size: var(--fs-sm); margin-top: 10px; min-height: 18px; }
-  .btn-link { background: none; border: none; color: var(--muted); font-size: var(--fs-xs); cursor: pointer; margin-top: 14px; text-decoration: underline; font-family: 'Syne', sans-serif; }
+
+  .error-msg { color: var(--danger); font-size: 13px; margin-top: 12px; min-height: 20px; }
+
+  .btn-link { background: none; border: none; color: var(--muted); font-size: 12px; cursor: pointer; margin-top: 16px; text-decoration: underline; font-family: 'Syne', sans-serif; }
   .btn-link:hover { color: var(--text); }
 
-  /* ── LOADING ─────────────────────────────────────────────────────────────── */
-  #loading-screen { min-height: 100dvh; display: flex; align-items: center; justify-content: center; }
+  /* LOADING */
+  #loading-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
   .spinner { width: 32px; height: 32px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* ── HEADER ──────────────────────────────────────────────────────────────── */
+  /* HEADER */
   #app { display: none; }
   header {
-    display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap;
-    padding: clamp(6px, 1.5vw, 16px) clamp(8px, 2vw, 24px);
-    border-bottom: 1px solid var(--border); background: var(--bg);
-    position: sticky; top: 0; z-index: 100; gap: clamp(4px, 1vw, 12px);
-    width: 100%; overflow: hidden;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 24px; border-bottom: 1px solid var(--border);
+    background: var(--bg); position: sticky; top: 0; z-index: 100;
   }
-  .logo-sm { font-size: clamp(14px, 3.5vw, 18px); font-weight: 800; letter-spacing: -0.5px; flex-shrink: 0; }
+  .logo-sm { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
   .logo-sm span { color: var(--accent); }
-  .header-right { display: flex; align-items: center; gap: clamp(4px, 1vw, 12px); flex-shrink: 0; }
-  .user-info { display: flex; align-items: center; gap: clamp(3px, 0.8vw, 8px); color: var(--muted); }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .user-info { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
   .user-avatar {
-    width: clamp(20px, 4.5vw, 28px); height: clamp(20px, 4.5vw, 28px);
-    border-radius: 50%; background: var(--surface2); border: 1px solid var(--border);
-    overflow: hidden; display: flex; align-items: center; justify-content: center;
-    font-size: clamp(8px, 2vw, 11px); font-weight: 700; color: var(--accent); flex-shrink: 0;
+    width: 28px; height: 28px; border-radius: 50%; background: var(--surface2);
+    border: 1px solid var(--border); overflow: hidden; display: flex;
+    align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--accent); flex-shrink: 0;
   }
   .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
-  .user-name-text { display: none; } /* always hidden — saves space */
+
   .driver-id-badge {
-    padding: clamp(2px, 0.4vw, 3px) clamp(4px, 1vw, 8px);
-    border-radius: 4px; font-size: clamp(9px, 2vw, 11px); font-weight: 700;
+    padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700;
     font-family: 'DM Mono', monospace; background: rgba(200,240,96,0.1);
-    border: 1px solid rgba(200,240,96,0.2); color: var(--accent); white-space: nowrap;
+    border: 1px solid rgba(200,240,96,0.2); color: var(--accent);
   }
-  .role-badge {
-    padding: clamp(2px, 0.4vw, 3px) clamp(4px, 1vw, 8px);
-    border-radius: 4px; font-size: clamp(8px, 1.8vw, 10px); font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap;
-  }
+
+  .role-badge { padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
   .role-badge.driver { background: rgba(200,240,96,0.15); color: var(--accent); }
   .role-badge.manager { background: rgba(96,212,240,0.15); color: var(--accent2); }
+
   .btn-signout {
-    padding: clamp(3px, 0.8vw, 6px) clamp(6px, 1.5vw, 12px);
-    background: transparent; border: 1px solid var(--border); border-radius: 6px;
-    color: var(--muted); font-family: 'Syne', sans-serif;
-    font-size: clamp(9px, 2vw, 12px); cursor: pointer; transition: all 0.2s; white-space: nowrap; flex-shrink: 0;
+    padding: 6px 12px; background: transparent; border: 1px solid var(--border);
+    border-radius: 6px; color: var(--muted); font-family: 'Syne', sans-serif; font-size: 12px; cursor: pointer; transition: all 0.2s;
   }
   .btn-signout:hover { border-color: var(--danger); color: var(--danger); }
-  .btn-signout .signout-text { display: none; }
-  @media (min-width: 480px) { .btn-signout .signout-text { display: inline; } }
 
-  /* ── TABS ────────────────────────────────────────────────────────────────── */
-  .tabs {
-    display: flex; border-bottom: 1px solid var(--border);
-    background: var(--bg); overflow-x: hidden; width: 100%;
-  }
+  /* TABS */
+  .tabs { display: flex; border-bottom: 1px solid var(--border); padding: 0 24px; background: var(--bg); overflow-x: auto; }
   .tab {
-    flex: 1; padding: clamp(8px, 2vw, 12px) clamp(2px, 1vw, 16px);
-    border: none; background: transparent; color: var(--muted);
-    font-family: 'Syne', sans-serif; font-size: clamp(10px, 2.2vw, 13px);
-    font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent;
-    transition: all 0.2s; white-space: nowrap; text-align: center;
+    padding: 12px 16px; border: none; background: transparent; color: var(--muted);
+    font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer;
+    border-bottom: 2px solid transparent; transition: all 0.2s; white-space: nowrap;
   }
   .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 
-  /* ── CONTENT ─────────────────────────────────────────────────────────────── */
-  .content { padding: clamp(10px, 2.5vw, 24px); max-width: 900px; margin: 0 auto; }
+  /* CONTENT */
+  .content { padding: 24px; max-width: 900px; margin: 0 auto; }
 
-  /* ── STATS ───────────────────────────────────────────────────────────────── */
-  .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(clamp(100px, 22vw, 130px), 1fr)); gap: clamp(6px, 1.5vw, 12px); margin-bottom: clamp(12px, 3vw, 24px); }
-  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: clamp(10px, 2.5vw, 16px); }
+  .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
   .stat-card.highlight { border-color: rgba(200,240,96,0.3); background: rgba(200,240,96,0.05); }
-  .stat-label { font-size: var(--fs-xs); color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-  .stat-value { font-size: clamp(16px, 4vw, 20px); font-weight: 700; font-family: 'DM Mono', monospace; color: var(--accent); }
+  .stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .stat-value { font-size: 20px; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--accent); }
   .stat-value.neutral { color: var(--text); }
 
-  .last-trip-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: clamp(12px, 3vw, 20px); margin-bottom: clamp(12px, 3vw, 24px); }
-  .ltc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: clamp(8px, 2vw, 16px); }
-  .ltc-title { font-size: var(--fs-xs); color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
-  .ltc-date { font-size: var(--fs-xs); color: var(--muted); font-family: 'DM Mono', monospace; }
-  .ltc-earnings { font-size: clamp(24px, 6vw, 36px); font-weight: 800; font-family: 'DM Mono', monospace; color: var(--accent); margin-bottom: clamp(8px, 2vw, 12px); }
-  .ltc-rows { display: grid; grid-template-columns: repeat(auto-fit, minmax(clamp(80px, 18vw, 110px), 1fr)); gap: clamp(4px, 1vw, 8px); }
-  .ltc-row { background: var(--surface2); border-radius: 8px; padding: clamp(6px, 1.5vw, 10px) clamp(8px, 2vw, 12px); }
-  .ltc-row-label { font-size: var(--fs-xs); color: var(--muted); margin-bottom: 2px; }
-  .ltc-row-val { font-size: var(--fs-sm); font-family: 'DM Mono', monospace; font-weight: 500; }
+  .last-trip-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 24px; }
+  .ltc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .ltc-title { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .ltc-date { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .ltc-earnings { font-size: 36px; font-weight: 800; font-family: 'DM Mono', monospace; color: var(--accent); margin-bottom: 12px; }
+  .ltc-rows { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
+  .ltc-row { background: var(--surface2); border-radius: 8px; padding: 10px 12px; }
+  .ltc-row-label { font-size: 10px; color: var(--muted); margin-bottom: 2px; }
+  .ltc-row-val { font-size: 13px; font-family: 'DM Mono', monospace; font-weight: 500; }
 
-  .period-tabs { display: flex; gap: clamp(4px, 1vw, 6px); margin-bottom: clamp(12px, 3vw, 20px); flex-wrap: wrap; }
+  .period-tabs { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
   .period-btn {
-    padding: clamp(4px, 1vw, 6px) clamp(8px, 2vw, 14px);
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 6px; color: var(--muted); font-family: 'Syne', sans-serif;
-    font-size: var(--fs-xs); font-weight: 600; cursor: pointer; transition: all 0.2s;
+    padding: 6px 14px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--muted); font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;
   }
   .period-btn.active { background: rgba(200,240,96,0.1); border-color: var(--accent); color: var(--accent); }
 
-  /* ── UPLOAD ZONE ─────────────────────────────────────────────────────────── */
   .upload-zone {
-    border: 2px dashed var(--border); border-radius: var(--radius);
-    padding: clamp(10px, 2.5vw, 20px); text-align: center; cursor: pointer;
-    transition: all 0.2s; margin-bottom: clamp(10px, 2.5vw, 20px); background: var(--surface);
+    border: 2px dashed var(--border); border-radius: var(--radius); padding: 28px;
+    text-align: center; cursor: pointer; transition: all 0.2s; margin-bottom: 20px; background: var(--surface);
   }
   .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: rgba(200,240,96,0.03); }
   .upload-zone input { display: none; }
-  .upload-icon { font-size: clamp(18px, 4vw, 28px); margin-bottom: clamp(4px, 1vw, 8px); }
-  .upload-text { font-size: var(--fs-sm); color: var(--muted); }
+  .upload-icon { font-size: 28px; margin-bottom: 8px; }
+  .upload-text { font-size: 13px; color: var(--muted); }
   .upload-text strong { color: var(--accent); }
+  #img-preview { max-width: 180px; max-height: 130px; border-radius: 8px; margin: 12px auto 0; display: none; border: 1px solid var(--border); }
 
-  /* ── MULTI-IMAGE PREVIEW ─────────────────────────────────────────────────── */
-  .img-previews { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; justify-content: center; }
-  .img-thumb {
-    position: relative; width: clamp(64px, 15vw, 90px); height: clamp(50px, 12vw, 72px);
-    border-radius: 8px; border: 1px solid var(--border); overflow: hidden; flex-shrink: 0; background: var(--surface2);
-  }
-  .img-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .img-thumb .thumb-remove {
-    position: absolute; top: 3px; right: 3px; width: 18px; height: 18px;
-    background: rgba(0,0,0,0.7); border: none; border-radius: 50%; color: #fff;
-    font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center;
-    line-height: 1; transition: background 0.15s;
-  }
-  .img-thumb .thumb-remove:hover { background: var(--danger); }
-  .img-thumb .thumb-num {
-    position: absolute; bottom: 3px; left: 4px; font-size: 9px; font-family: 'DM Mono', monospace;
-    color: rgba(255,255,255,0.7); background: rgba(0,0,0,0.5); padding: 1px 4px; border-radius: 3px;
-  }
-  .add-more-btn {
-    width: clamp(64px, 15vw, 90px); height: clamp(50px, 12vw, 72px);
-    border-radius: 8px; border: 1.5px dashed var(--border);
-    background: var(--surface2); color: var(--muted); font-size: 22px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0;
-  }
-  .add-more-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .parse-multi-btn {
-    width: 100%; margin-top: 12px; padding: clamp(8px, 2vw, 11px);
-    background: rgba(200,240,96,0.1); border: 1px solid rgba(200,240,96,0.3); border-radius: var(--radius);
-    color: var(--accent); font-family: 'Syne', sans-serif; font-size: var(--fs-md); font-weight: 700;
-    cursor: pointer; transition: all 0.2s; display: none;
-  }
-  .parse-multi-btn:hover { background: rgba(200,240,96,0.2); }
-  .parse-multi-btn.visible { display: block; }
-
-  /* ── FORM GRID ───────────────────────────────────────────────────────────── */
-  .form-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: clamp(5px, 1.2vw, 10px);
-    margin-bottom: clamp(10px, 2.5vw, 16px);
-  }
-  .field label {
-    display: block; font-size: var(--fs-xs); color: var(--muted);
-    text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: clamp(2px, 0.5vw, 5px);
-  }
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .field label { display: block; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
   .field input {
-    width: 100%; height: var(--field-h); padding: var(--field-pad);
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius); color: var(--text);
-    font-family: 'DM Mono', monospace; font-size: var(--field-fs);
-    transition: border-color 0.2s;
-  }
-  .field input[type="date"] {
-    /* Override browser default date picker padding that makes it taller */
-    padding: var(--field-pad);
-    -webkit-appearance: none;
-    appearance: none;
-  }
-  .field input[type="date"]::-webkit-calendar-picker-indicator {
-    opacity: 0.4; cursor: pointer; margin-left: 0;
-    width: clamp(12px, 3vw, 16px); height: clamp(12px, 3vw, 16px);
+    width: 100%; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 14px; transition: border-color 0.2s;
   }
   .field input:focus { outline: none; border-color: var(--accent); }
-  .form-grid .field[style*="grid-column"] { grid-column: 1 / -1; }
 
   .checkbox-field { display: flex; flex-direction: column; }
-  .checkbox-wrap {
-    display: flex; align-items: center; gap: clamp(5px, 1.2vw, 10px);
-    height: var(--field-h); padding: var(--field-pad);
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius); cursor: pointer; transition: border-color 0.2s;
-  }
+  .checkbox-wrap { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: border-color 0.2s; }
   .checkbox-wrap:has(input:checked) { border-color: var(--accent); background: rgba(200,240,96,0.05); }
-  .checkbox-wrap input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
-  .checkbox-label { font-size: clamp(9px, 2vw, 12px); color: var(--text); line-height: 1.2; }
+  .checkbox-wrap input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+  .checkbox-label { font-size: 13px; color: var(--text); }
 
-  /* ── EARNINGS PREVIEW ────────────────────────────────────────────────────── */
-  .earnings-preview { background: var(--surface); border: 1px solid rgba(200,240,96,0.2); border-radius: var(--radius); padding: clamp(10px, 2.5vw, 16px); margin-bottom: clamp(10px, 2.5vw, 16px); display: none; }
+  .earnings-preview { background: var(--surface); border: 1px solid rgba(200,240,96,0.2); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; display: none; }
   .earnings-preview.show { display: block; }
-  .ep-title { font-size: var(--fs-xs); color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
-  .ep-row { display: flex; justify-content: space-between; font-size: var(--fs-sm); padding: 4px 0; border-bottom: 1px solid var(--border); }
+  .ep-title { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+  .ep-row.ep-optional { display: none; }
+  .ep-row.ep-optional.visible { display: flex; }
+  .ep-row { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; border-bottom: 1px solid var(--border); }
   .ep-row:last-child { border: none; }
-  .ep-row.total { font-weight: 700; font-size: clamp(14px, 3.5vw, 17px); color: var(--accent); margin-top: 4px; padding-top: 6px; }
+  .ep-row.total { font-weight: 700; font-size: 17px; color: var(--accent); margin-top: 4px; padding-top: 8px; }
   .ep-val { font-family: 'DM Mono', monospace; }
 
-  /* ── SAVE BUTTON ─────────────────────────────────────────────────────────── */
   .btn-save {
-    width: 100%; padding: clamp(10px, 2.5vw, 14px); background: var(--accent); border: none;
-    border-radius: var(--radius); color: #000; font-family: 'Syne', sans-serif;
-    font-size: var(--fs-md); font-weight: 700; cursor: pointer; transition: all 0.2s;
+    flex: 1; padding: 14px; background: var(--accent); border: none; border-radius: var(--radius);
+    color: #000; font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s;
   }
   .btn-save:hover { background: #d4f570; transform: translateY(-1px); }
   .btn-save:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-  /* ── TABLE ───────────────────────────────────────────────────────────────── */
+  .btn-cancel {
+    padding: 14px 20px; background: transparent; border: 1px solid var(--border);
+    border-radius: var(--radius); color: var(--muted); font-family: 'Syne', sans-serif;
+    font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-cancel:hover { border-color: var(--danger); color: var(--danger); }
+
+  .form-actions { display: flex; gap: 10px; }
+
   .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
-  th { text-align: left; padding: clamp(6px, 1.5vw, 10px) clamp(8px, 2vw, 12px); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 1px solid var(--border); }
-  td { padding: clamp(8px, 2vw, 12px); border-bottom: 1px solid rgba(42,42,56,0.5); vertical-align: middle; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 10px 12px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 1px solid var(--border); }
+  td { padding: 12px; border-bottom: 1px solid rgba(42,42,56,0.5); vertical-align: middle; }
   tr:hover td { background: rgba(255,255,255,0.02); }
   .earn-val { color: var(--accent); font-family: 'DM Mono', monospace; font-weight: 600; }
   .mono { font-family: 'DM Mono', monospace; }
-  .btn-delete { padding: 4px 8px; background: transparent; border: 1px solid var(--border); border-radius: 4px; color: var(--muted); font-size: var(--fs-xs); cursor: pointer; transition: all 0.2s; }
+  .btn-delete { padding: 4px 8px; background: transparent; border: 1px solid var(--border); border-radius: 4px; color: var(--muted); font-size: 11px; cursor: pointer; transition: all 0.2s; }
   .btn-delete:hover { border-color: var(--danger); color: var(--danger); }
 
-  /* ── STATUS BAR ──────────────────────────────────────────────────────────── */
-  .status-bar { padding: clamp(6px, 1.5vw, 10px) clamp(10px, 2.5vw, 16px); border-radius: 8px; font-size: var(--fs-sm); margin-bottom: clamp(8px, 2vw, 16px); display: none; }
+  .status-bar { padding: 10px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; display: none; }
   .status-bar.show { display: block; }
   .status-bar.loading { background: rgba(96,212,240,0.1); border: 1px solid rgba(96,212,240,0.3); color: var(--accent2); }
   .status-bar.success { background: rgba(200,240,96,0.1); border: 1px solid rgba(200,240,96,0.3); color: var(--accent); }
   .status-bar.error { background: rgba(240,96,96,0.1); border: 1px solid rgba(240,96,96,0.3); color: var(--danger); }
 
-  .empty-state { text-align: center; padding: clamp(24px, 6vw, 48px) clamp(12px, 3vw, 24px); color: var(--muted); }
-  .empty-state .icon { font-size: clamp(28px, 7vw, 40px); margin-bottom: 10px; }
-  .section-title { font-size: var(--fs-xs); color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: clamp(6px, 1.5vw, 12px); }
+  .empty-state { text-align: center; padding: 48px 24px; color: var(--muted); }
+  .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+  .section-title { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
 
-  /* ── DASHBOARD FILTERS ───────────────────────────────────────────────────── */
-  .dash-filters { display: flex; flex-wrap: wrap; gap: clamp(5px, 1.2vw, 10px); align-items: flex-end; margin-bottom: clamp(10px, 2.5vw, 16px); }
-  .filter-group { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
-  .filter-label { font-size: var(--fs-xs); color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  /* DASHBOARD FILTERS */
+  .dash-filters {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin-bottom: 16px;
+  }
+  .filter-group { display: flex; flex-direction: column; gap: 4px; }
+  .filter-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
   .filter-input {
-    padding: clamp(5px, 1.2vw, 8px) clamp(6px, 1.5vw, 12px);
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 8px; color: var(--text); font-family: 'Syne', sans-serif;
-    font-size: var(--fs-sm); width: 100%; min-width: 0;
+    padding: 8px 12px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-family: 'Syne', sans-serif; font-size: 13px;
+    min-width: 130px;
   }
   .filter-input:focus { outline: none; border-color: var(--accent); }
   .filter-reset {
-    padding: clamp(5px, 1.2vw, 8px) clamp(8px, 2vw, 14px);
-    background: transparent; border: 1px solid var(--border); border-radius: 8px;
-    color: var(--muted); font-family: 'Syne', sans-serif; font-size: var(--fs-sm);
-    cursor: pointer; transition: all 0.2s; align-self: flex-end; white-space: nowrap;
+    padding: 8px 14px; background: transparent; border: 1px solid var(--border);
+    border-radius: 8px; color: var(--muted); font-family: 'Syne', sans-serif;
+    font-size: 12px; cursor: pointer; transition: all 0.2s; align-self: flex-end;
   }
   .filter-reset:hover { border-color: var(--danger); color: var(--danger); }
   .btn-export {
-    padding: clamp(5px, 1.2vw, 8px) clamp(10px, 2.5vw, 16px);
-    background: var(--accent); border: none; border-radius: 8px;
-    color: #000; font-family: 'Syne', sans-serif; font-size: var(--fs-sm);
-    font-weight: 700; cursor: pointer; transition: all 0.2s; align-self: flex-end; white-space: nowrap;
+    padding: 8px 16px; background: var(--accent); border: none; border-radius: 8px;
+    color: #000; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s; align-self: flex-end;
   }
   .btn-export:hover { background: #d4f570; }
 
-  /* ── EXPANDABLE ROWS ─────────────────────────────────────────────────────── */
+  /* EXPANDABLE ROWS */
   .dash-row { cursor: pointer; }
   .dash-row:hover td { background: rgba(200,240,96,0.05); }
-  .dash-row td:first-child { color: var(--muted); font-size: var(--fs-xs); }
-  .expand-icon { transition: transform 0.2s; display: inline-block; color: var(--muted); vertical-align: middle; }
-  .expand-icon svg { transition: transform 0.2s; display: block; }
-  .expanded .expand-icon svg, .expand-icon[style*="rotate"] { transform: rotate(90deg); }
+  .dash-row td:first-child { color: var(--muted); font-size: 12px; }
+  .expand-icon { transition: transform 0.2s; display: inline-block; }
+  .expanded .expand-icon { transform: rotate(90deg); }
   .breakdown-row td { padding: 0; }
-  .breakdown-content { padding: clamp(8px, 2vw, 12px) clamp(10px, 2.5vw, 16px); background: var(--surface2); border-bottom: 1px solid var(--border); display: none; }
+  .breakdown-content {
+    padding: 12px 16px; background: var(--surface2);
+    border-bottom: 1px solid var(--border); display: none;
+  }
   .breakdown-content.show { display: block; }
-  .bd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(clamp(90px, 20vw, 120px), 1fr)); gap: clamp(4px, 1vw, 8px); }
-  .bd-item { background: var(--surface); border-radius: 6px; padding: clamp(5px, 1.2vw, 8px) clamp(6px, 1.5vw, 10px); }
-  .bd-item-label { font-size: var(--fs-xs); color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
-  .bd-item-val { font-size: var(--fs-sm); font-family: 'DM Mono', monospace; }
+  .bd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px,1fr)); gap: 8px; }
+  .bd-item { background: var(--surface); border-radius: 6px; padding: 8px 10px; }
+  .bd-item-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+  .bd-item-val { font-size: 13px; font-family: 'DM Mono', monospace; }
   .bd-item-val.accent { color: var(--accent); }
-  .bd-item-val.muted { color: var(--muted); font-size: var(--fs-xs); }
+  .bd-item-val.muted { color: var(--muted); font-size: 11px; }
 
-  /* ── FOOTER TOTAL ROW ────────────────────────────────────────────────────── */
+  /* FOOTER TOTAL ROW */
   #dash-foot tr td { border-top: 2px solid var(--border); font-weight: 700; padding-top: 14px; }
+
+  /* TOAST */
+  #toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--accent); color: #000; font-family: 'Syne', sans-serif;
+    font-size: 14px; font-weight: 700; padding: 12px 24px; border-radius: 50px;
+    z-index: 9999; transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
+    opacity: 0; pointer-events: none; white-space: nowrap;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+  @media (max-width: 600px) {
+    .content { padding: 16px; }
+    header { padding: 12px 16px; }
+    .card { padding: 32px 20px; margin: 16px; }
+    .user-name-text { display: none; }
+  }
 </style>
 </head>
 <body>
+
+<!-- TOAST -->
+<div id="toast"></div>
 
 <!-- LOADING -->
 <div id="loading-screen"><div class="spinner"></div></div>
@@ -395,7 +321,7 @@
         <span class="driver-id-badge" id="driver-id-display"></span>
         <span class="role-badge driver" id="role-badge">driver</span>
       </div>
-      <button class="btn-signout" onclick="signOut()">⏻<span class="signout-text"> Sign out</span></button>
+      <button class="btn-signout" onclick="signOut()">Sign out</button>
     </div>
   </header>
 
@@ -410,29 +336,16 @@
   <div id="pane-log" class="content">
     <div id="status-log" class="status-bar"></div>
     <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
-      <input type="file" id="file-input" accept="image/*" multiple onchange="handleFiles(this.files)">
+      <input type="file" id="file-input" accept="image/*" onchange="handleFile(this.files[0])">
       <div class="upload-icon">📸</div>
-      <div class="upload-text">Drop screenshots or <strong>tap to upload</strong></div>
-      <div class="upload-text" style="font-size:11px;margin-top:4px;color:var(--muted)">You can add multiple screenshots for one trip</div>
-    </div>
-    <!-- Multi-image previews (outside upload-zone to avoid click conflicts) -->
-    <div id="multi-preview-wrap" style="margin-bottom:16px;display:none">
-      <div class="img-previews" id="img-previews"></div>
-      <button class="parse-multi-btn" id="parse-multi-btn" onclick="parseAllImages()">
-        🤖 Parse <span id="parse-count"></span> screenshots with AI
-      </button>
+      <div class="upload-text">Drop screenshot or <strong>tap to upload</strong></div>
+      <img id="img-preview">
     </div>
     <div class="form-grid">
       <div class="field"><label>Date</label><input type="date" id="f-date"></div>
       <div class="field"><label>Booking ID</label><input type="text" id="f-booking" placeholder="BK-12345"></div>
-      <div class="field"><label>Base Fare ($)</label><input type="number" id="f-base" placeholder="0.00" oninput="calcEarnings()"></div>
-      <div class="field"><label>Gratuity ($)</label><input type="number" id="f-gratuity" placeholder="0.00" oninput="calcEarnings()"></div>
-      <div class="field"><label>Tolls ($)</label><input type="number" id="f-tolls" placeholder="0.00" oninput="calcEarnings()"></div>
-      <div class="field"><label>Airport Fee ($)</label><input type="number" id="f-airport" placeholder="0.00" oninput="calcEarnings()"></div>
-      <div class="field"><label>Fuel Surcharge ($)</label><input type="number" id="f-fuel" placeholder="0.00" oninput="calcEarnings()"></div>
-      <div class="field"><label>Discount ($)</label><input type="number" id="f-discount" placeholder="0.00" oninput="calcEarnings()"></div>
-      <div class="field"><label>Expenses ($)</label><input type="number" id="f-expenses" placeholder="0.00" oninput="calcEarnings()"></div>
-      <div class="field"><label>Wait Time ($)</label><input type="number" id="f-wait" placeholder="0.00" oninput="calcEarnings()"></div>
+      <div class="field"><label>Base Fare ($)</label><input type="number" id="f-base" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()"></div>
+      <div class="field"><label>Wait Time ($)</label><input type="number" id="f-wait" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()"></div>
       <div class="field checkbox-field">
         <label>Greet Fee (+$40)</label>
         <div class="checkbox-wrap">
@@ -441,36 +354,41 @@
         </div>
       </div>
       <div class="field"><label>Car Seats (qty)</label><input type="number" id="f-carseat" placeholder="0" min="0" max="10" oninput="calcEarnings()"></div>
-      <div class="field"><label>Event Wait ($)</label><input type="number" id="f-eventwait" placeholder="0.00" oninput="calcEarnings()"></div>
-      <div class="field"><label>Extra Stop ($15)</label><input type="number" id="f-extrastop" placeholder="0.00" oninput="calcEarnings()"></div>
-      <div class="field"><label>Parking ($)</label><input type="number" id="f-parking" placeholder="0.00" oninput="calcEarnings()"></div>
-      <div class="field checkbox-field">
-        <label>Holiday Pay (+$20)</label>
-        <div class="checkbox-wrap">
-          <input type="checkbox" id="f-holiday" onchange="calcEarnings()">
-          <span class="checkbox-label">Holiday rate</span>
-        </div>
-      </div>
-      <div class="field" style="grid-column:1/-1;border-top:1px solid var(--border);padding-top:12px"><label style="color:var(--accent)">Total Fare ($) — from receipt</label><input type="number" id="f-total" placeholder="0.00" style="border-color:rgba(200,240,96,0.3)"></div>
-      <div class="field"><label style="color:var(--accent2)">Cash Tips ($) — visible only in your stats</label><input type="number" id="f-cash-tips" placeholder="0.00" style="border-color:rgba(96,212,240,0.3)" oninput="calcEarnings()"></div>
+      <div class="field"><label>Event Wait ($)</label><input type="number" id="f-eventwait" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()"></div>
+      <div class="field"><label>Extra Stop ($)</label><input type="number" id="f-extrastop" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()"></div>
+      <div class="field"><label>Discount ($)</label><input type="number" id="f-discount" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()"></div>
+      <div class="field"><label>Expenses ($)</label><input type="number" id="f-expenses" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()"></div>
+      <div class="field"><label>Gratuity ($)</label><input type="number" id="f-gratuity" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()"></div>
+      <div class="field"><label>Fuel Surcharge ($)</label><input type="number" id="f-fuel" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()"></div>
+      <div class="field"><label>Parking ($)</label><input type="number" id="f-parking" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()"></div>
+      <div class="field"><label>Airport Fee ($)</label><input type="number" id="f-airport" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()"></div>
+      <div class="field"><label>Tolls ($)</label><input type="number" id="f-tolls" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()"></div>
+      <div class="field" style="grid-column:1/-1;border-top:1px solid var(--border);padding-top:12px"><label style="color:var(--accent)">Total Fare ($) — from receipt</label><input type="number" id="f-total" placeholder="0.00" min="0" step="0.01" style="border-color:rgba(200,240,96,0.3)"></div>
+      <div class="field"><label style="color:var(--accent2)">Cash Tips ($) — visible only in your stats</label><input type="number" id="f-cash-tips" placeholder="0.00" min="0" step="0.01" style="border-color:rgba(96,212,240,0.3)" oninput="calcEarnings()"></div>
     </div>
     <div class="earnings-preview" id="earnings-preview">
       <div class="ep-title">Earnings Breakdown</div>
-      <div class="ep-row"><span>Adjusted Base<br><span style="font-size:10px;color:var(--muted);font-weight:400">Base + wait + fees − discount + expenses</span></span><span class="ep-val" id="ep-adj-base">$0.00</span></div>
-      <div class="ep-row" style="font-size:12px;color:var(--muted)"><span>Extra Stop</span><span class="ep-val" id="ep-extrastop">$0.00</span></div>
+      <div class="ep-row"><span>Base Fare</span><span class="ep-val" id="ep-base-fare">$0.00</span></div>
+      <div class="ep-row ep-optional" id="ep-row-wait"><span>Wait Time</span><span class="ep-val" id="ep-wait">$0.00</span></div>
+      <div class="ep-row ep-optional" id="ep-row-greet"><span>Greet Fee</span><span class="ep-val" id="ep-greet">$0.00</span></div>
+      <div class="ep-row ep-optional" id="ep-row-carseat"><span id="ep-carseat-label">Car Seats</span><span class="ep-val" id="ep-carseat">$0.00</span></div>
+      <div class="ep-row ep-optional" id="ep-row-eventwait"><span>Event Wait</span><span class="ep-val" id="ep-eventwait">$0.00</span></div>
+      <div class="ep-row ep-optional" id="ep-row-extrastop"><span>Extra Stop</span><span class="ep-val" id="ep-extrastop">$0.00</span></div>
+      <div class="ep-row ep-optional" id="ep-row-discount" style="color:var(--danger)"><span>Discount</span><span class="ep-val" id="ep-discount">-$0.00</span></div>
+      <div class="ep-row ep-optional" id="ep-row-expenses"><span>Expenses</span><span class="ep-val" id="ep-expenses">$0.00</span></div>
+      <div class="ep-row" style="border-top:1px solid var(--border);margin-top:4px;padding-top:8px"><span>Adjusted Base</span><span class="ep-val" id="ep-adj-base">$0.00</span></div>
       <div class="ep-row"><span>Base × 38%</span><span class="ep-val" id="ep-base-pct">$0.00</span></div>
-      <div class="ep-row"><span>Gratuity</span><span class="ep-val" id="ep-gratuity">$0.00</span></div>
-      <div class="ep-row"><span>Fuel Surcharge</span><span class="ep-val" id="ep-fuel">$0.00</span></div>
-      <div class="ep-row"><span>Parking</span><span class="ep-val" id="ep-parking">$0.00</span></div>
-      <div class="ep-row"><span>Airport Fee</span><span class="ep-val" id="ep-airport">$0.00</span></div>
-      <div class="ep-row" style="color:var(--muted);font-size:12px"><span>Tolls (company)</span><span class="ep-val" id="ep-tolls">$0.00</span></div>
-      <div class="ep-row" style="font-size:12px;color:var(--accent2)" id="ep-holiday-row"><span>Holiday Pay</span><span class="ep-val" id="ep-holiday">$0.00</span></div>
+      <div class="ep-row ep-optional" id="ep-row-gratuity"><span>Gratuity</span><span class="ep-val" id="ep-gratuity">$0.00</span></div>
+      <div class="ep-row ep-optional" id="ep-row-fuel"><span>Fuel Surcharge</span><span class="ep-val" id="ep-fuel">$0.00</span></div>
+      <div class="ep-row ep-optional" id="ep-row-parking"><span>Parking</span><span class="ep-val" id="ep-parking">$0.00</span></div>
+      <div class="ep-row ep-optional" id="ep-row-airport"><span>Airport Fee</span><span class="ep-val" id="ep-airport">$0.00</span></div>
+      <div class="ep-row ep-optional" id="ep-row-tolls" style="color:var(--muted);font-size:12px"><span>Tolls (company)</span><span class="ep-val" id="ep-tolls">$0.00</span></div>
       <div class="ep-row total"><span>Your Earnings</span><span class="ep-val" id="ep-total">$0.00</span></div>
-      <div class="ep-row" style="color:var(--accent2);font-size:13px;border-top:1px solid var(--border);margin-top:4px;padding-top:8px"><span>Cash Tips (private)</span><span class="ep-val" id="ep-cash-tips">$0.00</span></div>
+      <div class="ep-row ep-optional" id="ep-row-cash" style="color:var(--accent2);font-size:13px;border-top:1px solid var(--border);margin-top:4px;padding-top:8px"><span>Cash Tips (private)</span><span class="ep-val" id="ep-cash-tips">$0.00</span></div>
     </div>
-    <div style="display:flex;gap:8px">
-      <button class="btn-save" id="btn-save" onclick="saveTrip()" style="flex:1">Save Trip</button>
-      <button id="btn-cancel-edit" onclick="cancelEdit()" style="display:none;padding:14px 16px;background:transparent;border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);font-family:'Syne',sans-serif;font-size:14px;cursor:pointer;white-space:nowrap">Cancel</button>
+    <div class="form-actions">
+      <button class="btn-cancel" id="btn-cancel" onclick="cancelForm()">Cancel</button>
+      <button class="btn-save" id="btn-save" onclick="saveTrip()">Save Trip</button>
     </div>
   </div>
 
@@ -483,18 +401,25 @@
       <button class="period-btn"        onclick="setStatsPeriod('all',this)">All Time</button>
     </div>
     <div class="stats-row" id="stats-numbers"></div>
-    <div id="stats-fuel-section" style="margin-bottom:16px">
-      <div class="section-title" style="color:var(--muted)">Fuel Expense</div>
-      <div style="display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px">
-        <span style="font-size:12px;color:var(--muted);white-space:nowrap">Today's fuel cost:</span>
-        <input type="number" id="stats-fuel-input" placeholder="0.00" min="0" step="0.01"
-          style="flex:1;background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:15px;padding:2px 4px;outline:none"
-          oninput="saveFuelExpense(parseFloat(this.value)||0);renderStats()">
-        <span style="font-size:12px;color:var(--muted)">$</span>
-      </div>
-    </div>
-    <div id="stats-net"></div>
     <div id="stats-cash"></div>
+
+    <!-- BUG-04: Fuel expense with date -->
+    <div style="margin-bottom:24px">
+      <div class="section-title">Daily Fuel Expense</div>
+      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+        <div class="filter-group">
+          <label class="filter-label">Date</label>
+          <input type="date" id="fuel-date" class="filter-input" style="min-width:140px">
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Amount ($)</label>
+          <input type="number" id="fuel-amount" class="filter-input" placeholder="0.00" min="0" step="0.01" style="min-width:110px">
+        </div>
+        <button class="btn-primary" style="width:auto;padding:8px 18px;align-self:flex-end" onclick="saveFuelExpense()">Save</button>
+      </div>
+      <div id="fuel-status" style="font-size:12px;min-height:18px;margin-top:6px;color:var(--accent)"></div>
+    </div>
+
     <div class="section-title">Last Trip</div>
     <div id="last-trip-container"></div>
   </div>
@@ -507,36 +432,15 @@
       <button class="period-btn"        onclick="setHistoryFilter('week',this)">This Week</button>
       <button class="period-btn"        onclick="setHistoryFilter('month',this)">This Month</button>
     </div>
-    <!-- Booking ID search -->
-    <div style="margin-bottom:10px;position:relative">
-      <input type="text" id="hist-search" placeholder="Search by Booking ID…" maxlength="7"
-        oninput="this.value=this.value.replace(/[^0-9]/g,'');renderHistory()"
-        style="width:100%;padding:8px 12px 8px 34px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:'DM Mono',monospace;font-size:13px">
-      <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:0.4" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-    </div>
-    <!-- Date range filter — compact row -->
-    <div style="display:flex;gap:6px;align-items:flex-end;margin-bottom:12px">
-      <div style="flex:1;min-width:0">
-        <div class="filter-label" style="margin-bottom:3px">From</div>
-        <input type="date" id="hist-date-from" class="filter-input" style="width:100%;min-width:0" onchange="renderHistory()">
-      </div>
-      <div style="flex:1;min-width:0">
-        <div class="filter-label" style="margin-bottom:3px">To</div>
-        <input type="date" id="hist-date-to" class="filter-input" style="width:100%;min-width:0" onchange="renderHistory()">
-      </div>
-      <button class="filter-reset" style="flex-shrink:0;align-self:flex-end" onclick="resetHistoryDates()">Reset</button>
-    </div>
+    <div id="history-date-hint" style="font-size:11px;color:var(--muted);margin:-8px 0 12px;font-family:'DM Mono',monospace;"></div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th style="width:24px"></th><th>Date</th><th>Booking</th><th>Total</th><th>Earnings</th><th style="width:52px"></th></tr></thead>
+        <thead><tr><th>Date</th><th>Booking</th><th>Total</th><th>Earnings</th><th>Actions</th></tr></thead>
         <tbody id="trips-body"></tbody>
       </table>
     </div>
     <div id="empty-history" class="empty-state" style="display:none">
-      <div class="icon" style="font-size:28px;opacity:0.4">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1.5" fill="currentColor" stroke="none"/></svg>
-      </div>
-      <div style="margin-top:8px">No trips yet. Log your first trip!</div>
+      <div class="icon">🚗</div><div>No trips yet. Log your first trip!</div>
     </div>
   </div>
 
@@ -560,15 +464,9 @@
         </select>
       </div>
       <button class="filter-reset" onclick="resetDashFilters()">Reset</button>
-      <button class="btn-export" onclick="exportXLSX()">Export XLSX</button>
+      <button class="btn-export" onclick="exportCSV()">Export CSV</button>
     </div>
-    <!-- Booking ID search -->
-    <div style="margin-bottom:10px;position:relative">
-      <input type="text" id="dash-search" placeholder="Search by Booking ID…" maxlength="7"
-        oninput="this.value=this.value.replace(/[^0-9]/g,'');renderDashboard()"
-        style="width:100%;padding:8px 12px 8px 34px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:'DM Mono',monospace;font-size:13px">
-      <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:0.4" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-    </div>
+    <div id="dash-date-error" style="font-size:12px;color:var(--danger);margin:-8px 0 8px;min-height:16px;"></div>
 
     <!-- QUICK PERIOD BUTTONS -->
     <div class="period-tabs" style="margin-bottom:16px">
@@ -592,6 +490,7 @@
             <th>Booking</th>
             <th>Total</th>
             <th>Earnings</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody id="dash-body"></tbody>
@@ -606,71 +505,59 @@
 
 <script>
 const SUPABASE_URL  = 'https://uljmcbrorgjrrvoxzmdb.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsam1jYnJvcmdqcnJ2b3h6bWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQzNzAsImV4cCI6MjA4OTg4MDM3MH0.gzfN9ayldCSF0kRSfSCT9Np02Dpke8ZSS42iJLBhzmA';
+const SUPABASE_ANON = '%%VITE_SUPABASE_ANON_KEY%%';
 const API_URL       = 'https://limopay-production.up.railway.app';
 
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
-let currentUser = null, currentRole = 'driver', currentDriverId = null, allTrips = [], allTripsManager = [], fuelExpenses = [];
+let currentUser = null, currentRole = 'driver', currentDriverId = null, allTrips = [];
 let statsFilter = 'today', historyFilter = 'all', dashFilter = 'all';
-let editingTripId = null; // null = new trip, id = editing existing
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 async function init() {
   showScreen('loading');
 
-  // onAuthStateChange MUST come before getSession() — iOS Safari requirement
+  // Check existing session first
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    await onLoggedIn(session.user);
+  } else {
+    showScreen('login');
+  }
+
+  // Listen for future auth changes
   sb.auth.onAuthStateChange(async (event, session) => {
-    if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') && session) {
-      if (!currentUser) await onLoggedIn(session.user, session.access_token);
-    } else if (event === 'INITIAL_SESSION' && !session) {
-      showScreen('login');
+    if (event === 'SIGNED_IN' && session && !currentUser) {
+      await onLoggedIn(session.user);
     } else if (event === 'SIGNED_OUT') {
-      currentUser = null; allTrips = []; allTripsManager = []; fuelExpenses = [];
+      currentUser = null; allTrips = [];
       showScreen('login');
     }
   });
-
-  // Fallback: if onAuthStateChange never fires, show login after 8s
-  setTimeout(() => {
-    if (!currentUser && document.getElementById('loading-screen').style.display !== 'none') {
-      showScreen('login');
-    }
-  }, 8000);
 }
 
-async function onLoggedIn(user, accessToken) {
+async function onLoggedIn(user) {
   currentUser = user;
 
-  let profile = null;
-  try {
-    const res = await fetch(`${API_URL}/api/profile`, {
-      headers: { 'Authorization': `Bearer ${accessToken}` }
-    });
-    if (res.ok) {
-      const json = await res.json();
-      profile = json.data;
-    }
-  } catch(e) {
-    showScreen('login');
-    return;
-  }
+  let { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
 
   if (!profile) {
+    // New user — show Driver ID screen first
     showScreen('driverid');
     return;
   }
 
+  // Existing user — check if they have a driver_id
   if (!profile.driver_id && currentRole !== 'manager') {
     showScreen('driverid');
     return;
   }
 
-  await loadApp(user, profile, accessToken);
+  await loadApp(user, profile);
 }
 
-async function loadApp(user, profile, accessToken) {
+async function loadApp(user, profile) {
   currentRole     = profile?.role || 'driver';
   currentDriverId = profile?.driver_id || null;
 
@@ -692,7 +579,7 @@ async function loadApp(user, profile, accessToken) {
 
   document.getElementById('f-date').value = localToday();
   showScreen('app');
-  await loadTrips(accessToken);
+  await loadTrips();
 }
 
 // ── DRIVER ID VERIFICATION ────────────────────────────────────────────────────
@@ -762,119 +649,25 @@ function showTab(name) {
     if (p) p.style.display=t===name?'block':'none';
     if (b) b.classList.toggle('active',t===name);
   });
-  if (name==='stats')     renderStats();
+  if (name==='stats') {
+    renderStats();
+    const fd = document.getElementById('fuel-date');
+    if (fd && !fd.value) fd.value = localToday();
+  }
   if (name==='history')   renderHistory();
   if (name==='dashboard') renderDashboard();
 }
 
-// ── FILE UPLOAD (MULTI) ───────────────────────────────────────────────────────
-let uploadedImages = []; // { base64, objectUrl }
-
-async function handleFiles(files) {
-  if (!files || !files.length) return;
-  for (const file of Array.from(files)) {
-    if (!file.type.startsWith('image/')) continue;
-    const base64 = await fileToBase64(file);
-    const objectUrl = URL.createObjectURL(file);
-    uploadedImages.push({ base64, objectUrl });
-  }
-  renderPreviews();
-  // Auto-parse if images were added
-  if (uploadedImages.length > 0) parseAllImages();
-}
-
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = e => resolve(e.target.result.split(',')[1]);
-    r.onerror = reject;
-    r.readAsDataURL(file);
-  });
-}
-
-function renderPreviews() {
-  const wrap = document.getElementById('multi-preview-wrap');
-  const container = document.getElementById('img-previews');
-  const parseBtn = document.getElementById('parse-multi-btn');
-  const parseCount = document.getElementById('parse-count');
-
-  if (!uploadedImages.length) {
-    wrap.style.display = 'none';
-    return;
-  }
-  wrap.style.display = 'block';
-
-  container.innerHTML = uploadedImages.map((img, i) => `
-    <div class="img-thumb">
-      <img src="${img.objectUrl}" alt="Screenshot ${i+1}">
-      <button class="thumb-remove" onclick="removeImage(${i})" title="Remove">✕</button>
-      <div class="thumb-num">${i+1}</div>
-    </div>
-  `).join('') + `
-    <button class="add-more-btn" onclick="document.getElementById('file-input-more').click()" title="Add more screenshots">+
-      <input type="file" id="file-input-more" accept="image/*" multiple style="display:none" onchange="handleFiles(this.files)">
-    </button>`;
-
-  parseCount.textContent = uploadedImages.length === 1 ? '1' : uploadedImages.length;
-  parseBtn.classList.add('visible');
-}
-
-function removeImage(idx) {
-  URL.revokeObjectURL(uploadedImages[idx].objectUrl);
-  uploadedImages.splice(idx, 1);
-  renderPreviews();
-  if (!uploadedImages.length) {
-    document.getElementById('earnings-preview').classList.remove('show');
-  }
-}
-
-async function parseAllImages() {
-  if (!uploadedImages.length) return;
-  setStatus('log', 'loading', `Parsing ${uploadedImages.length} screenshot${uploadedImages.length>1?'s':''} with AI...`);
-  // Save user's manually entered date before parsing
-  const userDate = document.getElementById('f-date').value;
-  try {
-    const { data: { session } } = await sb.auth.getSession();
-    const res = await fetch(`${API_URL}/api/parse-screenshot`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-      body: JSON.stringify({ images: uploadedImages.map(i => i.base64) })
-    });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error);
-    fillForm(json.data, userDate);
-    const msg = uploadedImages.length > 1
-      ? `✓ ${uploadedImages.length} screenshots merged successfully`
-      : '✓ Screenshot parsed successfully';
-    setStatus('log', 'success', msg);
-  } catch { setStatus('log', 'error', 'Could not parse screenshot(s). Fill in manually.'); }
-}
-
-function fillForm(d, preserveDate) {
-  // Only set date from AI if user hasn't manually changed it from today's default
-  const currentDate = document.getElementById('f-date').value;
-  const todayDefault = localToday();
-  if (d.date && !preserveDate && currentDate === todayDefault) {
-    document.getElementById('f-date').value = d.date;
-  } else if (preserveDate) {
-    document.getElementById('f-date').value = preserveDate;
-  }
-  if (d.booking_id && /^\d{7}$/.test(String(d.booking_id)))   document.getElementById('f-booking').value   = d.booking_id;
-  if (d.base_fare)      document.getElementById('f-base').value      = d.base_fare;
-  if (d.wait_time)      document.getElementById('f-wait').value      = d.wait_time;
-  if (d.greet_fee)      document.getElementById('f-greet').checked   = d.greet_fee > 0;
-  if (d.car_seat_fee)   document.getElementById('f-carseat').value   = d.car_seat_count || Math.round((d.car_seat_fee - 10) / 10);
-  if (d.event_wait)     document.getElementById('f-eventwait').value = d.event_wait;
-  if (d.extra_stop)     document.getElementById('f-extrastop').value  = d.extra_stop;
-  if (d.discount)       document.getElementById('f-discount').value  = d.discount;
-  if (d.expenses)       document.getElementById('f-expenses').value  = d.expenses;
-  if (d.gratuity)       document.getElementById('f-gratuity').value  = d.gratuity;
-  if (d.fuel_surcharge) document.getElementById('f-fuel').value      = d.fuel_surcharge;
-  if (d.parking)        document.getElementById('f-parking').value   = d.parking;
-  if (d.airport_fee)    document.getElementById('f-airport').value   = d.airport_fee;
-  if (d.tolls)          document.getElementById('f-tolls').value     = d.tolls;
-  if (d.total)          document.getElementById('f-total').value     = d.total;
-  calcEarnings();
+// ── FILE UPLOAD ───────────────────────────────────────────────────────────────
+async function handleFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const p=document.getElementById('img-preview');
+    p.src=e.target.result; p.style.display='block';
+    parseScreenshot(e.target.result.split(',')[1]);
+  };
+  reader.readAsDataURL(file);
 }
 
 const zone = document.getElementById('upload-zone');
@@ -882,14 +675,52 @@ zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add(
 zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
 zone.addEventListener('drop', e => {
   e.preventDefault(); zone.classList.remove('drag-over');
-  const files = [...e.dataTransfer.files].filter(f => f.type.startsWith('image/'));
-  if (files.length) handleFiles(files);
+  const f=e.dataTransfer.files[0];
+  if (f?.type.startsWith('image/')) handleFile(f);
 });
+
+async function parseScreenshot(base64) {
+  setStatus('log','loading','Parsing screenshot with AI...');
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const res = await fetch(`${API_URL}/api/parse-screenshot`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+      body: JSON.stringify({ imageBase64: base64 })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error);
+    const d=json.data;
+    if (d.date)           document.getElementById('f-date').value      = d.date;
+    if (d.booking_id && /^\d{7}$/.test(String(d.booking_id)))     document.getElementById('f-booking').value   = d.booking_id;
+    if (d.base_fare)      document.getElementById('f-base').value      = d.base_fare;
+    if (d.wait_time)      document.getElementById('f-wait').value      = d.wait_time;
+    if (d.greet_fee)      document.getElementById('f-greet').checked   = d.greet_fee > 0;
+    if (d.car_seat_fee)   document.getElementById('f-carseat').value   = d.car_seat_count || Math.round((d.car_seat_fee - 10) / 10);
+    if (d.event_wait)     document.getElementById('f-eventwait').value = d.event_wait;
+    if (d.discount)       document.getElementById('f-discount').value  = d.discount;
+    if (d.expenses)       document.getElementById('f-expenses').value  = d.expenses;
+    if (d.gratuity)       document.getElementById('f-gratuity').value  = d.gratuity;
+    if (d.fuel_surcharge) document.getElementById('f-fuel').value      = d.fuel_surcharge;
+    if (d.parking)        document.getElementById('f-parking').value   = d.parking;
+    if (d.airport_fee)    document.getElementById('f-airport').value   = d.airport_fee;
+    if (d.tolls)          document.getElementById('f-tolls').value     = d.tolls;
+    if (d.total)          document.getElementById('f-total').value     = d.total;
+    calcEarnings();
+    setStatus('log','success','✓ Screenshot parsed successfully');
+  } catch { setStatus('log','error','Could not parse screenshot. Fill in manually.'); }
+}
 
 // ── EARNINGS ──────────────────────────────────────────────────────────────────
 function carSeatFee(qty) {
   if (qty <= 0) return 0;
   return 20 + Math.max(0, qty - 1) * 10;
+}
+
+function showEpRow(id, val, text) {
+  const row = document.getElementById(id);
+  if (!row) return;
+  row.classList.toggle('visible', val !== 0);
 }
 
 function calcEarnings() {
@@ -900,7 +731,6 @@ function calcEarnings() {
   const seatFee   = carSeatFee(seatQty);
   const eventWait = parseFloat(document.getElementById('f-eventwait').value)|| 0;
   const extraStop = parseFloat(document.getElementById('f-extrastop').value) || 0;
-  const holiday   = document.getElementById('f-holiday').checked ? 20 : 0;
   const discount  = parseFloat(document.getElementById('f-discount').value) || 0;
   const expenses  = parseFloat(document.getElementById('f-expenses').value) || 0;
   const grat      = parseFloat(document.getElementById('f-gratuity').value) || 0;
@@ -908,342 +738,227 @@ function calcEarnings() {
   const parking   = parseFloat(document.getElementById('f-parking').value)  || 0;
   const air       = parseFloat(document.getElementById('f-airport').value)  || 0;
   const toll      = parseFloat(document.getElementById('f-tolls').value)    || 0;
+  const cashTips  = parseFloat(document.getElementById('f-cash-tips').value)|| 0;
 
   const adjBase = base + wait + greet + seatFee + eventWait + extraStop - discount + expenses;
   const basePct = adjBase * 0.38;
-  const total   = basePct + grat + fuel + parking + air + holiday;
-  // tolls — company expense, not included in driver earnings
+  const total   = basePct + grat + fuel + parking + air;
+
+  // Base fare always shown
+  document.getElementById('ep-base-fare').textContent = fmt(base);
+
+  // Optional rows — show only when non-zero
+  showEpRow('ep-row-wait',      wait);
+  document.getElementById('ep-wait').textContent = fmt(wait);
+
+  showEpRow('ep-row-greet',     greet);
+  document.getElementById('ep-greet').textContent = fmt(greet);
+
+  showEpRow('ep-row-carseat',   seatFee);
+  document.getElementById('ep-carseat-label').textContent = seatQty > 0 ? `Car Seats (${seatQty}×)` : 'Car Seats';
+  document.getElementById('ep-carseat').textContent = fmt(seatFee);
+
+  showEpRow('ep-row-eventwait', eventWait);
+  document.getElementById('ep-eventwait').textContent = fmt(eventWait);
+
+  showEpRow('ep-row-extrastop', extraStop);
+  document.getElementById('ep-extrastop').textContent = fmt(extraStop);
+
+  showEpRow('ep-row-discount',  discount);
+  document.getElementById('ep-discount').textContent = '-'+fmt(discount);
+
+  showEpRow('ep-row-expenses',  expenses);
+  document.getElementById('ep-expenses').textContent = fmt(expenses);
 
   document.getElementById('ep-adj-base').textContent  = fmt(adjBase);
-  document.getElementById('ep-extrastop').textContent = fmt(extraStop);
   document.getElementById('ep-base-pct').textContent  = fmt(basePct);
-  document.getElementById('ep-gratuity').textContent  = fmt(grat);
-  document.getElementById('ep-fuel').textContent      = fmt(fuel);
-  document.getElementById('ep-parking').textContent   = fmt(parking);
-  document.getElementById('ep-airport').textContent   = fmt(air);
-  document.getElementById('ep-holiday').textContent   = fmt(holiday);
-  document.getElementById('ep-holiday-row').style.display = holiday > 0 ? 'flex' : 'none';
-  document.getElementById('ep-total').textContent     = fmt(total);
-  const cashTips = parseFloat(document.getElementById('f-cash-tips').value) || 0;
+
+  showEpRow('ep-row-gratuity',  grat);
+  document.getElementById('ep-gratuity').textContent = fmt(grat);
+
+  showEpRow('ep-row-fuel',      fuel);
+  document.getElementById('ep-fuel').textContent = fmt(fuel);
+
+  showEpRow('ep-row-parking',   parking);
+  document.getElementById('ep-parking').textContent = fmt(parking);
+
+  showEpRow('ep-row-airport',   air);
+  document.getElementById('ep-airport').textContent = fmt(air);
+
+  showEpRow('ep-row-tolls',     toll);
+  document.getElementById('ep-tolls').textContent = fmt(toll);
+
+  document.getElementById('ep-total').textContent = fmt(total);
+
+  showEpRow('ep-row-cash',      cashTips);
   document.getElementById('ep-cash-tips').textContent = fmt(cashTips);
+
   document.getElementById('earnings-preview').classList.toggle('show', base > 0);
-}
-
-// ── EDIT TRIP ─────────────────────────────────────────────────────────────────
-function startEditTrip(id) {
-  const t = [...allTrips, ...allTripsManager].find(x => x.id === id);
-  if (!t) return;
-  editingTripId = id;
-
-  // Fill form with trip data
-  document.getElementById('f-date').value      = t.date || localToday();
-  document.getElementById('f-booking').value   = t.booking_id || '';
-  document.getElementById('f-base').value      = t.base_fare || '';
-  document.getElementById('f-wait').value      = t.wait_time || '';
-  document.getElementById('f-greet').checked   = (t.greet_fee || 0) > 0;
-  document.getElementById('f-carseat').value   = t.car_seat_count || 0;
-  document.getElementById('f-eventwait').value = t.event_wait || '';
-  document.getElementById('f-extrastop').value = t.extra_stop || '';
-  document.getElementById('f-holiday').checked = (t.holiday_pay || 0) > 0;
-  document.getElementById('f-discount').value  = t.discount || '';
-  document.getElementById('f-expenses').value  = t.expenses || '';
-  document.getElementById('f-gratuity').value  = t.gratuity || '';
-  document.getElementById('f-fuel').value      = t.fuel_surcharge || '';
-  document.getElementById('f-parking').value   = t.parking || '';
-  document.getElementById('f-airport').value   = t.airport_fee || '';
-  document.getElementById('f-tolls').value     = t.tolls || '';
-  document.getElementById('f-total').value     = t.total || '';
-  document.getElementById('f-cash-tips').value = t.cash_tips || '';
-
-  // Update UI to show edit mode
-  document.getElementById('btn-save').textContent = 'Update Trip';
-  document.getElementById('btn-cancel-edit').style.display = 'block';
-  setStatus('log', 'loading', `Editing booking #${t.booking_id}`);
-  calcEarnings();
-  showTab('log');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function cancelEdit() {
-  editingTripId = null;
-  document.getElementById('btn-save').textContent = 'Save Trip';
-  document.getElementById('btn-cancel-edit').style.display = 'none';
-  clearForm();
-  setStatus('log', 'success', '');
 }
 
 // ── SAVE TRIP ─────────────────────────────────────────────────────────────────
 async function saveTrip() {
   const bookingId = document.getElementById('f-booking').value.trim();
-  const baseFare  = parseFloat(document.getElementById('f-base').value) || 0;
-  const total     = parseFloat(document.getElementById('f-total').value) || 0;
-
-  if (!bookingId) { setStatus('log','error','Booking ID є обов\'язковим.'); return; }
-  if (!/^\d{7}$/.test(bookingId)) { setStatus('log','error','Booking ID must be exactly 7 digits.'); return; }
-  if (baseFare <= 0) { setStatus('log','error','Base Fare є обов\'язковим.'); return; }
-  if (total <= 0) { setStatus('log','error','Total Fare є обов\'язковим.'); return; }
-
-  const btn = document.getElementById('btn-save');
-  btn.disabled = true; btn.textContent = editingTripId ? 'Updating...' : 'Saving...';
-
+  if (!bookingId) {
+    setStatus('log','error','Please enter Booking ID before saving.');
+    return;
+  }
+  if (!/^\d{7}$/.test(bookingId)) {
+    setStatus('log','error','Booking ID must be exactly 7 digits.');
+    return;
+  }
+  // BUG-01: validate no negative values
+  const numFields = ['f-base','f-wait','f-eventwait','f-extrastop','f-discount','f-expenses','f-gratuity','f-fuel','f-parking','f-airport','f-tolls','f-total','f-cash-tips'];
+  for (const id of numFields) {
+    const val = parseFloat(document.getElementById(id).value) || 0;
+    if (val < 0) { setStatus('log','error','All amounts must be $0.00 or greater.'); return; }
+  }
+  const base = parseFloat(document.getElementById('f-base').value)||0;
+  const wait = parseFloat(document.getElementById('f-wait').value)||0;
+  const greet = document.getElementById('f-greet').checked ? 40 : 0;
+  const seatQtyV = parseInt(document.getElementById('f-carseat').value)||0;
+  const eventWaitV = parseFloat(document.getElementById('f-eventwait').value)||0;
+  const extraStopV = parseFloat(document.getElementById('f-extrastop').value)||0;
+  const expensesV = parseFloat(document.getElementById('f-expenses').value)||0;
+  const discountV = parseFloat(document.getElementById('f-discount').value)||0;
+  const adjBaseCheck = base + wait + greet + carSeatFee(seatQtyV) + eventWaitV + extraStopV + expensesV;
+  if (discountV > adjBaseCheck) {
+    setStatus('log','error','Discount cannot exceed Adjusted Base ($'+adjBaseCheck.toFixed(2)+').');
+    return;
+  }
+  const btn=document.getElementById('btn-save');
+  btn.disabled=true; btn.textContent='Saving...';
   try {
     const { data: { session } } = await sb.auth.getSession();
     const seatQty = parseInt(document.getElementById('f-carseat').value)||0;
-    const payload = {
-      date:           document.getElementById('f-date').value,
-      booking_id:     bookingId,
-      base_fare:      parseFloat(document.getElementById('f-base').value)||0,
-      wait_time:      parseFloat(document.getElementById('f-wait').value)||0,
-      greet_fee:      document.getElementById('f-greet').checked ? 40 : 0,
-      car_seat_count: seatQty,
-      car_seat_fee:   carSeatFee(seatQty),
-      event_wait:     parseFloat(document.getElementById('f-eventwait').value)||0,
-      extra_stop:     parseFloat(document.getElementById('f-extrastop').value)||0,
-      holiday_pay:    document.getElementById('f-holiday').checked ? 20 : 0,
-      discount:       parseFloat(document.getElementById('f-discount').value)||0,
-      expenses:       parseFloat(document.getElementById('f-expenses').value)||0,
-      gratuity:       parseFloat(document.getElementById('f-gratuity').value)||0,
-      fuel_surcharge: parseFloat(document.getElementById('f-fuel').value)||0,
-      parking:        parseFloat(document.getElementById('f-parking').value)||0,
-      airport_fee:    parseFloat(document.getElementById('f-airport').value)||0,
-      tolls:          parseFloat(document.getElementById('f-tolls').value)||0,
-      total,
-      cash_tips:      parseFloat(document.getElementById('f-cash-tips').value)||0,
-      driver_id:      currentDriverId,
-    };
-
-    const isEdit = !!editingTripId;
-    const url    = isEdit ? `${API_URL}/api/trips/${editingTripId}` : `${API_URL}/api/trips`;
-    const method = isEdit ? 'PUT' : 'POST';
-
-    const res = await fetch(url, {
-      method,
+    const res = await fetch(`${API_URL}/api/trips`, {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        date:           document.getElementById('f-date').value,
+        booking_id:     document.getElementById('f-booking').value,
+        base_fare:      parseFloat(document.getElementById('f-base').value)||0,
+        wait_time:      parseFloat(document.getElementById('f-wait').value)||0,
+        greet_fee:      document.getElementById('f-greet').checked ? 40 : 0,
+        car_seat_count: seatQty,
+        car_seat_fee:   carSeatFee(seatQty),
+        event_wait:     parseFloat(document.getElementById('f-eventwait').value)||0,
+        extra_stop:     parseFloat(document.getElementById('f-extrastop').value)||0,
+        discount:       parseFloat(document.getElementById('f-discount').value)||0,
+        expenses:       parseFloat(document.getElementById('f-expenses').value)||0,
+        gratuity:       parseFloat(document.getElementById('f-gratuity').value)||0,
+        fuel_surcharge: parseFloat(document.getElementById('f-fuel').value)||0,
+        parking:        parseFloat(document.getElementById('f-parking').value)||0,
+        airport_fee:    parseFloat(document.getElementById('f-airport').value)||0,
+        tolls:          parseFloat(document.getElementById('f-tolls').value)||0,
+        total:          parseFloat(document.getElementById('f-total').value)||0,
+        cash_tips:      parseFloat(document.getElementById('f-cash-tips').value)||0,
+        driver_id:      currentDriverId,
+      })
     });
-    const json = await res.json();
+    const json=await res.json();
     if (!res.ok) throw new Error(json.error);
-
-    if (isEdit) {
-      // Update in local arrays
-      const updated = json.data;
-      allTrips = allTrips.map(t => t.id === editingTripId ? updated : t);
-      allTripsManager = allTripsManager.map(t => t.id === editingTripId ? updated : t);
-      setStatus('log','success','✓ Trip updated!');
-    } else {
-      allTrips.unshift(json.data);
-      setStatus('log','success','✓ Trip saved!');
-    }
-
-    editingTripId = null;
-    document.getElementById('btn-cancel-edit').style.display = 'none';
+    showToast('✓ Trip saved!');
+    setStatus('log','success','✓ Trip saved!');
+    allTrips.unshift(json.data);
     clearForm();
-    renderHistory(); renderStats(); renderDashboard();
-  } catch(err) { setStatus('log','error','Failed: '+err.message); }
+  } catch(err) { setStatus('log','error','Failed to save: '+err.message); }
   finally { btn.disabled=false; btn.textContent='Save Trip'; }
+}
+
+function hasFormData() {
+  const textFields = ['f-booking','f-base','f-wait','f-eventwait','f-extrastop','f-discount','f-expenses','f-gratuity','f-fuel','f-parking','f-airport','f-tolls','f-total','f-cash-tips'];
+  return textFields.some(id => (document.getElementById(id)?.value || '').trim() !== '') ||
+         document.getElementById('f-greet')?.checked ||
+         (parseInt(document.getElementById('f-carseat')?.value) || 0) > 0;
+}
+
+function cancelForm() {
+  if (!hasFormData()) { clearForm(); return; }
+  if (confirm('Cancel trip entry? All entered data will be lost.')) clearForm();
 }
 
 function clearForm() {
   ['f-booking','f-base','f-wait','f-carseat','f-eventwait','f-extrastop','f-discount','f-expenses','f-gratuity','f-fuel','f-parking','f-airport','f-tolls','f-total','f-cash-tips'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f-greet').checked = false;
-  document.getElementById('f-holiday').checked = false;
-  document.getElementById('f-date').value=localToday();
-  // Clear multi-image state
-  uploadedImages.forEach(img => URL.revokeObjectURL(img.objectUrl));
-  uploadedImages = [];
-  renderPreviews();
+  document.getElementById('f-date').value = localToday();
+  document.getElementById('img-preview').style.display='none';
   document.getElementById('earnings-preview').classList.remove('show');
 }
 
-// ── LOAD TRIPS ────────────────────────────────────────────────────────────────
-let tripsLoading = false;
-async function loadTrips(accessToken) {
-  if (tripsLoading) return;
-  tripsLoading = true;
+// ── FUEL EXPENSE ──────────────────────────────────────────────────────────────
+async function saveFuelExpense() {
+  const date   = document.getElementById('fuel-date').value;
+  const amount = parseFloat(document.getElementById('fuel-amount').value) || 0;
+  const statusEl = document.getElementById('fuel-status');
+  if (!date)   { statusEl.style.color='var(--danger)'; statusEl.textContent='Please select a date.'; return; }
+  if (amount <= 0) { statusEl.style.color='var(--danger)'; statusEl.textContent='Please enter an amount greater than $0.'; return; }
+  statusEl.style.color='var(--muted)'; statusEl.textContent='Saving…';
   try {
-    let token = accessToken;
-    if (!token) {
-      // fallback якщо викликається не з init (напр. з visibilitychange)
-      const { data: { session } } = await sb.auth.getSession();
-      token = session?.access_token;
-    }
-    if (!token) { console.warn('loadTrips: no token'); return; }
-    const headers = { 'Authorization': `Bearer ${token}` };
-
-    const res = await fetch(`${API_URL}/api/trips`, { headers });
+    const { data: { session } } = await sb.auth.getSession();
+    const res = await fetch(`${API_URL}/api/fuel-expenses`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+      body: JSON.stringify({ date, amount })
+    });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error);
-    allTrips = json.data || [];
-
-    const resAll = await fetch(`${API_URL}/api/trips/all`, { headers });
-    if (resAll.ok) {
-      const jsonAll = await resAll.json();
-      allTripsManager = jsonAll.data || [];
-    }
-
-    // Load fuel expenses
-    const resFuel = await fetch(`${API_URL}/api/fuel`, { headers });
-    if (resFuel.ok) {
-      const jsonFuel = await resFuel.json();
-      fuelExpenses = jsonFuel.data || [];
-    }
-  } catch (err) { console.error('Load trips:', err); }
-  finally { tripsLoading = false; }
+    statusEl.style.color='var(--accent)';
+    statusEl.textContent=`✓ Fuel expense $${amount.toFixed(2)} saved for ${date}`;
+    document.getElementById('fuel-amount').value = '';
+  } catch(err) {
+    statusEl.style.color='var(--danger)';
+    statusEl.textContent='Failed to save: '+err.message;
+  }
 }
 
-// ── FUEL EXPENSE SAVE ─────────────────────────────────────────────────────────
-let fuelSaveTimer = null;
-async function saveFuelExpense(amount) {
-  const today = localToday();
-  // Debounce — save 800ms after user stops typing
-  clearTimeout(fuelSaveTimer);
-  fuelSaveTimer = setTimeout(async () => {
-    try {
-      const { data: { session } } = await sb.auth.getSession();
-      if (!session) return;
-      await fetch(`${API_URL}/api/fuel`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-        body: JSON.stringify({ date: today, amount, driver_id: currentDriverId })
-      });
-      // Update local cache
-      const existing = fuelExpenses.findIndex(f => f.date === today);
-      if (existing >= 0) fuelExpenses[existing].amount = amount;
-      else fuelExpenses.unshift({ date: today, amount, driver_id: currentDriverId });
-    } catch (err) { console.error('Save fuel:', err); }
-  }, 800);
+// ── LOAD TRIPS ────────────────────────────────────────────────────────────────
+async function loadTrips() {
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const res=await fetch(`${API_URL}/api/trips`,{ headers:{ 'Authorization':`Bearer ${session.access_token}` } });
+    const json=await res.json();
+    if (!res.ok) throw new Error(json.error);
+    allTrips=json.data||[];
+  } catch(err) { console.error('Load trips:',err); }
 }
 
-// ── DATE HELPERS ──────────────────────────────────────────────────────────────
-function localToday() {
-  // Use local date (not UTC) to avoid timezone mismatch on mobile
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth()+1).padStart(2,'0');
-  const day = String(d.getDate()).padStart(2,'0');
-  return `${y}-${m}-${day}`;
-}
-
-function startOfWeek() {
-  // Monday of current calendar week (local time)
-  const d = new Date();
-  const dayOfWeek = d.getDay(); // 0=Sun, 1=Mon...
-  const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // days back to Monday
-  d.setDate(d.getDate() + diff);
-  d.setHours(0,0,0,0);
-  const y = d.getFullYear();
-  const m = String(d.getMonth()+1).padStart(2,'0');
-  const day = String(d.getDate()).padStart(2,'0');
-  return `${y}-${m}-${day}`;
-}
-
-function startOfMonth() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth()+1).padStart(2,'0');
-  return `${y}-${m}-01`;
-}
-
-function filterByPeriod(trips, f) {
-  const today = localToday();
-  if (f === 'today') return trips.filter(t => t.date === today);
-  if (f === 'week')  return trips.filter(t => t.date >= startOfWeek() && t.date <= today);
-  if (f === 'month') return trips.filter(t => t.date >= startOfMonth() && t.date <= today);
-  return trips;
+function filterByPeriod(trips,f) {
+  const range = periodDateRange(f);
+  if (!range) return trips;
+  return trips.filter(t => t.date >= range.from && t.date <= range.to);
 }
 
 // ── MY STATS ──────────────────────────────────────────────────────────────────
 function setStatsPeriod(f,btn) {
   statsFilter=f;
   document.querySelectorAll('#pane-stats .period-btn').forEach(b=>b.classList.remove('active'));
-  // Reset fuel input so it reloads for new period
-  const fi = document.getElementById('stats-fuel-input');
-  if (fi) { fi.dataset.loaded = ''; fi.value = ''; }
   btn.classList.add('active'); renderStats();
 }
 
 function renderStats() {
-  const filtered = filterByPeriod(allTrips, statsFilter);
-  const numEl = document.getElementById('stats-numbers');
-  const ltEl  = document.getElementById('last-trip-container');
-  const netEl = document.getElementById('stats-net');
-
-  // Get fuel for current period from DB
-  const today = localToday();
-  const now = new Date();
-
-  // Populate today's fuel input from DB
-  const fuelInput = document.getElementById('stats-fuel-input');
-  if (fuelInput && !fuelInput.dataset.loaded) {
-    const todayFuel = fuelExpenses.find(f => f.date === today);
-    if (todayFuel && todayFuel.amount > 0) fuelInput.value = todayFuel.amount;
-    fuelInput.dataset.loaded = '1';
-  }
-
-  // Sum fuel for current period
-  let periodFuelDates = [];
-  if (statsFilter === 'today') periodFuelDates = [today];
-  else if (statsFilter === 'week') {
-    const w = new Date(now); w.setDate(w.getDate() - 7);
-    periodFuelDates = fuelExpenses.filter(f => new Date(f.date) >= w).map(f => f.date);
-  } else if (statsFilter === 'month') {
-    periodFuelDates = fuelExpenses.filter(f => {
-      const d = new Date(f.date);
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-    }).map(f => f.date);
-  } else {
-    periodFuelDates = fuelExpenses.map(f => f.date);
-  }
-
-  // For today — use input value (most fresh); for other periods — use DB
-  let fuelCost = 0;
-  if (statsFilter === 'today') {
-    fuelCost = parseFloat(fuelInput?.value) || 0;
-  } else {
-    fuelCost = fuelExpenses
-      .filter(f => periodFuelDates.includes(f.date))
-      .reduce((s, f) => s + (parseFloat(f.amount) || 0), 0);
-  }
-
+  const filtered=filterByPeriod(allTrips,statsFilter);
+  const numEl=document.getElementById('stats-numbers');
+  const ltEl=document.getElementById('last-trip-container');
   if (!filtered.length) {
-    numEl.innerHTML = `<div class="stat-card"><div class="stat-label">Earnings</div><div class="stat-value">$0.00</div></div>`;
-    ltEl.innerHTML  = `<div class="empty-state"><div class="icon">🚗</div><div>No trips in this period.</div></div>`;
-    if (netEl) netEl.innerHTML = '';
+    numEl.innerHTML=`<div class="stat-card"><div class="stat-label">Earnings</div><div class="stat-value">$0.00</div></div>`;
+    ltEl.innerHTML=`<div class="empty-state"><div class="icon">🚗</div><div>No trips in this period.</div></div>`;
     return;
   }
-
-  const tot  = filtered.reduce((s,t) => s + (t.earnings||0), 0);
-  const avg  = tot / filtered.length;
-  const best = Math.max(...filtered.map(t => t.earnings||0));
-  const net  = tot - fuelCost;
-
-  numEl.innerHTML = `
+  const tot=filtered.reduce((s,t)=>s+(t.earnings||0),0);
+  const avg=tot/filtered.length;
+  const best=Math.max(...filtered.map(t=>t.earnings||0));
+  numEl.innerHTML=`
     <div class="stat-card highlight"><div class="stat-label">Total Earned</div><div class="stat-value">${fmt(tot)}</div></div>
     <div class="stat-card"><div class="stat-label">Avg Per Trip</div><div class="stat-value">${fmt(avg)}</div></div>
     <div class="stat-card"><div class="stat-label">Best Trip</div><div class="stat-value">${fmt(best)}</div></div>
     <div class="stat-card"><div class="stat-label">Trips</div><div class="stat-value neutral">${filtered.length}</div></div>`;
-
-  // Net income after fuel
-  if (netEl) {
-    netEl.innerHTML = fuelCost > 0 ? `
-      <div class="stats-row" style="margin-bottom:16px">
-        <div class="stat-card" style="border-color:rgba(240,96,96,0.3)">
-          <div class="stat-label">Fuel Cost</div>
-          <div class="stat-value" style="color:var(--danger)">-${fmt(fuelCost)}</div>
-        </div>
-        <div class="stat-card" style="border-color:rgba(200,240,96,0.5);background:rgba(200,240,96,0.05)">
-          <div class="stat-label">Net Income</div>
-          <div class="stat-value" style="color:var(--accent)">${fmt(net)}</div>
-        </div>
-      </div>` : '';
-  }
-
-  // Cash tips
+  // Cash tips analytics
   const cashEl = document.getElementById('stats-cash');
   if (cashEl) {
-    const totalCash = filtered.reduce((s,t) => s + (t.cash_tips||0), 0);
-    const avgCash   = filtered.length ? totalCash/filtered.length : 0;
-    const bestCash  = Math.max(...filtered.map(t => t.cash_tips||0));
+    const totalCash = filtered.reduce((s,t)=>s+(t.cash_tips||0),0);
+    const avgCash = filtered.length ? totalCash/filtered.length : 0;
+    const bestCash = Math.max(...filtered.map(t=>t.cash_tips||0));
     cashEl.innerHTML = totalCash > 0 ? `
       <div class="section-title" style="margin-top:8px;color:var(--accent2)">Cash Tips (private)</div>
       <div class="stats-row">
@@ -1253,9 +968,9 @@ function renderStats() {
       </div>` : '';
   }
 
-  const last = allTrips[0];
-  if (!last) { ltEl.innerHTML = ''; return; }
-  ltEl.innerHTML = `
+  const last=allTrips[0];
+  if (!last) { ltEl.innerHTML=''; return; }
+  ltEl.innerHTML=`
     <div class="last-trip-card">
       <div class="ltc-header">
         <div class="ltc-title">Most Recent Trip</div>
@@ -1274,137 +989,83 @@ function renderStats() {
 }
 
 // ── MY TRIPS ──────────────────────────────────────────────────────────────────
+function localToday() {
+  const now = new Date();
+  return now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+}
+
+function periodDateRange(f) {
+  const today = localToday();
+  const now = new Date();
+  if (f === 'today') return { from: today, to: today };
+  if (f === 'week') {
+    const mon = new Date(now);
+    mon.setDate(now.getDate() - ((now.getDay()+6)%7));
+    const from = mon.getFullYear()+'-'+String(mon.getMonth()+1).padStart(2,'0')+'-'+String(mon.getDate()).padStart(2,'0');
+    return { from, to: today };
+  }
+  if (f === 'month') {
+    return { from: today.slice(0,7)+'-01', to: today };
+  }
+  return null;
+}
+
+function fmtDateShort(d) {
+  if (!d) return '';
+  const [y,m,day] = d.split('-');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return months[parseInt(m)-1]+' '+parseInt(day);
+}
+
 function setHistoryFilter(f,btn) {
   historyFilter=f;
   document.querySelectorAll('#pane-history .period-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active'); renderHistory();
-}
-
-function resetHistoryDates() {
-  document.getElementById('hist-date-from').value='';
-  document.getElementById('hist-date-to').value='';
+  btn.classList.add('active');
+  const hint = document.getElementById('history-date-hint');
+  if (hint) {
+    const range = periodDateRange(f);
+    hint.textContent = range ? fmtDateShort(range.from) + ' – ' + fmtDateShort(range.to) : '';
+  }
   renderHistory();
 }
 
 function renderHistory() {
-  let filtered = filterByPeriod(allTrips, historyFilter);
-  const from   = document.getElementById('hist-date-from')?.value;
-  const to     = document.getElementById('hist-date-to')?.value;
-  const search = (document.getElementById('hist-search')?.value || '').trim();
-  if (from) filtered = filtered.filter(t => t.date >= from);
-  if (to)   filtered = filtered.filter(t => t.date <= to);
-  if (search) filtered = filtered.filter(t => (t.booking_id||'').includes(search));
-
-  const tbody = document.getElementById('trips-body');
-  const empty = document.getElementById('empty-history');
+  const filtered=filterByPeriod(allTrips,historyFilter);
+  const tbody=document.getElementById('trips-body');
+  const empty=document.getElementById('empty-history');
   if (!filtered.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
   empty.style.display='none';
-
-  tbody.innerHTML = filtered.map(t => {
-    const isDeleted = t.deleted_by === 'manager';
-    const isEdited  = !!t.edited_at;
-
-    const actionCell = isDeleted
-      ? `<span style="font-size:10px;color:var(--danger);border:1px solid var(--danger);border-radius:4px;padding:2px 5px">Del. by mgr</span>`
-      : `<div style="display:flex;gap:4px;align-items:center">
-           <button class="btn-delete" style="padding:3px 6px;font-size:10px" onclick="event.stopPropagation();startEditTrip('${t.id}')">✏️</button>
-           <button class="btn-delete" onclick="event.stopPropagation();deleteTrip('${t.id}')">✕</button>
-         </div>`;
-
-    const editedBadge = isEdited
-      ? `<span style="font-size:9px;color:var(--accent2);border:1px solid rgba(96,212,240,0.4);border-radius:3px;padding:1px 4px;margin-left:4px">edited</span>`
-      : '';
-
-    const adjB = (t.base_fare||0)+(t.wait_time||0)+(t.greet_fee||0)+(t.car_seat_fee||0)+(t.event_wait||0)+(t.extra_stop||0)-(t.discount||0)+(t.expenses||0);
-
-    // Diff section if edited
-    let diffSection = '';
-    if (isEdited && t.edit_diff) {
-      const diffItems = Object.entries(t.edit_diff).map(([field, {was, now}]) =>
-        `<div class="bd-item" style="border-color:rgba(96,212,240,0.2)">
-          <div class="bd-item-label" style="color:var(--accent2)">${field.replace(/_/g,' ')}</div>
-          <div class="bd-item-val" style="font-size:11px">
-            <span style="color:var(--danger);text-decoration:line-through">${typeof was==='number'?fmt(was):was}</span>
-            <span style="color:var(--accent)"> → ${typeof now==='number'?fmt(now):now}</span>
-          </div>
-        </div>`
-      ).join('');
-      diffSection = `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
-        <div class="bd-item-label" style="color:var(--accent2);margin-bottom:6px">Changes from original:</div>
-        <div class="bd-grid">${diffItems}</div>
-      </div>`;
-    }
-
-    const details = `
-      <div class="bd-grid" style="padding:10px 0 4px">
-        ${[
-          ['Base Fare', t.base_fare], ['Adj. Base', adjB], ['Gratuity', t.gratuity],
-          ['Wait Time', t.wait_time], ['Greet Fee', t.greet_fee], ['Car Seat', t.car_seat_fee],
-          ['Event Wait', t.event_wait], ['Extra Stop', t.extra_stop], ['Holiday Pay', t.holiday_pay],
-          ['Fuel', t.fuel_surcharge], ['Parking', t.parking], ['Airport', t.airport_fee],
-          ['Discount', t.discount], ['Expenses', t.expenses], ['Tolls (co.)', t.tolls],
-        ].filter(([,v])=>v>0).map(([label,val])=>
-          `<div class="bd-item"><div class="bd-item-label">${label}</div><div class="bd-item-val">${fmt(val||0)}</div></div>`
-        ).join('')}
-        ${t.cash_tips>0?`<div class="bd-item" style="border-color:rgba(96,212,240,0.3)"><div class="bd-item-label" style="color:var(--accent2)">Cash Tips</div><div class="bd-item-val" style="color:var(--accent2)">${fmt(t.cash_tips)}</div></div>`:''}
-      </div>${diffSection}`;
-
-    return `
-      <tr class="dash-row" onclick="toggleHistoryRow('hbd-${t.id}', this)">
-        <td><span class="expand-icon" id="hexp-${t.id}"><svg class="expand-icon" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 2l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
-        <td class="mono" style="font-size:11px">${t.date}</td>
-        <td style="color:var(--muted);font-size:11px">${t.booking_id||'—'}${editedBadge}</td>
-        <td class="mono" style="font-size:11px">${fmt(t.total||0)}</td>
-        <td class="earn-val" style="font-size:11px">${fmt(t.earnings||0)}</td>
-        <td onclick="event.stopPropagation()">${actionCell}</td>
-      </tr>
-      <tr><td colspan="6" style="padding:0">
-        <div class="breakdown-content" id="hbd-${t.id}">${details}</div>
-      </td></tr>`;
-  }).join('');
-}
-
-function toggleHistoryRow(bdId, row) {
-  const bd = document.getElementById(bdId);
-  if (!bd) return;
-  const isOpen = bd.classList.toggle('show');
-  const svg = row.querySelector('.expand-icon svg');
-  if (svg) svg.style.transform = isOpen ? 'rotate(90deg)' : '';
-}
-
-async function deleteTripManager(id, bookingId) {
-  const label = bookingId ? `booking #${bookingId}` : `trip #${id}`;
-  if (!confirm(`Delete ${label} from dashboard?\n\nThis trip will remain visible to the driver with a "Deleted by manager" note.`)) return;
-  try {
-    const { data: { session } } = await sb.auth.getSession();
-    const res = await fetch(`${API_URL}/api/trips/${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${session.access_token}` }
-    });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error);
-    allTripsManager = allTripsManager.filter(t => t.id !== id);
-    renderDashboard();
-  } catch { alert('Failed to delete trip'); }
+  tbody.innerHTML=filtered.map(t=>`
+    <tr>
+      <td class="mono">${t.date}</td>
+      <td style="color:var(--muted)">${t.booking_id||'—'}</td>
+      <td class="mono">${fmt(t.total||0)}</td>
+      <td class="earn-val">${fmt(t.earnings||0)}</td>
+      <td><button class="btn-delete" onclick="deleteTrip('${t.id}')">✕</button></td>
+    </tr>`).join('');
 }
 
 async function deleteTrip(id) {
   if (!confirm('Delete this trip?')) return;
   try {
     const { data: { session } } = await sb.auth.getSession();
-    const res = await fetch(`${API_URL}/api/trips/${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${session.access_token}` }
-    });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error);
-    allTrips = allTrips.filter(t => t.id !== id);
-    allTripsManager = allTripsManager.filter(t => t.id !== id);
-    renderHistory(); renderStats(); renderDashboard();
+    await fetch(`${API_URL}/api/trips/${id}`,{ method:'DELETE', headers:{ 'Authorization':`Bearer ${session.access_token}` } });
+    allTrips=allTrips.filter(t=>t.id!==id);
+    renderHistory(); renderStats();
   } catch { alert('Failed to delete trip'); }
 }
 
-// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+async function deleteTripManager(id) {
+  if (!confirm('Delete this trip?')) return;
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    await fetch(`${API_URL}/api/trips/${id}`,{ method:'DELETE', headers:{ 'Authorization':`Bearer ${session.access_token}` } });
+    allTrips=allTrips.filter(t=>t.id!==id);
+    renderDashboard();
+  } catch { alert('Failed to delete trip'); }
+}
+
+
 function setDashQuick(period, btn) {
   document.querySelectorAll('#pane-dashboard .period-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
@@ -1412,9 +1073,12 @@ function setDashQuick(period, btn) {
   const fromEl = document.getElementById('dash-date-from');
   const toEl = document.getElementById('dash-date-to');
   if (period === 'today') { fromEl.value = today; toEl.value = today; }
-  else if (period === 'week') { fromEl.value = startOfWeek(); toEl.value = today; }
-  else if (period === 'month') { fromEl.value = startOfMonth(); toEl.value = today; }
-  else { fromEl.value = ''; toEl.value = ''; }
+  else if (period === 'week') {
+    const range = periodDateRange('week');
+    fromEl.value = range.from; toEl.value = range.to;
+  } else if (period === 'month') {
+    fromEl.value = today.slice(0,7)+'-01'; toEl.value = today;
+  } else { fromEl.value = ''; toEl.value = ''; }
   renderDashboard();
 }
 
@@ -1429,22 +1093,27 @@ function resetDashFilters() {
 
 function populateDriverFilter() {
   const sel = document.getElementById('dash-driver-filter');
-  const drivers = [...new Set(allTripsManager.map(t=>t.driver_id).filter(Boolean))].sort();
+  const drivers = [...new Set(allTrips.map(t=>t.driver_id).filter(Boolean))].sort();
   const current = sel.value;
   sel.innerHTML = '<option value="">All drivers</option>' +
     drivers.map(d=>`<option value="${d}"${d===current?' selected':''}>Driver #${d}</option>`).join('');
 }
 
 function getDashFiltered() {
-  const from   = document.getElementById('dash-date-from')?.value;
-  const to     = document.getElementById('dash-date-to')?.value;
+  const from = document.getElementById('dash-date-from')?.value;
+  const to   = document.getElementById('dash-date-to')?.value;
   const driver = document.getElementById('dash-driver-filter')?.value;
-  const search = (document.getElementById('dash-search')?.value || '').trim();
-  return allTripsManager.filter(t => {
+  // BUG-05: validate date range
+  const errEl = document.getElementById('dash-date-error');
+  if (from && to && from > to) {
+    if (errEl) errEl.textContent = 'From date cannot be after To date.';
+    return [];
+  }
+  if (errEl) errEl.textContent = '';
+  return allTrips.filter(t => {
     if (from && t.date < from) return false;
     if (to   && t.date > to)   return false;
     if (driver && t.driver_id !== driver) return false;
-    if (search && !(t.booking_id||'').includes(search)) return false;
     return true;
   });
 }
@@ -1459,22 +1128,6 @@ function toggleBreakdown(id) {
 }
 
 function breakdownHTML(t) {
-  let diffSection = '';
-  if (t.edited_at && t.edit_diff) {
-    const diffItems = Object.entries(t.edit_diff).map(([field, {was, now}]) =>
-      `<div class="bd-item" style="border-color:rgba(96,212,240,0.2)">
-        <div class="bd-item-label" style="color:var(--accent2)">${field.replace(/_/g,' ')}</div>
-        <div class="bd-item-val" style="font-size:11px">
-          <span style="color:var(--danger);text-decoration:line-through">${typeof was==='number'?fmt(was):was}</span>
-          <span style="color:var(--accent)"> → ${typeof now==='number'?fmt(now):now}</span>
-        </div>
-      </div>`
-    ).join('');
-    diffSection = `<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">
-      <div class="bd-item-label" style="color:var(--accent2);margin-bottom:6px">Changes from original:</div>
-      <div class="bd-grid">${diffItems}</div>
-    </div>`;
-  }
   return `<div class="bd-grid">
     <div class="bd-item"><div class="bd-item-label">Base Fare</div><div class="bd-item-val">${fmt(t.base_fare||0)}</div></div>
     <div class="bd-item"><div class="bd-item-label">Wait Time</div><div class="bd-item-val">${fmt(t.wait_time||0)}</div></div>
@@ -1482,7 +1135,6 @@ function breakdownHTML(t) {
     <div class="bd-item"><div class="bd-item-label">Car Seat</div><div class="bd-item-val">${fmt(t.car_seat_fee||0)}</div></div>
     <div class="bd-item"><div class="bd-item-label">Event Wait</div><div class="bd-item-val">${fmt(t.event_wait||0)}</div></div>
     <div class="bd-item"><div class="bd-item-label">Extra Stop</div><div class="bd-item-val">${fmt(t.extra_stop||0)}</div></div>
-    ${t.holiday_pay>0?`<div class="bd-item"><div class="bd-item-label">Holiday Pay</div><div class="bd-item-val" style="color:var(--accent2)">${fmt(t.holiday_pay||0)}</div></div>`:''}
     <div class="bd-item"><div class="bd-item-label">Discount</div><div class="bd-item-val" style="color:var(--danger)">-${fmt(t.discount||0)}</div></div>
     <div class="bd-item"><div class="bd-item-label">Expenses</div><div class="bd-item-val">${fmt(t.expenses||0)}</div></div>
     <div class="bd-item"><div class="bd-item-label">Gratuity</div><div class="bd-item-val">${fmt(t.gratuity||0)}</div></div>
@@ -1490,7 +1142,7 @@ function breakdownHTML(t) {
     <div class="bd-item"><div class="bd-item-label">Parking</div><div class="bd-item-val">${fmt(t.parking||0)}</div></div>
     <div class="bd-item"><div class="bd-item-label">Airport Fee</div><div class="bd-item-val">${fmt(t.airport_fee||0)}</div></div>
     <div class="bd-item"><div class="bd-item-label">Tolls (co.)</div><div class="bd-item-val muted">${fmt(t.tolls||0)}</div></div>
-  </div>${diffSection}`;
+  </div>`;
 }
 
 function renderDashboard() {
@@ -1524,22 +1176,13 @@ function renderDashboard() {
 
   tbody.innerHTML = filtered.map(t => `
     <tr class="dash-row" id="tr-${t.id}" onclick="toggleBreakdown('${t.id}')">
-      <td><span class="expand-icon"><svg class="expand-icon" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 2l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
-      <td class="mono" style="font-size:11px">${t.date}</td>
+      <td><span class="expand-icon">▶</span></td>
+      <td class="mono">${t.date}</td>
       <td><span class="driver-id-badge">#${t.driver_id||'—'}</span></td>
-      <td style="color:var(--muted);font-size:11px">
-        ${t.booking_id||'—'}
-        ${t.deleted_by === 'driver' ? '<span style="font-size:9px;color:var(--danger);border:1px solid var(--danger);border-radius:3px;padding:1px 4px;margin-left:4px">del by driver</span>' : ''}
-        ${t.edited_at ? '<span style="font-size:9px;color:var(--accent2);border:1px solid rgba(96,212,240,0.4);border-radius:3px;padding:1px 4px;margin-left:4px">edited</span>' : ''}
-      </td>
-      <td class="mono" style="font-size:11px">${fmt(t.total||0)}</td>
-      <td class="earn-val" style="font-size:11px">${fmt(t.earnings||0)}</td>
-      <td onclick="event.stopPropagation()">
-        <div style="display:flex;gap:3px">
-          <button class="btn-delete" style="padding:3px 6px;font-size:10px" onclick="startEditTrip('${t.id}')">✏️</button>
-          <button class="btn-delete" onclick="deleteTripManager('${t.id}', '${t.booking_id||''}')">✕</button>
-        </div>
-      </td>
+      <td style="color:var(--muted)">${t.booking_id||'—'}</td>
+      <td class="mono">${fmt(t.total||0)}</td>
+      <td class="earn-val">${fmt(t.earnings||0)}</td>
+      <td><button class="btn-delete" onclick="event.stopPropagation();deleteTripManager('${t.id}')">✕</button></td>
     </tr>
     <tr class="breakdown-row">
       <td colspan="7">
@@ -1549,9 +1192,8 @@ function renderDashboard() {
 
   // Summary footer row
   const summaryBD = `<div class="bd-grid">
-    ${['base_fare','wait_time','greet_fee','car_seat_fee','event_wait','extra_stop','holiday_pay','discount','expenses','gratuity','fuel_surcharge','parking','airport_fee','tolls'].map(f=>{
+    ${['base_fare','wait_time','greet_fee','car_seat_fee','event_wait','extra_stop','discount','expenses','gratuity','fuel_surcharge','parking','airport_fee','tolls'].map(f=>{
       const sum = filtered.reduce((s,t)=>s+(t[f]||0),0);
-      if (!sum) return '';
       const label = f.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
       return `<div class="bd-item"><div class="bd-item-label">${label}</div><div class="bd-item-val">${fmt(sum)}</div></div>`;
     }).join('')}
@@ -1559,7 +1201,7 @@ function renderDashboard() {
 
   tfoot.innerHTML = `
     <tr class="dash-row" id="tr-total" onclick="toggleBreakdown('total')">
-      <td><span class="expand-icon"><svg class="expand-icon" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 2l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+      <td><span class="expand-icon">▶</span></td>
       <td colspan="2" style="font-weight:700;color:var(--text)">TOTAL (${filtered.length} trips)</td>
       <td></td>
       <td class="mono" style="font-weight:700">${fmt(rev)}</td>
@@ -1573,201 +1215,32 @@ function renderDashboard() {
     </tr>`;
 }
 
-async function exportXLSX() {
+function exportCSV() {
   const filtered = getDashFiltered();
   if (!filtered.length) { alert('No data to export'); return; }
-
-  if (typeof ExcelJS === 'undefined') {
-    await new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
-      s.onload = resolve; s.onerror = reject;
-      document.head.appendChild(s);
-    });
-  }
-
-  const fromVal   = document.getElementById('dash-date-from').value;
-  const toVal     = document.getElementById('dash-date-to').value;
-  const driverVal = document.getElementById('dash-driver-filter').value;
-
-  const wb = new ExcelJS.Workbook();
-  wb.creator = 'LimoPay';
-  const ws = wb.addWorksheet('LimoPay Export');
-
-  const C = { white: 'FFFFFFFF', black: 'FF000000', accent: 'FFC8F060', dark: 'FF111118', surface: 'FF1A1A24', danger: 'FFF06060', subtotal: 'FFE8F5C8', daytotal: 'FF2A2A38' };
-
-  // ── COLUMNS in requested order ───────────────────────────────────────────────
-  const COLS = [
-    { key: 'date',          header: 'Date',         width: 13 },
-    { key: 'driver_id',     header: 'Driver',       width: 10 },
-    { key: 'booking_id',    header: 'Booking ID',   width: 13 },
-    { key: 'base_fare',     header: 'Base Fare',    width: 12 },
-    { key: '_adj_base',     header: 'Adj. Base',    width: 12 }, // розрахункова
-    { key: 'gratuity',      header: 'Gratuity',     width: 12 },
-    { key: 'holiday_pay',   header: 'Holiday Pay',  width: 13 },
-    { key: 'tolls',         header: 'Tolls',        width: 10 },
-    { key: 'airport_fee',   header: 'Airport Fee',  width: 12 },
-    { key: 'fuel_surcharge',header: 'Fuel',         width: 10 },
-    { key: 'discount',      header: 'Discount',     width: 11 },
-    { key: 'expenses',      header: 'Expenses',     width: 11 },
-    { key: 'wait_time',     header: 'Wait Time',    width: 11 },
-    { key: 'greet_fee',     header: 'Greet Fee',    width: 11 },
-    { key: 'car_seat_fee',  header: 'Car Seat',     width: 11 },
-    { key: 'event_wait',    header: 'Event Wait',   width: 11 },
-    { key: 'extra_stop',    header: 'Extra Stop',   width: 12 },
-    { key: 'parking',       header: 'Parking',      width: 10 },
-    { key: 'total',         header: 'Total Fare',   width: 12 },
-    { key: 'earnings',      header: 'Earnings',     width: 12 },
-  ];
-  const NUM_KEYS = COLS.filter(c => !['date','driver_id','booking_id','_adj_base'].includes(c.key)).map(c => c.key);
-
-  // Helper: compute adjusted base for a trip
-  function adjBase(t) {
-    return (parseFloat(t.base_fare)||0) + (parseFloat(t.wait_time)||0) +
-           (parseFloat(t.greet_fee)||0) + (parseFloat(t.car_seat_fee)||0) +
-           (parseFloat(t.event_wait)||0) + (parseFloat(t.extra_stop)||0) -
-           (parseFloat(t.discount)||0) + (parseFloat(t.expenses)||0);
-  }
-
-  ws.columns = COLS.map(c => ({ key: c.key, width: c.width }));
-  const numFmt = '$#,##0.00';
-
-  function applyStyle(row, opts) {
-    row.eachCell({ includeEmpty: true }, (cell, col) => {
-      cell.font = { name: 'Arial', size: opts.size || 10, bold: opts.bold || false, color: { argb: opts.color || C.black } };
-      if (opts.bg) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: opts.bg } };
-      cell.alignment = { horizontal: col <= 3 ? 'left' : 'right', vertical: 'middle' };
-      if (col > 3) cell.numFmt = numFmt;
-    });
-    if (opts.height) row.height = opts.height;
-  }
-
-  function sumCols(trips) {
-    const s = {};
-    NUM_KEYS.forEach(k => s[k] = trips.reduce((a, t) => a + (parseFloat(t[k]) || 0), 0));
-    // Adj. Base — розраховується, не береться з БД
-    s['_adj_base'] = trips.reduce((a, t) => a + adjBase(t), 0);
-    return s;
-  }
-
-  function addTotalRow(label, sums, style) {
-    const rowData = COLS.map((c, i) => {
-      if (i === 0) return label;
-      if (i === 1 || i === 2) return '';
-      return sums[c.key] || 0;
-    });
-    const row = ws.addRow(rowData);
-    applyStyle(row, style);
-    ws.mergeCells(row.number, 1, row.number, 3);
-    return row;
-  }
-
-  // ── TITLE ────────────────────────────────────────────────────────────────────
-  const titleParts = ['LimoPay Export'];
-  if (fromVal && toVal) titleParts.push(`${fromVal} — ${toVal}`);
-  else if (fromVal) titleParts.push(`From ${fromVal}`);
-  else if (toVal) titleParts.push(`To ${toVal}`);
-  else titleParts.push('All Time');
-  if (driverVal) titleParts.push(`Driver #${driverVal}`);
-
-  ws.mergeCells(1, 1, 1, COLS.length);
-  const titleCell = ws.getCell('A1');
-  titleCell.value = titleParts.join('   |   ');
-  titleCell.font = { bold: true, size: 13, name: 'Arial', color: { argb: C.white } };
-  titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: C.dark } };
-  titleCell.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 };
-  ws.getRow(1).height = 28;
-  ws.addRow([]);
-
-  // ── HEADER ROW ───────────────────────────────────────────────────────────────
-  const headerRow = ws.addRow(COLS.map(c => c.header));
-  applyStyle(headerRow, { bold: true, bg: C.accent, size: 10 });
-  headerRow.height = 20;
-
-  // ── SORT: chronological by date, then driver ─────────────────────────────────
-  const sorted = [...filtered].sort((a, b) =>
-    a.date.localeCompare(b.date) || (a.driver_id || '').localeCompare(b.driver_id || '')
-  );
-
-  // ── GROUP BY DATE ────────────────────────────────────────────────────────────
-  const byDate = {};
-  sorted.forEach(t => {
-    if (!byDate[t.date]) byDate[t.date] = {};
-    const drv = t.driver_id || '—';
-    if (!byDate[t.date][drv]) byDate[t.date][drv] = [];
-    byDate[t.date][drv].push(t);
-  });
-
-  const grandSums = {};
-  NUM_KEYS.forEach(k => grandSums[k] = 0);
-
-  for (const [date, drivers] of Object.entries(byDate)) {
-    // Day header
-    ws.mergeCells(ws.rowCount + 1, 1, ws.rowCount + 1, COLS.length);
-    const dayHeaderRow = ws.addRow([date]);
-    applyStyle(dayHeaderRow, { bold: true, size: 11, bg: C.surface, color: C.accent, height: 22 });
-
-    const dayTrips = [];
-
-    for (const [driverId, trips] of Object.entries(drivers)) {
-      // Always show driver sub-header (even for single driver — consistent layout)
-      ws.mergeCells(ws.rowCount + 1, 1, ws.rowCount + 1, COLS.length);
-      const drvRow = ws.addRow([`  Driver #${driverId}`]);
-      applyStyle(drvRow, { bold: false, size: 10, color: 'FF888888', height: 18 });
-
-      // Data rows
-      trips.forEach(t => {
-        const isDeleted = t.deleted_by === 'driver';
-        const rowData = COLS.map(c => {
-          if (c.key === 'date') return t.date;
-          if (c.key === 'driver_id') return `#${t.driver_id || '—'}`;
-          if (c.key === 'booking_id') return isDeleted ? `${t.booking_id || '—'} [del]` : (t.booking_id || '—');
-          if (c.key === '_adj_base') return adjBase(t);
-          return parseFloat(t[c.key]) || 0;
-        });
-        const dataRow = ws.addRow(rowData);
-        dataRow.height = 18;
-        dataRow.eachCell({ includeEmpty: true }, (cell, colIdx) => {
-          const col = COLS[colIdx - 1];
-          const isAdjBase = col?.key === '_adj_base';
-          const baseColor = isDeleted ? C.danger : C.black;
-          cell.font = { name: 'Arial', size: 10, bold: isAdjBase, color: { argb: isAdjBase ? 'FF4A90D9' : baseColor } };
-          if (isAdjBase) {
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F0FA' } };
-          }
-          cell.alignment = { horizontal: colIdx <= 3 ? 'left' : 'right', vertical: 'middle' };
-          if (colIdx > 3) cell.numFmt = numFmt;
-        });
-        dayTrips.push(t);
-      });
-    }
-
-    // Day total
-    const daySums = sumCols(dayTrips);
-    const count = dayTrips.length;
-    addTotalRow(`Total ${date} (${count} trip${count > 1 ? 's' : ''})`, daySums, {
-      bold: true, size: 10, bg: C.daytotal, color: C.white, height: 20
-    });
-
-    NUM_KEYS.forEach(k => grandSums[k] += daySums[k]);
-    ws.addRow([]);
-  }
-
-  // ── GRAND TOTAL ──────────────────────────────────────────────────────────────
-  addTotalRow(`GRAND TOTAL (${filtered.length} trips)`, grandSums, {
-    bold: true, size: 11, bg: C.dark, color: C.accent, height: 24
-  });
-
-  // ── DOWNLOAD ─────────────────────────────────────────────────────────────────
-  const buf = await wb.xlsx.writeBuffer();
-  const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const headers = ['Date','Driver ID','Booking ID','Base Fare','Wait Time','Greet Fee','Car Seat Fee','Event Wait','Extra Stop','Discount','Expenses','Gratuity','Fuel','Parking','Airport Fee','Tolls','Total','Earnings'];
+  const rows = filtered.map(t=>[
+    t.date, t.driver_id||'—', t.booking_id||'—',
+    t.base_fare||0, t.wait_time||0, t.greet_fee||0, t.car_seat_fee||0,
+    t.event_wait||0, t.extra_stop||0, t.discount||0, t.expenses||0, t.gratuity||0,
+    t.fuel_surcharge||0, t.parking||0, t.airport_fee||0, t.tolls||0,
+    t.total||0, t.earnings||0
+  ].join(','));
+  const csv = [headers.join(','),...rows].join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  const dateStr = localToday();
-  a.href = url;
-  a.download = `limopay_${driverVal ? 'driver' + driverVal + '_' : ''}${dateStr}.xlsx`;
-  a.click();
-  URL.revokeObjectURL(url);
+  a.href = url; a.download = `limopay_export_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+function showToast(msg, isError=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = isError ? 'var(--danger)' : 'var(--accent)';
+  t.style.color = isError ? '#fff' : '#000';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
 }
 
 function fmt(n) { return '$'+(n||0).toFixed(2); }
@@ -1778,73 +1251,7 @@ function setStatus(pane,type,msg) {
   if (type==='success') setTimeout(()=>el.classList.remove('show'),3000);
 }
 
-// ── SERVICE WORKER — auto-update on deploy ────────────────────────────────────
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').then(reg => {
-    reg.update();
-    reg.addEventListener('updatefound', () => {
-      const nw = reg.installing;
-      nw.addEventListener('statechange', () => {
-        if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-          nw.postMessage({ type: 'SKIP_WAITING' });
-        }
-      });
-    });
-  });
-  let refreshing = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!refreshing) { refreshing = true; window.location.reload(); }
-  });
-}
-
 init();
-
-// ── BFCACHE PREVENTION (Safari) ───────────────────────────────────────────────
-// Safari restores pages from Back/Forward Cache — force reload to get fresh session
-window.addEventListener('pageshow', e => {
-  if (e.persisted) window.location.reload();
-});
-
-// ── KEEP ALIVE (prevent page sleeping on mobile/PWA) ─────────────────────────
-(function keepAlive() {
-  let wakeLock = null;
-  let wasHidden = false;
-
-  async function requestWakeLock() {
-    if (!('wakeLock' in navigator)) return;
-    try {
-      wakeLock = await navigator.wakeLock.request('screen');
-      wakeLock.addEventListener('release', () => { wakeLock = null; });
-    } catch {}
-  }
-
-  document.addEventListener('visibilitychange', async () => {
-    if (document.visibilityState === 'hidden') {
-      wasHidden = true;
-      return;
-    }
-    // Page became visible again
-    requestWakeLock();
-    if (wasHidden && currentUser) {
-      wasHidden = false;
-      await loadTrips();
-      const active = ['log','stats','history','dashboard'].find(t =>
-        document.getElementById(`pane-${t}`)?.style.display !== 'none'
-      );
-      if (active === 'stats')     renderStats();
-      if (active === 'history')   renderHistory();
-      if (active === 'dashboard') renderDashboard();
-    }
-  });
-
-  requestWakeLock();
-
-  // Refresh Supabase session every 4 min to prevent token expiry
-  setInterval(async () => {
-    if (document.visibilityState !== 'visible') return;
-    try { await sb.auth.getSession(); } catch {}
-  }, 4 * 60 * 1000);
-})();
 </script>
 </body>
 </html>
