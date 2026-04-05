@@ -20,13 +20,12 @@
   --muted:    #6a6a80;
   --radius:   10px;
 
-  /* Fluid sizing — scales smoothly from 375px to 900px */
-  --fh:   clamp(42px, 5.5vw, 52px);
-  --ffs:  clamp(13px, 1.7vw, 15px);
-  --fp:   0 clamp(10px, 2vw, 14px);
-  --gap:  clamp(8px,  1.5vw, 12px);
-  --lfs:  clamp(9px,  1.1vw, 11px);
-  --pad:  clamp(12px, 3vw,   20px);
+  --fh:   42px;
+  --ffs:  16px;
+  --fp:   0 12px;
+  --gap:  10px;
+  --lfs:  10px;
+  --pad:  14px;
 }
 
 /* ── RESET ───────────────────────────────────────────────────────────────────── */
@@ -399,20 +398,103 @@ header {
 /* ── FORM ACTIONS ────────────────────────────────────────────────────────────── */
 .form-actions { display: flex; gap: 10px; }
 
-/* ── STATS / CARDS ───────────────────────────────────────────────────────────── */
+/* ── TRIP CARDS (My Trips) ───────────────────────────────────────────────────── */
+.trip-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.trip-card:hover { border-color: rgba(200,240,96,0.2); }
+.trip-card.deleted-mgr { opacity: 0.6; cursor: default; }
+
+.trip-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  gap: 8px;
+}
+.trip-card-date {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.trip-card-booking {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--muted);
+  flex: 1;
+  text-align: center;
+}
+.trip-card-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.trip-card-body {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  gap: 0;
+}
+.trip-card-total {
+  flex: 1;
+  font-size: 12px;
+  color: var(--muted);
+}
+.trip-card-total span {
+  display: block;
+  font-family: 'DM Mono', monospace;
+  font-size: 15px;
+  color: var(--text);
+  font-weight: 600;
+}
+.trip-card-earned {
+  flex: 1;
+  text-align: center;
+}
+.trip-card-earned .label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+.trip-card-earned .value { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 700; color: var(--accent); }
+.trip-card-cash {
+  flex: 1;
+  text-align: right;
+}
+.trip-card-cash .label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+.trip-card-cash .value { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 600; color: var(--accent2); }
+.trip-card-cash .value.empty { color: var(--muted); font-size: 12px; }
+
+.trip-card-detail {
+  display: none;
+  padding: 10px 12px;
+  background: var(--surface2);
+  border-top: 1px solid var(--border);
+}
+.trip-card-detail.show { display: block; }
+
+/* ── STAT CARDS ──────────────────────────────────────────────────────────────── */
 .stats-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--gap);
-  margin-bottom: 18px;
+  margin-bottom: 14px;
 }
-@media (min-width: 500px) { .stats-row { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); } }
-
-.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+}
 .stat-card.highlight { border-color: rgba(200,240,96,0.3); background: rgba(200,240,96,0.05); }
 .stat-card.cash      { border-color: rgba(96,212,240,0.2); }
-.stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
-.stat-value { font-size: 20px; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--accent); }
+.stat-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+.stat-value { font-size: 18px; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--accent); }
 .stat-value.neutral { color: var(--text); }
 .stat-value.cash    { color: var(--accent2); }
 
@@ -831,22 +913,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       <input type="text" class="search-input" id="history-search" placeholder="Search booking ID..." oninput="renderHistory()">
     </div>
 
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th></th>
-            <th>Date</th>
-            <th>Booking</th>
-            <th>Total</th>
-            <th>Earned</th>
-            <th>Cash</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="trips-body"></tbody>
-      </table>
-    </div>
+    <div id="trips-list"></div>
     <div id="empty-history" class="empty-state" style="display:none">
       <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
       <div>No trips yet. Log your first trip!</div>
@@ -918,7 +985,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 <script>
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 const SUPABASE_URL  = 'https://uljmcbrorgjrrvoxzmdb.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsam1jYnJvcmdqcnJ2b3h6bWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQzNzAsImV4cCI6MjA4OTg4MDM3MH0.gzfN9ayldCSF0kRSfSCT9Np02Dpke8ZSS42iJLBhzmA';
+const SUPABASE_ANON = '%%VITE_SUPABASE_ANON_KEY%%';
 const API_URL       = 'https://limopay-production.up.railway.app';
 
 const { createClient } = supabase;
@@ -1717,27 +1784,24 @@ function renderHistory() {
   let filtered   = filterByPeriod(allTrips, historyFilter);
   if (search) filtered = filtered.filter(t => (t.booking_id || '').toLowerCase().includes(search));
 
-  const tbody = document.getElementById('trips-body');
+  const list  = document.getElementById('trips-list');
   const empty = document.getElementById('empty-history');
-  if (!filtered.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  if (!filtered.length) { list.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
 
-  tbody.innerHTML = filtered.map(t => {
+  list.innerHTML = filtered.map(t => {
     const isDeletedByMgr = t.deleted_by === 'manager';
+    const hasCash = (t.cash_tips || 0) > 0;
     return `
-      <tr class="trip-row" id="tr-${t.id}" onclick="toggleDetail('${t.id}')">
-        <td><span class="expand-icon">▶</span></td>
-        <td class="td-mono">${t.date}</td>
-        <td class="td-mono td-muted">
-          ${t.booking_id || '—'}
-          ${isDeletedByMgr ? '<span class="deleted-badge">deleted by mgr</span>' : ''}
-        </td>
-        <td class="td-mono">${fmt(t.total || 0)}</td>
-        <td class="td-earn">${fmt(t.earnings || 0)}</td>
-        <td class="td-cash">${(t.cash_tips || 0) > 0 ? fmt(t.cash_tips) : '—'}</td>
-        <td>
-          ${!isDeletedByMgr ? `
-            <div class="actions-cell" onclick="event.stopPropagation()">
+      <div class="trip-card${isDeletedByMgr ? ' deleted-mgr' : ''}" onclick="toggleTripCard('${t.id}')">
+        <div class="trip-card-header">
+          <span class="trip-card-date">${t.date}</span>
+          <span class="trip-card-booking">
+            #${t.booking_id || '—'}
+            ${isDeletedByMgr ? '<span class="deleted-badge">deleted by mgr</span>' : ''}
+          </span>
+          <div class="trip-card-actions" onclick="event.stopPropagation()">
+            ${!isDeletedByMgr ? `
               <button class="btn-icon" onclick="editTrip('${t.id}')" title="Edit">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -1748,25 +1812,31 @@ function renderHistory() {
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M18 6L6 18M6 6l12 12"/>
                 </svg>
-              </button>
-            </div>` : ''}
-        </td>
-      </tr>
-      <tr class="detail-row">
-        <td colspan="7">
-          <div class="detail-content" id="bd-${t.id}">${breakdownHTML(t)}</div>
-        </td>
-      </tr>`;
+              </button>` : ''}
+          </div>
+        </div>
+        <div class="trip-card-body">
+          <div class="trip-card-total">
+            <span>Total Fare</span>
+            <span>${fmt(t.total || 0)}</span>
+          </div>
+          <div class="trip-card-earned">
+            <div class="label">Earned</div>
+            <div class="value">${fmt(t.earnings || 0)}</div>
+          </div>
+          <div class="trip-card-cash">
+            <div class="label">Cash</div>
+            <div class="value${hasCash ? '' : ' empty'}">${hasCash ? fmt(t.cash_tips) : '—'}</div>
+          </div>
+        </div>
+        <div class="trip-card-detail" id="tcd-${t.id}">${breakdownHTML(t)}</div>
+      </div>`;
   }).join('');
 }
 
-function toggleDetail(id) {
-  const content = document.getElementById('bd-' + id);
-  const row     = document.getElementById('tr-' + id);
-  if (!content || !row) return;
-  const open = content.classList.contains('show');
-  content.classList.toggle('show', !open);
-  row.classList.toggle('open', !open);
+function toggleTripCard(id) {
+  const detail = document.getElementById('tcd-' + id);
+  if (detail) detail.classList.toggle('show');
 }
 
 async function deleteTrip(id) {
