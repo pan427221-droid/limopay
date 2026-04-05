@@ -904,24 +904,35 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 <script>
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 const SUPABASE_URL  = 'https://uljmcbrorgjrrvoxzmdb.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsam1jYnJvcmdqcnJ2b3h6bWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQzNzAsImV4cCI6MjA4OTg4MDM3MH0.gzfN9ayldCSF0kRSfSCT9Np02Dpke8ZSS42iJLBhzmA';
+const SUPABASE_ANON = '%%VITE_SUPABASE_ANON_KEY%%';
 const API_URL       = 'https://limopay-production.up.railway.app';
 
 const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
-  auth: { storage: window.localStorage, detectSessionInUrl: true, persistSession: true }
-});
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 let currentUser     = null;
 let currentRole     = 'driver';
 let currentDriverId = null;
+let currentToken    = null; // stored after login, refreshed every 4 min
 let allTrips        = [];
 let fuelExpenses    = [];
 let statsFilter     = 'today';
 let historyFilter   = 'all';
 let editingId       = null; // null = new trip, uuid = editing
 let uploadedImages  = []; // { base64, objectUrl }
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+async function getToken() {
+  if (currentToken) return currentToken;
+  try {
+    const { data: { session } } = await withTimeout(sb.auth.getSession(), 5000);
+    currentToken = session?.access_token || null;
+    return currentToken;
+  } catch {
+    return null;
+  }
+}
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 const fmt = n => '$' + (+(n) || 0).toFixed(2);
@@ -989,29 +1000,43 @@ function showEpRow(id, val) {
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
+function withTimeout(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
+  ]);
+}
+
 async function init() {
   showScreen('loading');
 
   // CRITICAL: onAuthStateChange BEFORE getSession() — required for iOS Safari
   sb.auth.onAuthStateChange(async (event, session) => {
     if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
+      currentToken = session.access_token;
       if (!currentUser) await onLoggedIn(session.user, session.access_token);
     } else if (event === 'SIGNED_OUT') {
-      currentUser = null; allTrips = []; fuelExpenses = [];
+      currentUser = null; currentToken = null; allTrips = []; fuelExpenses = [];
       showScreen('login');
     }
   });
 
-  const { data: { session } } = await sb.auth.getSession();
-  if (session && !currentUser) {
-    await onLoggedIn(session.user, session.access_token);
-  } else if (!session && !window.location.hash.includes('access_token')) {
+  try {
+    const { data: { session } } = await withTimeout(sb.auth.getSession(), 5000);
+    if (session && !currentUser) {
+      await onLoggedIn(session.user, session.access_token);
+    } else if (!session && !window.location.hash.includes('access_token')) {
+      showScreen('login');
+    }
+  } catch {
+    // getSession timed out or failed — show login screen
     showScreen('login');
   }
 }
 
 async function onLoggedIn(user, accessToken) {
-  currentUser = user;
+  currentUser  = user;
+  currentToken = accessToken;
   const { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
   if (!profile) { showScreen('driverid'); return; }
   if (!profile.driver_id && profile.role !== 'manager') { showScreen('driverid'); return; }
@@ -1054,15 +1079,15 @@ async function verifyDriverId() {
   if (input.length !== 4) { errEl.textContent = 'Driver ID must be 4 digits.'; return; }
   btn.disabled = true; btn.textContent = 'Checking...'; errEl.textContent = '';
   try {
-    const { data: { session } } = await sb.auth.getSession();
+    const token = await getToken();
     const res  = await fetch(API_URL + '/api/register', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({ driver_id: input })
     });
     const json = await res.json();
     if (!res.ok) { errEl.textContent = json.error || 'Something went wrong.'; btn.disabled = false; btn.textContent = 'Continue'; return; }
-    await loadApp(currentUser, json.profile, session.access_token);
+    await loadApp(currentUser, json.profile, token);
   } catch {
     errEl.textContent = 'Something went wrong.'; btn.disabled = false; btn.textContent = 'Continue';
   }
@@ -1110,7 +1135,7 @@ function showTab(name) {
 // ── LOAD DATA ─────────────────────────────────────────────────────────────────
 async function loadTrips(token) {
   try {
-    const t = token || (await sb.auth.getSession()).data.session?.access_token;
+    const t = token || await getToken();
     const res  = await fetch(API_URL + '/api/trips', { headers: { 'Authorization': 'Bearer ' + t } });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error);
@@ -1120,7 +1145,7 @@ async function loadTrips(token) {
 
 async function loadFuelExpenses(token) {
   try {
-    const t = token || (await sb.auth.getSession()).data.session?.access_token;
+    const t = token || await getToken();
     const res  = await fetch(API_URL + '/api/fuel-expenses', { headers: { 'Authorization': 'Bearer ' + t } });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error);
@@ -1184,10 +1209,10 @@ async function parseAllImages() {
   if (!uploadedImages.length) return;
   setStatus('log', 'loading', `Parsing ${uploadedImages.length} screenshot${uploadedImages.length > 1 ? 's' : ''} with AI...`);
   try {
-    const { data: { session } } = await sb.auth.getSession();
+    const t = await getToken();
     const res  = await fetch(API_URL + '/api/parse-screenshot', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + t },
       body: JSON.stringify({ images: uploadedImages.map(i => i.base64) })
     });
     const json = await res.json();
@@ -1448,13 +1473,13 @@ async function saveTrip() {
   btn.textContent = editingId ? 'Updating...' : 'Saving...';
 
   try {
-    const { data: { session } } = await sb.auth.getSession();
+    const token = await getToken();
     const method = editingId ? 'PATCH' : 'POST';
     const url    = editingId ? `${API_URL}/api/trips/${editingId}` : `${API_URL}/api/trips`;
 
     const res  = await fetch(url, {
       method,
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify(d)
     });
     const json = await res.json();
@@ -1627,10 +1652,10 @@ async function saveFuelExpense() {
 
   st.style.color = 'var(--muted)'; st.textContent = 'Saving…';
   try {
-    const { data: { session } } = await sb.auth.getSession();
+    const token = await getToken();
     const res  = await fetch(API_URL + '/api/fuel-expenses', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({ date, amount })
     });
     const json = await res.json();
@@ -1733,9 +1758,9 @@ function toggleDetail(id) {
 async function deleteTrip(id) {
   if (!confirm('Delete this trip?')) return;
   try {
-    const { data: { session } } = await sb.auth.getSession();
+    const token = await getToken();
     const res = await fetch(`${API_URL}/api/trips/${id}`, {
-      method: 'DELETE', headers: { 'Authorization': 'Bearer ' + session.access_token }
+      method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token }
     });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error);
@@ -1908,9 +1933,9 @@ async function deleteTripManager(id, bookingId) {
   const label = bookingId ? `booking #${bookingId}` : 'this trip';
   if (!confirm(`Delete ${label}?\n\nThis action cannot be undone.`)) return;
   try {
-    const { data: { session } } = await sb.auth.getSession();
+    const t = await getToken();
     const res = await fetch(`${API_URL}/api/trips/${id}`, {
-      method: 'DELETE', headers: { 'Authorization': 'Bearer ' + session.access_token }
+      method: 'DELETE', headers: { 'Authorization': 'Bearer ' + t }
     });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error);
@@ -2094,10 +2119,10 @@ async function exportXLSX() {
     requestWakeLock();
     if (wasHidden && currentUser) {
       wasHidden = false;
-      const { data: { session } } = await sb.auth.getSession().catch(() => ({ data: { session: null } }));
-      if (!session) return;
-      await loadTrips(session.access_token);
-      await loadFuelExpenses(session.access_token);
+      const t = await getToken();
+      if (!t) return;
+      await loadTrips(t);
+      await loadFuelExpenses(t);
       const active = ['log','stats','history','dashboard'].find(t =>
         document.getElementById('pane-' + t)?.style.display !== 'none'
       );
@@ -2109,10 +2134,13 @@ async function exportXLSX() {
 
   requestWakeLock();
 
-  // Token refresh every 4 minutes
+  // Token refresh every 4 minutes — also updates currentToken
   setInterval(async () => {
     if (document.visibilityState !== 'visible') return;
-    try { await sb.auth.getSession(); } catch {}
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session) currentToken = session.access_token;
+    } catch {}
   }, 4 * 60 * 1000);
 })();
 
