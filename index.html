@@ -31,6 +31,7 @@
 
 /* ── RESET ───────────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { overflow-x: hidden; max-width: 100vw; }
 body {
   font-family: 'Syne', sans-serif;
   background: var(--bg);
@@ -38,6 +39,7 @@ body {
   min-height: 100vh;
   -webkit-text-size-adjust: 100%;
   overflow-x: hidden;
+  max-width: 100vw;
 }
 
 /* ── SCREENS ─────────────────────────────────────────────────────────────────── */
@@ -182,6 +184,7 @@ header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 12px var(--pad); border-bottom: 1px solid var(--border);
   background: var(--bg); position: sticky; top: 0; z-index: 100;
+  overflow: hidden;
 }
 .logo-sm { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
 .logo-sm span { color: var(--accent); }
@@ -314,8 +317,9 @@ header {
   grid-template-columns: 1fr 1fr; /* ALWAYS exactly 2 equal columns */
   gap: var(--gap);
   margin-bottom: 14px;
+  width: 100%;
 }
-.field { display: flex; flex-direction: column; }
+.field { display: flex; flex-direction: column; min-width: 0; }
 .field label {
   display: block; font-size: var(--lfs); color: var(--muted);
   text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;
@@ -327,8 +331,12 @@ header {
   border-radius: 8px; color: var(--text);
   font-family: 'DM Mono', monospace; font-size: var(--ffs);
   transition: border-color 0.2s; -webkit-appearance: none; appearance: none;
+  min-width: 0;
 }
 .field input:focus, .field select:focus { outline: none; border-color: var(--accent); }
+.field input[type="number"]::-webkit-inner-spin-button,
+.field input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.field input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.5); }
 .field input.warning { border-color: var(--danger); }
 .field-warning {
   font-size: 11px; color: var(--danger); margin-top: 4px; display: none;
@@ -461,7 +469,13 @@ header {
 .search-input:focus { outline: none; border-color: var(--accent); }
 
 /* ── TABLE ───────────────────────────────────────────────────────────────────── */
-.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 calc(-1 * var(--pad)); padding: 0 var(--pad); }
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 calc(-1 * var(--pad));
+  padding: 0 var(--pad);
+  max-width: 100vw;
+}
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th {
   text-align: left; padding: 9px 8px;
@@ -904,7 +918,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 <script>
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 const SUPABASE_URL  = 'https://uljmcbrorgjrrvoxzmdb.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsam1jYnJvcmdqcnJ2b3h6bWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQzNzAsImV4cCI6MjA4OTg4MDM3MH0.gzfN9ayldCSF0kRSfSCT9Np02Dpke8ZSS42iJLBhzmA';
+const SUPABASE_ANON = '%%VITE_SUPABASE_ANON_KEY%%';
 const API_URL       = 'https://limopay-production.up.railway.app';
 
 const { createClient } = supabase;
