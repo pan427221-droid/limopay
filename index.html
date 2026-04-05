@@ -2,257 +2,534 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>LimoPay</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#0a0a0f;--surface:#111118;--surface2:#1a1a24;--border:#2a2a38;
-  --accent:#c8f060;--accent2:#60d4f0;--danger:#f06060;
-  --text:#e8e8f0;--muted:#6a6a80;--radius:12px;
-  --fh:48px;--ffs:14px;--fp:0 12px;
+/* ── TOKENS ─────────────────────────────────────────────────────────────────── */
+:root {
+  --bg:       #0a0a0f;
+  --surface:  #111118;
+  --surface2: #1a1a24;
+  --border:   #2a2a38;
+  --accent:   #c8f060;
+  --accent2:  #60d4f0;
+  --danger:   #f06060;
+  --text:     #e8e8f0;
+  --muted:    #6a6a80;
+  --radius:   10px;
+
+  /* Fluid sizing — scales smoothly from 375px to 900px */
+  --fh:   clamp(42px, 5.5vw, 52px);
+  --ffs:  clamp(13px, 1.7vw, 15px);
+  --fp:   0 clamp(10px, 2vw, 14px);
+  --gap:  clamp(8px,  1.5vw, 12px);
+  --lfs:  clamp(9px,  1.1vw, 11px);
+  --pad:  clamp(12px, 3vw,   20px);
 }
-*{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-text-size-adjust:100%;}
 
-/* SCREENS */
-.screen{min-height:100vh;display:flex;align-items:center;justify-content:center;
-  background:radial-gradient(ellipse at 20% 50%,#1a1a2e 0%,var(--bg) 60%);}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:20px;
-  padding:40px 24px;width:100%;max-width:400px;text-align:center;margin:16px;}
-.logo{font-size:30px;font-weight:800;letter-spacing:-1px;margin-bottom:6px;}
-.logo span{color:var(--accent);}
-.card-sub{color:var(--muted);font-size:14px;margin-bottom:36px;}
-.btn-google{display:flex;align-items:center;justify-content:center;gap:12px;
-  width:100%;height:var(--fh);background:var(--surface2);border:1px solid var(--border);
-  border-radius:var(--radius);color:var(--text);font-family:'Syne',sans-serif;
-  font-size:15px;font-weight:600;cursor:pointer;transition:all .2s;}
-.btn-google:hover{border-color:var(--accent);}
-.card-note{margin-top:20px;font-size:12px;color:var(--muted);}
-.error-msg{color:var(--danger);font-size:13px;margin-top:10px;min-height:18px;}
-.btn-link{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;
-  margin-top:14px;text-decoration:underline;font-family:'Syne',sans-serif;}
-
-/* DRIVER ID */
-.driver-id-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:block;}
-.driver-id-input{width:100%;padding:16px;background:var(--surface2);border:2px solid var(--border);
-  border-radius:var(--radius);color:var(--text);font-family:'DM Mono',monospace;
-  font-size:28px;font-weight:700;text-align:center;letter-spacing:8px;transition:border-color .2s;margin-bottom:14px;}
-.driver-id-input:focus{outline:none;border-color:var(--accent);}
-.driver-id-input::placeholder{letter-spacing:4px;font-size:20px;}
-
-/* LOADING */
-#loading-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;}
-.spinner{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
-
-/* TOAST */
-#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
-  background:var(--accent);color:#000;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;
-  padding:12px 24px;border-radius:50px;z-index:9999;
-  transition:transform .3s cubic-bezier(.34,1.56,.64,1),opacity .3s;
-  opacity:0;pointer-events:none;white-space:nowrap;}
-#toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
-
-/* HEADER */
-#app{display:none;}
-header{display:flex;align-items:center;justify-content:space-between;
-  padding:12px 16px;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:0;z-index:100;}
-.logo-sm{font-size:18px;font-weight:800;letter-spacing:-.5px;}
-.logo-sm span{color:var(--accent);}
-.header-right{display:flex;align-items:center;gap:8px;}
-.user-info{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);}
-.user-avatar{width:28px;height:28px;border-radius:50%;background:var(--surface2);
-  border:1px solid var(--border);overflow:hidden;display:flex;align-items:center;
-  justify-content:center;font-size:11px;font-weight:700;color:var(--accent);flex-shrink:0;}
-.user-avatar img{width:100%;height:100%;object-fit:cover;}
-.driver-id-badge{padding:3px 7px;border-radius:4px;font-size:11px;font-weight:700;
-  font-family:'DM Mono',monospace;background:rgba(200,240,96,.1);
-  border:1px solid rgba(200,240,96,.2);color:var(--accent);}
-.role-badge{padding:3px 7px;border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
-.role-badge.driver{background:rgba(200,240,96,.15);color:var(--accent);}
-.role-badge.manager{background:rgba(96,212,240,.15);color:var(--accent2);}
-.btn-signout{padding:6px 10px;background:transparent;border:1px solid var(--border);
-  border-radius:6px;color:var(--muted);font-family:'Syne',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;}
-.btn-signout:hover{border-color:var(--danger);color:var(--danger);}
-.user-name-text{display:none;}
-@media(min-width:480px){.user-name-text{display:inline;}}
-
-/* TABS */
-.tabs{display:flex;border-bottom:1px solid var(--border);padding:0 4px;background:var(--bg);overflow-x:auto;scrollbar-width:none;}
-.tabs::-webkit-scrollbar{display:none;}
-.tab{padding:11px 14px;border:none;background:transparent;color:var(--muted);
-  font-family:'Syne',sans-serif;font-size:13px;font-weight:600;cursor:pointer;
-  border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;flex-shrink:0;}
-.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
-
-/* CONTENT */
-.content{padding:16px;max-width:860px;margin:0 auto;}
-
-/* BUTTONS */
-.btn-primary{width:100%;height:var(--fh);background:var(--accent);border:none;
-  border-radius:var(--radius);color:#000;font-family:'Syne',sans-serif;
-  font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;}
-.btn-primary:hover{background:#d4f570;}
-.btn-primary:disabled{opacity:.5;cursor:not-allowed;}
-.btn-save{flex:1;height:var(--fh);background:var(--accent);border:none;
-  border-radius:var(--radius);color:#000;font-family:'Syne',sans-serif;
-  font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;}
-.btn-save:hover{background:#d4f570;}
-.btn-save:disabled{opacity:.5;cursor:not-allowed;}
-.btn-cancel{height:var(--fh);padding:0 20px;background:transparent;
-  border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);
-  font-family:'Syne',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;}
-.btn-cancel:hover{border-color:var(--danger);color:var(--danger);}
-.form-actions{display:flex;gap:10px;}
-.btn-delete{padding:5px 8px;background:transparent;border:1px solid var(--border);
-  border-radius:4px;color:var(--muted);font-size:11px;cursor:pointer;transition:all .2s;}
-.btn-delete:hover{border-color:var(--danger);color:var(--danger);}
-.btn-edit{padding:5px 8px;background:transparent;border:1px solid var(--border);
-  border-radius:4px;color:var(--muted);font-size:11px;cursor:pointer;transition:all .2s;}
-.btn-edit:hover{border-color:var(--accent);color:var(--accent);}
-.btn-export{padding:0 16px;height:36px;background:var(--accent);border:none;border-radius:8px;
-  color:#000;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;align-self:flex-end;}
-.btn-export:hover{background:#d4f570;}
-
-/* STATUS BAR */
-.status-bar{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;display:none;}
-.status-bar.show{display:block;}
-.status-bar.loading{background:rgba(96,212,240,.1);border:1px solid rgba(96,212,240,.3);color:var(--accent2);}
-.status-bar.success{background:rgba(200,240,96,.1);border:1px solid rgba(200,240,96,.3);color:var(--accent);}
-.status-bar.error{background:rgba(240,96,96,.1);border:1px solid rgba(240,96,96,.3);color:var(--danger);}
-
-/* EDIT BANNER */
-#edit-banner{background:rgba(200,240,96,.08);border:1px solid rgba(200,240,96,.25);
-  border-radius:var(--radius);padding:10px 14px;margin-bottom:14px;
-  font-size:13px;color:var(--accent);display:none;align-items:center;justify-content:space-between;gap:10px;}
-#edit-banner.show{display:flex;}
-#edit-banner strong{font-family:'DM Mono',monospace;}
-
-/* UPLOAD ZONE */
-.upload-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:20px;
-  text-align:center;cursor:pointer;transition:all .2s;margin-bottom:14px;background:var(--surface);}
-.upload-zone:hover,.upload-zone.drag-over{border-color:var(--accent);background:rgba(200,240,96,.03);}
-.upload-zone input{display:none;}
-.upload-icon{font-size:22px;margin-bottom:5px;}
-.upload-text{font-size:13px;color:var(--muted);}
-.upload-text strong{color:var(--accent);}
-#img-preview{max-width:140px;max-height:100px;border-radius:8px;margin:10px auto 0;display:none;border:1px solid var(--border);}
-
-/* FORM GRID — exactly 2 columns, equal height fields */
-.form-grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-  margin-bottom:14px;
+/* ── RESET ───────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
 }
-.field label{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;
-  letter-spacing:.5px;margin-bottom:5px;line-height:1.3;}
-.field input,.field select{
-  display:block;width:100%;height:var(--fh);padding:var(--fp);
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;
-  font-size:var(--ffs);transition:border-color .2s;
-  -webkit-appearance:none;appearance:none;
+
+/* ── SCREENS ─────────────────────────────────────────────────────────────────── */
+.screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at 20% 50%, #1a1a2e 0%, var(--bg) 60%);
+  padding: 16px;
 }
-.field input:focus,.field select:focus{outline:none;border-color:var(--accent);}
-.field.full{grid-column:1/-1;}
-/* Checkbox */
-.checkbox-field{display:flex;flex-direction:column;}
-.checkbox-wrap{display:flex;align-items:center;gap:10px;height:var(--fh);padding:var(--fp);
-  background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:border-color .2s;}
-.checkbox-wrap:has(input:checked){border-color:var(--accent);background:rgba(200,240,96,.05);}
-.checkbox-wrap input[type="checkbox"]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;}
-.checkbox-label{font-size:13px;color:var(--text);}
-/* Divider row */
-.field.divider{grid-column:1/-1;border-top:1px solid var(--border);padding-top:10px;}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 40px 24px;
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+.logo { font-size: 30px; font-weight: 800; letter-spacing: -1px; margin-bottom: 6px; }
+.logo span { color: var(--accent); }
+.card-sub { color: var(--muted); font-size: 14px; margin-bottom: 36px; }
+.card-note { margin-top: 20px; font-size: 12px; color: var(--muted); }
+.error-msg { color: var(--danger); font-size: 13px; margin-top: 10px; min-height: 18px; }
 
-/* EARNINGS PREVIEW */
-.earnings-preview{background:var(--surface);border:1px solid rgba(200,240,96,.2);
-  border-radius:var(--radius);padding:14px;margin-bottom:14px;display:none;}
-.earnings-preview.show{display:block;}
-.ep-title{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
-.ep-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px solid var(--border);}
-.ep-row:last-child{border:none;}
-.ep-row.ep-optional{display:none;}
-.ep-row.ep-optional.visible{display:flex;}
-.ep-row.total{font-weight:700;font-size:16px;color:var(--accent);margin-top:4px;padding-top:6px;}
-.ep-val{font-family:'DM Mono',monospace;}
+/* ── LOADING ─────────────────────────────────────────────────────────────────── */
+#loading-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+.spinner {
+  width: 32px; height: 32px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-/* STATS */
-.stats-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
-@media(min-width:500px){.stats-row{grid-template-columns:repeat(auto-fit,minmax(130px,1fr));}}
-.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;}
-.stat-card.highlight{border-color:rgba(200,240,96,.3);background:rgba(200,240,96,.05);}
-.stat-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
-.stat-value{font-size:20px;font-weight:700;font-family:'DM Mono',monospace;color:var(--accent);}
-.stat-value.neutral{color:var(--text);}
+/* ── TOAST ───────────────────────────────────────────────────────────────────── */
+#toast {
+  position: fixed;
+  bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--accent); color: #000;
+  font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700;
+  padding: 12px 24px; border-radius: 50px;
+  z-index: 9999; pointer-events: none; white-space: nowrap;
+  opacity: 0;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s;
+}
+#toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
-/* PERIOD TABS + DATE HINT */
-.period-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px;}
-.period-btn{padding:6px 12px;background:var(--surface);border:1px solid var(--border);
-  border-radius:6px;color:var(--muted);font-family:'Syne',sans-serif;font-size:12px;
-  font-weight:600;cursor:pointer;transition:all .2s;}
-.period-btn.active{background:rgba(200,240,96,.1);border-color:var(--accent);color:var(--accent);}
-.date-hint{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;min-height:18px;margin-bottom:12px;padding-left:1px;}
+/* ── BUTTONS ─────────────────────────────────────────────────────────────────── */
+.btn-google {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  width: 100%; height: var(--fh);
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text);
+  font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 600;
+  cursor: pointer; transition: border-color 0.2s;
+}
+.btn-google:hover { border-color: var(--accent); }
 
-/* LAST TRIP CARD */
-.last-trip-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:18px;}
-.ltc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:4px;}
-.ltc-title{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
-.ltc-date{font-size:12px;color:var(--muted);font-family:'DM Mono',monospace;}
-.ltc-earnings{font-size:30px;font-weight:800;font-family:'DM Mono',monospace;color:var(--accent);margin-bottom:10px;}
-.ltc-rows{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-@media(min-width:480px){.ltc-rows{grid-template-columns:repeat(auto-fit,minmax(110px,1fr));}}
-.ltc-row{background:var(--surface2);border-radius:8px;padding:9px 11px;}
-.ltc-row-label{font-size:10px;color:var(--muted);margin-bottom:2px;}
-.ltc-row-val{font-size:13px;font-family:'DM Mono',monospace;font-weight:500;}
+.btn-primary {
+  width: 100%; height: var(--fh);
+  background: var(--accent); border: none; border-radius: var(--radius);
+  color: #000; font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700;
+  cursor: pointer; transition: opacity 0.2s;
+}
+.btn-primary:hover { opacity: 0.9; }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* TABLE */
-.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -16px;padding:0 16px;}
-table{width:100%;border-collapse:collapse;font-size:13px;}
-th{text-align:left;padding:9px 10px;font-size:10px;text-transform:uppercase;
-  letter-spacing:.5px;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;}
-td{padding:10px 10px;border-bottom:1px solid rgba(42,42,56,.5);vertical-align:middle;}
-tr:hover td{background:rgba(255,255,255,.02);}
-.earn-val{color:var(--accent);font-family:'DM Mono',monospace;font-weight:600;}
-.cash-val{color:var(--accent2);font-family:'DM Mono',monospace;font-weight:600;}
-.mono{font-family:'DM Mono',monospace;}
-.actions-cell{display:flex;gap:4px;}
+.btn-save {
+  flex: 1; height: var(--fh);
+  background: var(--accent); border: none; border-radius: var(--radius);
+  color: #000; font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700;
+  cursor: pointer; transition: opacity 0.2s;
+}
+.btn-save:hover { opacity: 0.9; }
+.btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* EXPANDABLE ROWS */
-.dash-row{cursor:pointer;}
-.dash-row:hover td{background:rgba(200,240,96,.04);}
-.expand-icon{transition:transform .2s;display:inline-block;color:var(--muted);font-size:11px;}
-.expanded .expand-icon{transform:rotate(90deg);}
-.breakdown-row td{padding:0;}
-.breakdown-content{padding:12px 14px;background:var(--surface2);border-bottom:1px solid var(--border);display:none;}
-.breakdown-content.show{display:block;}
-.bd-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:8px;}
-.bd-item{background:var(--surface);border-radius:6px;padding:8px 10px;}
-.bd-item-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;}
-.bd-item-val{font-size:13px;font-family:'DM Mono',monospace;}
-.bd-item-val.muted{color:var(--muted);font-size:11px;}
-#dash-foot tr td{border-top:2px solid var(--border);font-weight:700;padding-top:12px;}
+.btn-cancel {
+  height: var(--fh); padding: 0 18px;
+  background: transparent; border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--muted);
+  font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s; white-space: nowrap;
+}
+.btn-cancel:hover { border-color: var(--danger); color: var(--danger); }
 
-/* DASHBOARD FILTERS */
-.dash-filters{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:6px;}
-.filter-group{display:flex;flex-direction:column;gap:4px;}
-.filter-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
-.filter-input{height:36px;padding:0 10px;background:var(--surface);border:1px solid var(--border);
-  border-radius:8px;color:var(--text);font-family:'Syne',sans-serif;font-size:13px;min-width:110px;}
-.filter-input:focus{outline:none;border-color:var(--accent);}
-.filter-reset{height:36px;padding:0 14px;background:transparent;border:1px solid var(--border);
-  border-radius:8px;color:var(--muted);font-family:'Syne',sans-serif;font-size:12px;
-  cursor:pointer;transition:all .2s;align-self:flex-end;}
-.filter-reset:hover{border-color:var(--danger);color:var(--danger);}
-.date-error{font-size:12px;color:var(--danger);min-height:16px;margin-bottom:6px;}
+.btn-link {
+  background: none; border: none; color: var(--muted);
+  font-size: 12px; cursor: pointer; margin-top: 14px;
+  text-decoration: underline; font-family: 'Syne', sans-serif;
+}
+.btn-link:hover { color: var(--text); }
 
-/* MISC */
-.empty-state{text-align:center;padding:40px 20px;color:var(--muted);}
-.empty-state .icon{font-size:36px;margin-bottom:10px;}
-.section-title{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
+.btn-signout {
+  padding: 6px 10px; background: transparent;
+  border: 1px solid var(--border); border-radius: 6px;
+  color: var(--muted); font-family: 'Syne', sans-serif; font-size: 12px;
+  cursor: pointer; transition: all 0.2s;
+}
+.btn-signout:hover { border-color: var(--danger); color: var(--danger); }
+
+.btn-icon {
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; border: 1px solid var(--border);
+  border-radius: 6px; color: var(--muted); cursor: pointer;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+.btn-icon.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+.btn-export {
+  height: 36px; padding: 0 16px;
+  background: var(--accent); border: none; border-radius: 8px;
+  color: #000; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: opacity 0.2s; align-self: flex-end; white-space: nowrap;
+}
+.btn-export:hover { opacity: 0.9; }
+
+/* ── DRIVER ID SCREEN ────────────────────────────────────────────────────────── */
+.driver-id-label {
+  font-size: 11px; color: var(--muted); text-transform: uppercase;
+  letter-spacing: 0.5px; margin-bottom: 8px; display: block;
+}
+.driver-id-input {
+  width: 100%; padding: 16px;
+  background: var(--surface2); border: 2px solid var(--border);
+  border-radius: var(--radius); color: var(--text);
+  font-family: 'DM Mono', monospace; font-size: 28px; font-weight: 700;
+  text-align: center; letter-spacing: 8px; transition: border-color 0.2s;
+  margin-bottom: 14px;
+}
+.driver-id-input:focus { outline: none; border-color: var(--accent); }
+.driver-id-input::placeholder { letter-spacing: 4px; font-size: 20px; }
+
+/* ── HEADER ──────────────────────────────────────────────────────────────────── */
+#app { display: none; }
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px var(--pad); border-bottom: 1px solid var(--border);
+  background: var(--bg); position: sticky; top: 0; z-index: 100;
+}
+.logo-sm { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+.logo-sm span { color: var(--accent); }
+.header-right { display: flex; align-items: center; gap: 8px; }
+.user-info { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+.user-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--surface2); border: 1px solid var(--border);
+  overflow: hidden; display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: var(--accent); flex-shrink: 0;
+}
+.user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.driver-id-badge {
+  padding: 3px 7px; border-radius: 4px; font-size: 11px; font-weight: 700;
+  font-family: 'DM Mono', monospace;
+  background: rgba(200,240,96,0.1); border: 1px solid rgba(200,240,96,0.2); color: var(--accent);
+}
+.role-badge {
+  padding: 3px 7px; border-radius: 4px; font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.role-badge.driver  { background: rgba(200,240,96,0.15); color: var(--accent); }
+.role-badge.manager { background: rgba(96,212,240,0.15); color: var(--accent2); }
+.user-name-text { display: none; }
+@media (min-width: 480px) { .user-name-text { display: inline; } }
+
+/* ── TABS ────────────────────────────────────────────────────────────────────── */
+.tabs {
+  display: flex; border-bottom: 1px solid var(--border);
+  background: var(--bg); overflow-x: auto; scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  flex: 1; padding: 11px 8px; border: none; background: transparent;
+  color: var(--muted); font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 600;
+  cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s;
+  white-space: nowrap; text-align: center; min-width: 0;
+}
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ── CONTENT ─────────────────────────────────────────────────────────────────── */
+.content { padding: var(--pad); max-width: 860px; margin: 0 auto; }
+
+/* ── STATUS BAR ──────────────────────────────────────────────────────────────── */
+.status-bar { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 14px; display: none; }
+.status-bar.show   { display: block; }
+.status-bar.loading { background: rgba(96,212,240,0.1);  border: 1px solid rgba(96,212,240,0.3);  color: var(--accent2); }
+.status-bar.success { background: rgba(200,240,96,0.1);  border: 1px solid rgba(200,240,96,0.3);  color: var(--accent); }
+.status-bar.error   { background: rgba(240,96,96,0.1);   border: 1px solid rgba(240,96,96,0.3);   color: var(--danger); }
+
+/* ── EDIT BANNER ─────────────────────────────────────────────────────────────── */
+#edit-banner {
+  display: none; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 10px 14px; margin-bottom: 14px;
+  background: rgba(200,240,96,0.07); border: 1px solid rgba(200,240,96,0.2);
+  border-radius: var(--radius); font-size: 13px; color: var(--accent);
+}
+#edit-banner.show { display: flex; }
+#edit-banner strong { font-family: 'DM Mono', monospace; }
+.edit-cancel-btn {
+  padding: 5px 12px; background: transparent;
+  border: 1px solid rgba(200,240,96,0.3); border-radius: 6px;
+  color: var(--accent); font-family: 'Syne', sans-serif; font-size: 11px;
+  cursor: pointer; white-space: nowrap;
+}
+.edit-cancel-btn:hover { background: rgba(200,240,96,0.1); }
+
+/* ── UPLOAD ZONE ─────────────────────────────────────────────────────────────── */
+.upload-zone {
+  border: 1.5px dashed var(--border); border-radius: var(--radius);
+  padding: 16px; text-align: center; cursor: pointer;
+  transition: all 0.2s; margin-bottom: 14px; background: var(--surface);
+}
+.upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: rgba(200,240,96,0.03); }
+.upload-zone input[type="file"] { display: none; }
+.upload-inner { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.upload-icon-wrap {
+  width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;
+  background: rgba(200,240,96,0.08); border: 1px solid rgba(200,240,96,0.15);
+  display: flex; align-items: center; justify-content: center; color: var(--accent);
+}
+.upload-text { text-align: left; }
+.upload-text strong { display: block; font-size: 13px; color: var(--accent); }
+.upload-text span   { font-size: 11px; color: var(--muted); }
+
+/* Multi-image thumbnails */
+#multi-preview-wrap { display: none; margin-bottom: 12px; }
+#img-previews {
+  display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start;
+}
+.img-thumb {
+  position: relative; width: 80px; height: 64px; border-radius: 8px;
+  overflow: hidden; border: 1px solid var(--border); flex-shrink: 0;
+}
+.img-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.thumb-remove {
+  position: absolute; top: 3px; right: 3px; width: 18px; height: 18px;
+  background: rgba(0,0,0,0.7); border: none; border-radius: 50%;
+  color: #fff; font-size: 10px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.thumb-remove:hover { background: var(--danger); }
+.thumb-num {
+  position: absolute; bottom: 3px; left: 4px;
+  font-size: 9px; font-family: 'DM Mono', monospace;
+  color: rgba(255,255,255,0.8); background: rgba(0,0,0,0.5);
+  padding: 1px 4px; border-radius: 3px;
+}
+.add-more-btn {
+  width: 80px; height: 64px; border-radius: 8px;
+  border: 1.5px dashed var(--border); background: var(--surface2);
+  color: var(--muted); font-size: 20px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.add-more-btn:hover { border-color: var(--accent); color: var(--accent); }
+.parse-btn {
+  width: 100%; margin-top: 10px; padding: 11px;
+  background: rgba(200,240,96,0.1); border: 1px solid rgba(200,240,96,0.3);
+  border-radius: var(--radius); color: var(--accent);
+  font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: background 0.2s; display: none;
+}
+.parse-btn:hover { background: rgba(200,240,96,0.18); }
+.parse-btn.visible { display: block; }
+
+/* ── FORM GRID — LOCKED 2 columns ────────────────────────────────────────────── */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* ALWAYS exactly 2 equal columns */
+  gap: var(--gap);
+  margin-bottom: 14px;
+}
+.field { display: flex; flex-direction: column; }
+.field label {
+  display: block; font-size: var(--lfs); color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.field input, .field select {
+  width: 100%; height: var(--fh); padding: var(--fp);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text);
+  font-family: 'DM Mono', monospace; font-size: var(--ffs);
+  transition: border-color 0.2s; -webkit-appearance: none; appearance: none;
+}
+.field input:focus, .field select:focus { outline: none; border-color: var(--accent); }
+.field input.warning { border-color: var(--danger); }
+.field-warning {
+  font-size: 11px; color: var(--danger); margin-top: 4px; display: none;
+}
+.field-warning.show { display: block; }
+
+/* Full-width spanning fields */
+.field.full { grid-column: 1 / -1; }
+
+/* Divider before Total Fare */
+.field.divider { grid-column: 1 / -1; border-top: 1px solid var(--border); padding-top: 10px; }
+
+/* Accent borders */
+.field.accent-green input { border-color: rgba(200,240,96,0.3); }
+.field.accent-green label { color: var(--accent); }
+.field.accent-blue  input { border-color: rgba(96,212,240,0.3); }
+.field.accent-blue  label { color: var(--accent2); }
+
+/* ── CHECKBOX ────────────────────────────────────────────────────────────────── */
+.checkbox-field { display: flex; flex-direction: column; }
+.checkbox-wrap {
+  display: flex; align-items: center; gap: 10px;
+  height: var(--fh); padding: var(--fp);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; cursor: pointer; transition: all 0.2s;
+}
+.checkbox-wrap.checked { border-color: var(--accent); background: rgba(200,240,96,0.05); }
+.checkbox-box {
+  width: 18px; height: 18px; border-radius: 4px; flex-shrink: 0;
+  border: 1.5px solid var(--border); background: var(--surface2);
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.checkbox-box.checked { background: var(--accent); border-color: var(--accent); }
+.checkbox-box svg { display: none; }
+.checkbox-box.checked svg { display: block; }
+.checkbox-label { font-size: 13px; color: var(--text); flex: 1; }
+.checkbox-amount { font-size: 13px; font-family: 'DM Mono', monospace; color: var(--accent); margin-left: auto; flex-shrink: 0; }
+
+/* ── EARNINGS PREVIEW ────────────────────────────────────────────────────────── */
+.earnings-preview {
+  background: var(--surface); border: 1px solid rgba(200,240,96,0.2);
+  border-radius: var(--radius); padding: 14px; margin-bottom: 14px; display: none;
+}
+.earnings-preview.show { display: block; }
+.ep-title { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+.ep-row {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 13px; padding: 4px 0; border-bottom: 1px solid var(--border);
+}
+.ep-row:last-child { border: none; }
+.ep-row.ep-optional { display: none; }
+.ep-row.ep-optional.visible { display: flex; }
+.ep-row.ep-section { border-top: 1px solid var(--border); margin-top: 4px; padding-top: 6px; }
+.ep-row.ep-total { font-weight: 700; font-size: 16px; color: var(--accent); margin-top: 4px; padding-top: 6px; }
+.ep-row.ep-cash { color: var(--accent2); font-size: 13px; border-top: 1px solid var(--border); margin-top: 4px; padding-top: 6px; }
+.ep-val { font-family: 'DM Mono', monospace; }
+.ep-danger { color: var(--danger); }
+
+/* ── FORM ACTIONS ────────────────────────────────────────────────────────────── */
+.form-actions { display: flex; gap: 10px; }
+
+/* ── STATS / CARDS ───────────────────────────────────────────────────────────── */
+.stats-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap);
+  margin-bottom: 18px;
+}
+@media (min-width: 500px) { .stats-row { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); } }
+
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+.stat-card.highlight { border-color: rgba(200,240,96,0.3); background: rgba(200,240,96,0.05); }
+.stat-card.cash      { border-color: rgba(96,212,240,0.2); }
+.stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+.stat-value { font-size: 20px; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--accent); }
+.stat-value.neutral { color: var(--text); }
+.stat-value.cash    { color: var(--accent2); }
+
+/* ── PERIOD TABS + DATE HINT ─────────────────────────────────────────────────── */
+.period-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
+.period-btn {
+  padding: 6px 12px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 6px; color: var(--muted); font-family: 'Syne', sans-serif;
+  font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+}
+.period-btn.active { background: rgba(200,240,96,0.1); border-color: var(--accent); color: var(--accent); }
+.date-hint { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; margin-bottom: 14px; min-height: 18px; padding-left: 1px; }
+
+/* ── SECTION ─────────────────────────────────────────────────────────────────── */
+.section-title { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+.section-gap { margin-bottom: 20px; }
+
+/* ── LAST TRIP CARD ──────────────────────────────────────────────────────────── */
+.last-trip-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px; margin-bottom: 20px;
+}
+.ltc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 4px; }
+.ltc-title { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.ltc-date  { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; }
+.ltc-earnings { font-size: 30px; font-weight: 800; font-family: 'DM Mono', monospace; color: var(--accent); margin-bottom: 10px; }
+.ltc-rows { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+@media (min-width: 480px) { .ltc-rows { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); } }
+.ltc-row { background: var(--surface2); border-radius: 8px; padding: 9px 11px; }
+.ltc-row-label { font-size: 10px; color: var(--muted); margin-bottom: 2px; }
+.ltc-row-val   { font-size: 13px; font-family: 'DM Mono', monospace; font-weight: 500; }
+
+/* ── FUEL EXPENSE LIST ───────────────────────────────────────────────────────── */
+.fuel-list { margin-top: 10px; }
+.fuel-list-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+}
+.fuel-list-item:last-child { border: none; }
+.fuel-list-date { color: var(--muted); font-family: 'DM Mono', monospace; font-size: 12px; }
+.fuel-list-amount { font-family: 'DM Mono', monospace; color: var(--text); }
+
+/* ── FILTER ROW ──────────────────────────────────────────────────────────────── */
+.filter-row {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 14px; flex-wrap: wrap;
+}
+.search-input {
+  height: 36px; padding: 0 12px; min-width: 160px; flex: 1;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text);
+  font-family: 'Syne', sans-serif; font-size: 13px;
+}
+.search-input:focus { outline: none; border-color: var(--accent); }
+
+/* ── TABLE ───────────────────────────────────────────────────────────────────── */
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 calc(-1 * var(--pad)); padding: 0 var(--pad); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th {
+  text-align: left; padding: 9px 8px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--muted); border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+td { padding: 10px 8px; border-bottom: 1px solid rgba(42,42,56,0.5); vertical-align: middle; }
+tr:hover td { background: rgba(255,255,255,0.02); }
+.td-mono  { font-family: 'DM Mono', monospace; white-space: nowrap; }
+.td-earn  { color: var(--accent);  font-family: 'DM Mono', monospace; font-weight: 600; }
+.td-cash  { color: var(--accent2); font-family: 'DM Mono', monospace; }
+.td-muted { color: var(--muted); }
+.actions-cell { display: flex; gap: 4px; }
+
+/* Expandable rows */
+.trip-row { cursor: pointer; }
+.trip-row:hover td { background: rgba(200,240,96,0.04); }
+.expand-icon { transition: transform 0.2s; display: inline-block; color: var(--muted); font-size: 10px; margin-right: 4px; }
+.trip-row.open .expand-icon { transform: rotate(90deg); }
+.detail-row td { padding: 0; }
+.detail-content {
+  padding: 12px 14px; background: var(--surface2);
+  border-bottom: 1px solid var(--border); display: none;
+}
+.detail-content.show { display: block; }
+.bd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; }
+.bd-item { background: var(--surface); border-radius: 6px; padding: 8px 10px; }
+.bd-item-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+.bd-item-val   { font-size: 13px; font-family: 'DM Mono', monospace; }
+.bd-item-val.muted   { color: var(--muted); font-size: 11px; }
+.bd-item-val.danger  { color: var(--danger); }
+
+/* Soft delete badge */
+.deleted-badge {
+  font-size: 9px; color: var(--danger);
+  border: 1px solid var(--danger); border-radius: 3px;
+  padding: 1px 4px; margin-left: 5px; vertical-align: middle; white-space: nowrap;
+}
+
+/* Dashboard footer total */
+#dash-foot tr td { border-top: 2px solid var(--border); font-weight: 700; padding-top: 12px; }
+
+/* ── DASHBOARD FILTERS ───────────────────────────────────────────────────────── */
+.dash-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; margin-bottom: 8px; }
+.filter-group { display: flex; flex-direction: column; gap: 4px; }
+.filter-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.filter-input {
+  height: 36px; padding: 0 10px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); font-family: 'Syne', sans-serif; font-size: 13px;
+  min-width: 110px; -webkit-appearance: none; appearance: none;
+}
+.filter-input:focus { outline: none; border-color: var(--accent); }
+.filter-reset {
+  height: 36px; padding: 0 14px; background: transparent;
+  border: 1px solid var(--border); border-radius: 8px;
+  color: var(--muted); font-family: 'Syne', sans-serif; font-size: 12px;
+  cursor: pointer; transition: all 0.2s; align-self: flex-end;
+}
+.filter-reset:hover { border-color: var(--danger); color: var(--danger); }
+.date-error { font-size: 12px; color: var(--danger); min-height: 16px; margin-bottom: 6px; }
+
+/* ── EMPTY STATE ─────────────────────────────────────────────────────────────── */
+.empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
+.empty-icon {
+  width: 40px; height: 40px; margin: 0 auto 12px;
+  opacity: 0.3;
+}
 </style>
 </head>
 <body>
@@ -266,7 +543,7 @@ tr:hover td{background:rgba(255,255,255,.02);}
     <div class="logo">Limo<span>Pay</span></div>
     <div class="card-sub">Driver earnings tracker</div>
     <button class="btn-google" onclick="signInWithGoogle()">
-      <svg width="18" height="18" viewBox="0 0 18 18">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
         <path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z"/>
         <path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2.04a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z"/>
         <path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z"/>
@@ -284,7 +561,7 @@ tr:hover td{background:rgba(255,255,255,.02);}
     <div class="logo">Limo<span>Pay</span></div>
     <div class="card-sub">Enter your Driver ID to continue</div>
     <label class="driver-id-label">Driver ID</label>
-    <input type="text" id="driver-id-input" class="driver-id-input" maxlength="4" placeholder="····" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+    <input type="text" id="driver-id-input" class="driver-id-input" maxlength="4" placeholder="····" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
     <button class="btn-primary" id="btn-verify" onclick="verifyDriverId()">Continue</button>
     <div class="error-msg" id="driverid-error"></div>
     <button class="btn-link" onclick="signOut()">Sign out and use a different account</button>
@@ -308,61 +585,161 @@ tr:hover td{background:rgba(255,255,255,.02);}
 
   <div class="tabs">
     <button class="tab active" onclick="showTab('log')"       id="tab-log">Log Trip</button>
-    <button class="tab"        onclick="showTab('stats')"     id="tab-stats">My Stats</button>
+    <button class="tab"        onclick="showTab('stats')"     id="tab-stats">My Day</button>
     <button class="tab"        onclick="showTab('history')"   id="tab-history">My Trips</button>
     <button class="tab"        onclick="showTab('dashboard')" id="tab-dashboard" style="display:none">Dashboard</button>
   </div>
 
-  <!-- LOG TRIP -->
+  <!-- ═══════════════════════════════ LOG TRIP ═══════════════════════════════ -->
   <div id="pane-log" class="content">
     <div id="status-log" class="status-bar"></div>
+
+    <!-- Edit banner -->
     <div id="edit-banner">
-      ✏️ Editing booking <strong id="edit-booking-label"></strong>
-      <button class="btn-cancel" style="height:30px;padding:0 12px;font-size:12px" onclick="cancelForm()">Cancel edit</button>
+      <span>Editing booking <strong id="edit-booking-label"></strong></span>
+      <button class="edit-cancel-btn" onclick="cancelForm()">Cancel edit</button>
     </div>
+
+    <!-- Upload zone -->
     <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
-      <input type="file" id="file-input" accept="image/*" onchange="handleFile(this.files[0])">
-      <div class="upload-icon">📸</div>
-      <div class="upload-text">Drop screenshot or <strong>tap to upload</strong></div>
-      <img id="img-preview">
+      <input type="file" id="file-input" accept="image/*" multiple onchange="handleFiles(this.files)">
+      <div class="upload-inner">
+        <div class="upload-icon-wrap">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <path d="m21 15-5-5L5 21"/>
+          </svg>
+        </div>
+        <div class="upload-text">
+          <strong>Upload screenshot</strong>
+          <span>Tap to add — multiple allowed</span>
+        </div>
+      </div>
     </div>
 
+    <!-- Multi-image previews -->
+    <div id="multi-preview-wrap">
+      <div id="img-previews"></div>
+      <button class="parse-btn" id="parse-btn" onclick="parseAllImages()">
+        Parse <span id="parse-count">1</span> screenshot<span id="parse-plural"></span> with AI
+      </button>
+    </div>
+
+    <!-- FORM -->
     <div class="form-grid">
-      <div class="field"><label>Date</label><input type="date" id="f-date"></div>
-      <div class="field"><label>Booking ID</label><input type="text" id="f-booking" placeholder="1234567" maxlength="7" inputmode="numeric"></div>
 
-      <div class="field"><label>Base Fare ($)</label><input type="number" id="f-base" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()"></div>
-      <div class="field"><label>Wait Time ($)</label><input type="number" id="f-wait" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()"></div>
+      <!-- Row 1: Date + Booking ID -->
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="f-date">
+      </div>
+      <div class="field">
+        <label>Booking ID</label>
+        <input type="text" id="f-booking" placeholder="1234567" maxlength="7" inputmode="numeric"
+               oninput="onBookingInput()" onblur="checkDuplicateBooking()">
+        <span class="field-warning" id="booking-warning">Booking ID already exists</span>
+      </div>
 
-      <div class="field checkbox-field full">
-        <label>Greet Fee (+$40)</label>
-        <div class="checkbox-wrap">
-          <input type="checkbox" id="f-greet" onchange="calcEarnings()">
-          <span class="checkbox-label">Meet &amp; Greet at airport</span>
+      <!-- Row 2: Base Fare + Gratuity -->
+      <div class="field">
+        <label>Base Fare ($)</label>
+        <input type="number" id="f-base" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()">
+      </div>
+      <div class="field">
+        <label>Gratuity ($)</label>
+        <input type="number" id="f-gratuity" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()">
+      </div>
+
+      <!-- Holiday Pay — full width checkbox -->
+      <div class="field full checkbox-field">
+        <label>Holiday Pay</label>
+        <div class="checkbox-wrap" id="holiday-wrap" onclick="toggleCheck('holiday')">
+          <div class="checkbox-box" id="holiday-box">
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="#000" stroke-width="2.5"><path d="m2 6 3 3 5-5"/></svg>
+          </div>
+          <span class="checkbox-label">Public holiday</span>
+          <span class="checkbox-amount">+$20</span>
         </div>
       </div>
 
-      <div class="field"><label>Car Seats (qty)</label><input type="number" id="f-carseat" placeholder="0" min="0" max="10" oninput="calcEarnings()"></div>
-      <div class="field"><label>Event Wait ($)</label><input type="number" id="f-eventwait" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()"></div>
-      <div class="field"><label>Extra Stop ($)</label><input type="number" id="f-extrastop" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()"></div>
-      <div class="field"><label>Discount ($)</label><input type="number" id="f-discount" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()"></div>
-      <div class="field"><label>Expenses ($)</label><input type="number" id="f-expenses" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()"></div>
-      <div class="field"><label>Gratuity ($)</label><input type="number" id="f-gratuity" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()"></div>
-      <div class="field"><label>Fuel Surcharge ($)</label><input type="number" id="f-fuel" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()"></div>
-      <div class="field"><label>Parking ($)</label><input type="number" id="f-parking" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()"></div>
-      <div class="field"><label>Airport Fee ($)</label><input type="number" id="f-airport" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()"></div>
-      <div class="field"><label>Tolls ($)</label><input type="number" id="f-tolls" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()"></div>
-
-      <div class="field divider">
-        <label style="color:var(--accent)">Total Fare ($) — from receipt</label>
-        <input type="number" id="f-total" placeholder="0.00" min="0" step="0.01" style="border-color:rgba(200,240,96,.3)">
+      <!-- Row 3: Tolls + Airport Fee -->
+      <div class="field">
+        <label>Tolls ($)</label>
+        <input type="number" id="f-tolls" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()">
       </div>
-      <div class="field full">
-        <label style="color:var(--accent2)">Cash Tips ($) — private, only you see this</label>
-        <input type="number" id="f-cash-tips" placeholder="0.00" min="0" step="0.01" style="border-color:rgba(96,212,240,.3)" oninput="calcEarnings()">
+      <div class="field">
+        <label>Airport Fee ($)</label>
+        <input type="number" id="f-airport" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()">
       </div>
-    </div>
 
+      <!-- Row 4: Fuel + Discount -->
+      <div class="field">
+        <label>Fuel Surcharge ($)</label>
+        <input type="number" id="f-fuel" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()">
+      </div>
+      <div class="field">
+        <label>Discount ($)</label>
+        <input type="number" id="f-discount" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()">
+      </div>
+
+      <!-- Row 5: Expenses + Wait Time -->
+      <div class="field">
+        <label>Expenses ($)</label>
+        <input type="number" id="f-expenses" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()">
+      </div>
+      <div class="field">
+        <label>Wait Time ($)</label>
+        <input type="number" id="f-wait" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()">
+      </div>
+
+      <!-- Greet Fee — full width checkbox -->
+      <div class="field full checkbox-field">
+        <label>Greet Fee</label>
+        <div class="checkbox-wrap" id="greet-wrap" onclick="toggleCheck('greet')">
+          <div class="checkbox-box" id="greet-box">
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="#000" stroke-width="2.5"><path d="m2 6 3 3 5-5"/></svg>
+          </div>
+          <span class="checkbox-label">Meet &amp; Greet at airport</span>
+          <span class="checkbox-amount">+$40</span>
+        </div>
+      </div>
+
+      <!-- Row 6: Car Seats + Event Wait -->
+      <div class="field">
+        <label>Car Seats (qty)</label>
+        <input type="number" id="f-carseat" placeholder="0" min="0" max="10" oninput="calcEarnings()">
+      </div>
+      <div class="field">
+        <label>Event Wait ($)</label>
+        <input type="number" id="f-eventwait" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()">
+      </div>
+
+      <!-- Row 7: Extra Stop + Parking -->
+      <div class="field">
+        <label>Extra Stop ($)</label>
+        <input type="number" id="f-extrastop" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()">
+      </div>
+      <div class="field">
+        <label>Parking ($)</label>
+        <input type="number" id="f-parking" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()">
+      </div>
+
+      <!-- Total Fare — full width with divider -->
+      <div class="field divider accent-green">
+        <label>Total Fare ($) — from receipt</label>
+        <input type="number" id="f-total" placeholder="0.00" min="0" step="0.01">
+      </div>
+
+      <!-- Cash Tips — full width private -->
+      <div class="field full accent-blue">
+        <label>Cash Tips ($) — private, only you see this</label>
+        <input type="number" id="f-cash-tips" placeholder="0.00" min="0" step="0.01" oninput="calcEarnings()">
+      </div>
+
+    </div><!-- /form-grid -->
+
+    <!-- Earnings Preview -->
     <div class="earnings-preview" id="earnings-preview">
       <div class="ep-title">Earnings Breakdown</div>
       <div class="ep-row"><span>Base Fare</span><span class="ep-val" id="ep-base-fare">$0.00</span></div>
@@ -371,19 +748,18 @@ tr:hover td{background:rgba(255,255,255,.02);}
       <div class="ep-row ep-optional" id="ep-row-carseat"><span id="ep-carseat-label">Car Seats</span><span class="ep-val" id="ep-carseat">$0.00</span></div>
       <div class="ep-row ep-optional" id="ep-row-eventwait"><span>Event Wait</span><span class="ep-val" id="ep-eventwait">$0.00</span></div>
       <div class="ep-row ep-optional" id="ep-row-extrastop"><span>Extra Stop</span><span class="ep-val" id="ep-extrastop">$0.00</span></div>
-      <div class="ep-row ep-optional" id="ep-row-discount" style="color:var(--danger)"><span>Discount</span><span class="ep-val" id="ep-discount">-$0.00</span></div>
+      <div class="ep-row ep-optional" id="ep-row-holiday"><span>Holiday Pay</span><span class="ep-val" id="ep-holiday">$0.00</span></div>
+      <div class="ep-row ep-optional ep-danger" id="ep-row-discount"><span>Discount</span><span class="ep-val" id="ep-discount">-$0.00</span></div>
       <div class="ep-row ep-optional" id="ep-row-expenses"><span>Expenses</span><span class="ep-val" id="ep-expenses">$0.00</span></div>
-      <div class="ep-row" style="border-top:1px solid var(--border);margin-top:4px;padding-top:6px"><span>Adjusted Base</span><span class="ep-val" id="ep-adj-base">$0.00</span></div>
+      <div class="ep-row ep-section"><span>Adjusted Base</span><span class="ep-val" id="ep-adj-base">$0.00</span></div>
       <div class="ep-row"><span>Base × 38%</span><span class="ep-val" id="ep-base-pct">$0.00</span></div>
       <div class="ep-row ep-optional" id="ep-row-gratuity"><span>Gratuity</span><span class="ep-val" id="ep-gratuity">$0.00</span></div>
       <div class="ep-row ep-optional" id="ep-row-fuel"><span>Fuel Surcharge</span><span class="ep-val" id="ep-fuel">$0.00</span></div>
       <div class="ep-row ep-optional" id="ep-row-parking"><span>Parking</span><span class="ep-val" id="ep-parking">$0.00</span></div>
       <div class="ep-row ep-optional" id="ep-row-airport"><span>Airport Fee</span><span class="ep-val" id="ep-airport">$0.00</span></div>
       <div class="ep-row ep-optional" id="ep-row-tolls" style="color:var(--muted);font-size:12px"><span>Tolls (company)</span><span class="ep-val" id="ep-tolls">$0.00</span></div>
-      <div class="ep-row total"><span>Your Earnings</span><span class="ep-val" id="ep-total">$0.00</span></div>
-      <div class="ep-row ep-optional" id="ep-row-cash" style="color:var(--accent2);font-size:13px;border-top:1px solid var(--border);margin-top:4px;padding-top:6px">
-        <span>Cash Tips (private)</span><span class="ep-val" id="ep-cash-tips-preview">$0.00</span>
-      </div>
+      <div class="ep-row ep-total"><span>Your Earnings</span><span class="ep-val" id="ep-total">$0.00</span></div>
+      <div class="ep-row ep-optional ep-cash" id="ep-row-cash"><span>Cash Tips (private)</span><span class="ep-val" id="ep-cash-tips-val">$0.00</span></div>
     </div>
 
     <div class="form-actions">
@@ -392,7 +768,7 @@ tr:hover td{background:rgba(255,255,255,.02);}
     </div>
   </div>
 
-  <!-- MY STATS -->
+  <!-- ═══════════════════════════════ MY DAY ════════════════════════════════ -->
   <div id="pane-stats" class="content" style="display:none">
     <div class="period-tabs">
       <button class="period-btn active" onclick="setStatsPeriod('today',this)">Today</button>
@@ -401,12 +777,13 @@ tr:hover td{background:rgba(255,255,255,.02);}
       <button class="period-btn"        onclick="setStatsPeriod('all',this)">All Time</button>
     </div>
     <div class="date-hint" id="stats-date-hint"></div>
-    <div class="stats-row" id="stats-numbers"></div>
-    <div id="stats-cash"></div>
+    <div class="stats-row" id="stats-cards"></div>
+    <div id="stats-cash" class="section-gap"></div>
 
-    <div style="margin-bottom:20px">
+    <!-- Fuel Expense -->
+    <div class="section-gap">
       <div class="section-title">Daily Fuel Expense</div>
-      <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
         <div class="filter-group">
           <label class="filter-label">Date</label>
           <input type="date" id="fuel-date" class="filter-input" style="min-width:130px">
@@ -418,13 +795,15 @@ tr:hover td{background:rgba(255,255,255,.02);}
         <button class="btn-primary" style="width:auto;padding:0 18px;height:36px;align-self:flex-end" onclick="saveFuelExpense()">Save</button>
       </div>
       <div id="fuel-status" style="font-size:12px;min-height:16px;margin-top:6px;color:var(--accent)"></div>
+      <div class="fuel-list" id="fuel-list"></div>
     </div>
 
+    <!-- Most Recent Trip -->
     <div class="section-title">Most Recent Trip</div>
     <div id="last-trip-container"></div>
   </div>
 
-  <!-- MY TRIPS -->
+  <!-- ═══════════════════════════════ MY TRIPS ══════════════════════════════ -->
   <div id="pane-history" class="content" style="display:none">
     <div class="period-tabs">
       <button class="period-btn active" onclick="setHistoryFilter('all',this)">All</button>
@@ -433,19 +812,36 @@ tr:hover td{background:rgba(255,255,255,.02);}
       <button class="period-btn"        onclick="setHistoryFilter('month',this)">This Month</button>
     </div>
     <div class="date-hint" id="history-date-hint"></div>
+
+    <div class="filter-row">
+      <input type="text" class="search-input" id="history-search" placeholder="Search booking ID..." oninput="renderHistory()">
+    </div>
+
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Date</th><th>Booking</th><th>Total</th><th>Earned</th><th>Cash</th><th>Actions</th></tr></thead>
+        <thead>
+          <tr>
+            <th></th>
+            <th>Date</th>
+            <th>Booking</th>
+            <th>Total</th>
+            <th>Earned</th>
+            <th>Cash</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
         <tbody id="trips-body"></tbody>
       </table>
     </div>
     <div id="empty-history" class="empty-state" style="display:none">
-      <div class="icon">🚗</div><div>No trips yet. Log your first trip!</div>
+      <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
+      <div>No trips yet. Log your first trip!</div>
     </div>
   </div>
 
-  <!-- DASHBOARD -->
+  <!-- ═══════════════════════════════ DASHBOARD ════════════════════════════ -->
   <div id="pane-dashboard" class="content" style="display:none">
+
     <div class="dash-filters">
       <div class="filter-group">
         <label class="filter-label">From</label>
@@ -462,7 +858,7 @@ tr:hover td{background:rgba(255,255,255,.02);}
         </select>
       </div>
       <button class="filter-reset" onclick="resetDashFilters()">Reset</button>
-      <button class="btn-export" onclick="exportCSV()">Export CSV</button>
+      <button class="btn-export" onclick="exportXLSX()">Export XLSX</button>
     </div>
     <div class="date-error" id="dash-date-error"></div>
 
@@ -476,589 +872,880 @@ tr:hover td{background:rgba(255,255,255,.02);}
 
     <div class="stats-row" id="dash-stats"></div>
 
+    <div class="filter-row">
+      <input type="text" class="search-input" id="dash-search" placeholder="Search booking ID..." oninput="renderDashboard()">
+    </div>
+
     <div class="table-wrap">
-      <table id="dash-table">
-        <thead><tr><th></th><th>Date</th><th>Driver</th><th>Booking</th><th>Total</th><th>Earnings</th><th>Actions</th></tr></thead>
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>Date</th>
+            <th>Driver</th>
+            <th>Booking</th>
+            <th>Total</th>
+            <th>Earnings</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
         <tbody id="dash-body"></tbody>
         <tfoot id="dash-foot"></tfoot>
       </table>
     </div>
     <div id="empty-dash" class="empty-state" style="display:none">
-      <div class="icon">📊</div><div>No trips found.</div>
+      <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+      <div>No trips found for selected filters.</div>
     </div>
   </div>
-</div>
+
+</div><!-- /app -->
 
 <script>
+// ── CONSTANTS ─────────────────────────────────────────────────────────────────
 const SUPABASE_URL  = 'https://uljmcbrorgjrrvoxzmdb.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsam1jYnJvcmdqcnJ2b3h6bWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQzNzAsImV4cCI6MjA4OTg4MDM3MH0.gzfN9ayldCSF0kRSfSCT9Np02Dpke8ZSS42iJLBhzmA';
+const SUPABASE_ANON = '%%VITE_SUPABASE_ANON_KEY%%';
 const API_URL       = 'https://limopay-production.up.railway.app';
 
-const {createClient}=supabase;
-const sb=createClient(SUPABASE_URL,SUPABASE_ANON);
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
+  auth: { storage: window.localStorage, detectSessionInUrl: true, persistSession: true }
+});
 
-let currentUser=null,currentRole='driver',currentDriverId=null,allTrips=[];
-let statsFilter='today',historyFilter='all';
-let editingId=null; // null=new, uuid=editing
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let currentUser     = null;
+let currentRole     = 'driver';
+let currentDriverId = null;
+let allTrips        = [];
+let fuelExpenses    = [];
+let statsFilter     = 'today';
+let historyFilter   = 'all';
+let editingId       = null; // null = new trip, uuid = editing
+let uploadedImages  = []; // { base64, objectUrl }
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
-function fmt(n){return '$'+(n||0).toFixed(2);}
+const fmt = n => '$' + (+(n) || 0).toFixed(2);
 
-function localToday(){
-  const d=new Date();
-  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+function localToday() {
+  const d = new Date();
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
 }
 
-function periodDateRange(f){
-  const today=localToday(),now=new Date();
-  if(f==='today') return {from:today,to:today};
-  if(f==='week'){
-    const mon=new Date(now);
-    mon.setDate(now.getDate()-((now.getDay()+6)%7));
-    const from=mon.getFullYear()+'-'+String(mon.getMonth()+1).padStart(2,'0')+'-'+String(mon.getDate()).padStart(2,'0');
-    return {from,to:today};
+function periodDateRange(f) {
+  const today = localToday();
+  const now   = new Date();
+  if (f === 'today') return { from: today, to: today };
+  if (f === 'week') {
+    const mon = new Date(now);
+    mon.setDate(now.getDate() - ((now.getDay() + 6) % 7)); // Monday start
+    const from = mon.getFullYear() + '-' + String(mon.getMonth()+1).padStart(2,'0') + '-' + String(mon.getDate()).padStart(2,'0');
+    return { from, to: today };
   }
-  if(f==='month') return {from:today.slice(0,7)+'-01',to:today};
+  if (f === 'month') return { from: today.slice(0, 7) + '-01', to: today };
   return null;
 }
 
-function fmtDateShort(d){
-  if(!d) return '';
-  const [,m,day]=d.split('-');
-  return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m-1]+' '+parseInt(day);
+function fmtDateShort(d) {
+  if (!d) return '';
+  const [, m, day] = d.split('-');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return months[+m - 1] + ' ' + parseInt(day);
 }
 
-function dateHintText(f){
-  const r=periodDateRange(f);
-  if(!r) return '';
-  return r.from===r.to?fmtDateShort(r.from):fmtDateShort(r.from)+' – '+fmtDateShort(r.to);
+function dateHintText(f) {
+  const r = periodDateRange(f);
+  if (!r) return '';
+  return r.from === r.to ? fmtDateShort(r.from) : fmtDateShort(r.from) + ' – ' + fmtDateShort(r.to);
 }
 
-function filterByPeriod(trips,f){
-  const r=periodDateRange(f);
-  if(!r) return trips;
-  return trips.filter(t=>t.date>=r.from&&t.date<=r.to);
+function filterByPeriod(trips, f) {
+  const r = periodDateRange(f);
+  if (!r) return trips;
+  return trips.filter(t => t.date >= r.from && t.date <= r.to);
 }
 
-function setStatus(pane,type,msg){
-  const el=document.getElementById(`status-${pane}`);
-  el.className=`status-bar ${type} show`;el.textContent=msg;
-  if(type==='success') setTimeout(()=>el.classList.remove('show'),3500);
+function setStatus(pane, type, msg) {
+  const el = document.getElementById('status-' + pane);
+  if (!el) return;
+  el.className = 'status-bar ' + type + ' show';
+  el.textContent = msg;
+  if (type === 'success') setTimeout(() => el.classList.remove('show'), 3500);
 }
 
-function showToast(msg,isError=false){
-  const t=document.getElementById('toast');
-  t.textContent=msg;
-  t.style.background=isError?'var(--danger)':'var(--accent)';
-  t.style.color=isError?'#fff':'#000';
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = isError ? 'var(--danger)' : 'var(--accent)';
+  t.style.color = isError ? '#fff' : '#000';
   t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),3000);
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function showEpRow(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('visible', !!val && val !== 0);
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
-async function init(){
+async function init() {
   showScreen('loading');
-  const {data:{session}}=await sb.auth.getSession();
-  if(session) await onLoggedIn(session.user);
-  else showScreen('login');
-  sb.auth.onAuthStateChange(async(event,session)=>{
-    if(event==='SIGNED_IN'&&session&&!currentUser) await onLoggedIn(session.user);
-    else if(event==='SIGNED_OUT'){currentUser=null;allTrips=[];showScreen('login');}
+
+  // CRITICAL: onAuthStateChange BEFORE getSession() — required for iOS Safari
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
+      if (!currentUser) await onLoggedIn(session.user, session.access_token);
+    } else if (event === 'SIGNED_OUT') {
+      currentUser = null; allTrips = []; fuelExpenses = [];
+      showScreen('login');
+    }
   });
+
+  const { data: { session } } = await sb.auth.getSession();
+  if (session && !currentUser) {
+    await onLoggedIn(session.user, session.access_token);
+  } else if (!session && !window.location.hash.includes('access_token')) {
+    showScreen('login');
+  }
 }
 
-async function onLoggedIn(user){
-  currentUser=user;
-  let{data:profile}=await sb.from('profiles').select('*').eq('id',user.id).maybeSingle();
-  if(!profile){showScreen('driverid');return;}
-  if(!profile.driver_id&&currentRole!=='manager'){showScreen('driverid');return;}
-  await loadApp(user,profile);
+async function onLoggedIn(user, accessToken) {
+  currentUser = user;
+  const { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
+  if (!profile) { showScreen('driverid'); return; }
+  if (!profile.driver_id && profile.role !== 'manager') { showScreen('driverid'); return; }
+  await loadApp(user, profile, accessToken);
 }
 
-async function loadApp(user,profile){
-  currentRole=profile?.role||'driver';
-  currentDriverId=profile?.driver_id||null;
-  const name=user.user_metadata?.full_name||user.email?.split('@')[0]||'User';
-  document.getElementById('user-name').textContent=name;
-  const badge=document.getElementById('role-badge');
-  badge.textContent=currentRole;badge.className=`role-badge ${currentRole}`;
-  const avatar=document.getElementById('user-avatar');
-  if(user.user_metadata?.avatar_url) avatar.innerHTML=`<img src="${user.user_metadata.avatar_url}" alt="">`;
-  else avatar.textContent=name[0].toUpperCase();
-  const idDisplay=document.getElementById('driver-id-display');
-  if(currentDriverId) idDisplay.textContent=`#${currentDriverId}`;
-  else idDisplay.style.display='none';
-  if(currentRole==='manager') document.getElementById('tab-dashboard').style.display='';
-  document.getElementById('f-date').value=localToday();
+async function loadApp(user, profile, accessToken) {
+  currentRole     = profile?.role || 'driver';
+  currentDriverId = profile?.driver_id || null;
+
+  const name = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
+  document.getElementById('user-name').textContent = name;
+
+  const badge = document.getElementById('role-badge');
+  badge.textContent = currentRole;
+  badge.className   = 'role-badge ' + currentRole;
+
+  const avatar = document.getElementById('user-avatar');
+  if (user.user_metadata?.avatar_url) avatar.innerHTML = `<img src="${user.user_metadata.avatar_url}" alt="">`;
+  else avatar.textContent = name[0].toUpperCase();
+
+  const idDisplay = document.getElementById('driver-id-display');
+  if (currentDriverId) idDisplay.textContent = '#' + currentDriverId;
+  else idDisplay.style.display = 'none';
+
+  if (currentRole === 'manager') document.getElementById('tab-dashboard').style.display = '';
+
+  document.getElementById('f-date').value = localToday();
   showScreen('app');
-  await loadTrips();
+  await loadTrips(accessToken);
+  await loadFuelExpenses(accessToken);
+  restoreDraft();
 }
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
-async function verifyDriverId(){
-  const input=document.getElementById('driver-id-input').value.trim();
-  const errEl=document.getElementById('driverid-error');
-  const btn=document.getElementById('btn-verify');
-  if(input.length!==4){errEl.textContent='Driver ID must be 4 digits.';return;}
-  btn.disabled=true;btn.textContent='Checking...';errEl.textContent='';
-  try{
-    const{data:{session}}=await sb.auth.getSession();
-    const res=await fetch(API_URL+'/api/register',{method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},
-      body:JSON.stringify({driver_id:input})});
-    const json=await res.json();
-    if(!res.ok){errEl.textContent=json.error||'Something went wrong.';btn.disabled=false;btn.textContent='Continue';return;}
-    await loadApp(currentUser,json.profile);
-  }catch{errEl.textContent='Something went wrong.';btn.disabled=false;btn.textContent='Continue';}
+async function verifyDriverId() {
+  const input = document.getElementById('driver-id-input').value.trim();
+  const errEl = document.getElementById('driverid-error');
+  const btn   = document.getElementById('btn-verify');
+  if (input.length !== 4) { errEl.textContent = 'Driver ID must be 4 digits.'; return; }
+  btn.disabled = true; btn.textContent = 'Checking...'; errEl.textContent = '';
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const res  = await fetch(API_URL + '/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+      body: JSON.stringify({ driver_id: input })
+    });
+    const json = await res.json();
+    if (!res.ok) { errEl.textContent = json.error || 'Something went wrong.'; btn.disabled = false; btn.textContent = 'Continue'; return; }
+    await loadApp(currentUser, json.profile, session.access_token);
+  } catch {
+    errEl.textContent = 'Something went wrong.'; btn.disabled = false; btn.textContent = 'Continue';
+  }
 }
-document.getElementById('driver-id-input').addEventListener('keydown',e=>{if(e.key==='Enter')verifyDriverId();});
+document.getElementById('driver-id-input').addEventListener('keydown', e => { if (e.key === 'Enter') verifyDriverId(); });
 
-function showScreen(s){
-  document.getElementById('loading-screen').style.display =s==='loading'?'flex':'none';
-  document.getElementById('login-screen').style.display   =s==='login'?'flex':'none';
-  document.getElementById('driverid-screen').style.display=s==='driverid'?'flex':'none';
-  document.getElementById('app').style.display            =s==='app'?'block':'none';
+function showScreen(s) {
+  document.getElementById('loading-screen').style.display  = s === 'loading'   ? 'flex'  : 'none';
+  document.getElementById('login-screen').style.display    = s === 'login'     ? 'flex'  : 'none';
+  document.getElementById('driverid-screen').style.display = s === 'driverid'  ? 'flex'  : 'none';
+  document.getElementById('app').style.display             = s === 'app'       ? 'block' : 'none';
 }
 
-async function signInWithGoogle(){
-  const{error}=await sb.auth.signInWithOAuth({provider:'google',
-    options:{redirectTo:window.location.origin+window.location.pathname,queryParams:{prompt:'select_account'}}});
-  if(error) alert('Login failed: '+error.message);
+async function signInWithGoogle() {
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.origin + window.location.pathname, queryParams: { prompt: 'select_account' } }
+  });
+  if (error) alert('Login failed: ' + error.message);
 }
-async function signOut(){await sb.auth.signOut();window.location.href=window.location.origin+window.location.pathname;}
+
+async function signOut() {
+  clearDraft();
+  await sb.auth.signOut();
+  window.location.href = window.location.origin + window.location.pathname;
+}
 
 // ── TABS ──────────────────────────────────────────────────────────────────────
-function showTab(name){
-  ['log','stats','history','dashboard'].forEach(t=>{
-    const p=document.getElementById(`pane-${t}`),b=document.getElementById(`tab-${t}`);
-    if(p) p.style.display=t===name?'block':'none';
-    if(b) b.classList.toggle('active',t===name);
+function showTab(name) {
+  ['log', 'stats', 'history', 'dashboard'].forEach(t => {
+    const p = document.getElementById('pane-' + t);
+    const b = document.getElementById('tab-' + t);
+    if (p) p.style.display = t === name ? 'block' : 'none';
+    if (b) b.classList.toggle('active', t === name);
   });
-  if(name==='stats'){
+  if (name === 'stats') {
     renderStats();
-    const fd=document.getElementById('fuel-date');
-    if(fd&&!fd.value) fd.value=localToday();
+    const fd = document.getElementById('fuel-date');
+    if (fd && !fd.value) fd.value = localToday();
   }
-  if(name==='history') renderHistory();
-  if(name==='dashboard') renderDashboard();
+  if (name === 'history')   renderHistory();
+  if (name === 'dashboard') renderDashboard();
 }
 
-// ── FILE UPLOAD ───────────────────────────────────────────────────────────────
-async function handleFile(file){
-  if(!file) return;
-  const reader=new FileReader();
-  reader.onload=e=>{
-    const p=document.getElementById('img-preview');
-    p.src=e.target.result;p.style.display='block';
-    parseScreenshot(e.target.result.split(',')[1]);
-  };
-  reader.readAsDataURL(file);
+// ── LOAD DATA ─────────────────────────────────────────────────────────────────
+async function loadTrips(token) {
+  try {
+    const t = token || (await sb.auth.getSession()).data.session?.access_token;
+    const res  = await fetch(API_URL + '/api/trips', { headers: { 'Authorization': 'Bearer ' + t } });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error);
+    allTrips = json.data || [];
+  } catch (err) { console.error('Load trips:', err); }
 }
-const zone=document.getElementById('upload-zone');
-zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag-over');});
-zone.addEventListener('dragleave',()=>zone.classList.remove('drag-over'));
-zone.addEventListener('drop',e=>{
-  e.preventDefault();zone.classList.remove('drag-over');
-  const f=e.dataTransfer.files[0];
-  if(f?.type.startsWith('image/')) handleFile(f);
+
+async function loadFuelExpenses(token) {
+  try {
+    const t = token || (await sb.auth.getSession()).data.session?.access_token;
+    const res  = await fetch(API_URL + '/api/fuel-expenses', { headers: { 'Authorization': 'Bearer ' + t } });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error);
+    fuelExpenses = json.data || [];
+  } catch (err) { console.error('Load fuel expenses:', err); }
+}
+
+// ── FILE UPLOAD (MULTI) ───────────────────────────────────────────────────────
+async function handleFiles(files) {
+  if (!files?.length) return;
+  for (const file of Array.from(files)) {
+    if (!file.type.startsWith('image/')) continue;
+    const base64    = await fileToBase64(file);
+    const objectUrl = URL.createObjectURL(file);
+    uploadedImages.push({ base64, objectUrl });
+  }
+  renderPreviews();
+  if (uploadedImages.length > 0) parseAllImages();
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload  = e => resolve(e.target.result.split(',')[1]);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+function renderPreviews() {
+  const wrap     = document.getElementById('multi-preview-wrap');
+  const container = document.getElementById('img-previews');
+  const parseBtn  = document.getElementById('parse-btn');
+  const count     = document.getElementById('parse-count');
+  const plural    = document.getElementById('parse-plural');
+
+  if (!uploadedImages.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  count.textContent  = uploadedImages.length;
+  plural.textContent = uploadedImages.length === 1 ? '' : 's';
+  parseBtn.classList.add('visible');
+
+  container.innerHTML = uploadedImages.map((img, i) => `
+    <div class="img-thumb">
+      <img src="${img.objectUrl}" alt="Screenshot ${i+1}">
+      <button class="thumb-remove" onclick="removeImage(${i})">×</button>
+      <div class="thumb-num">${i+1}</div>
+    </div>`).join('') + `
+    <button class="add-more-btn" onclick="document.getElementById('file-input-more').click()">+
+      <input type="file" id="file-input-more" accept="image/*" multiple style="display:none" onchange="handleFiles(this.files)">
+    </button>`;
+}
+
+function removeImage(idx) {
+  URL.revokeObjectURL(uploadedImages[idx].objectUrl);
+  uploadedImages.splice(idx, 1);
+  renderPreviews();
+}
+
+async function parseAllImages() {
+  if (!uploadedImages.length) return;
+  setStatus('log', 'loading', `Parsing ${uploadedImages.length} screenshot${uploadedImages.length > 1 ? 's' : ''} with AI...`);
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const res  = await fetch(API_URL + '/api/parse-screenshot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+      body: JSON.stringify({ images: uploadedImages.map(i => i.base64) })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error);
+    fillForm(json.data);
+    setStatus('log', 'success', `✓ ${uploadedImages.length > 1 ? uploadedImages.length + ' screenshots merged' : 'Screenshot parsed'} successfully`);
+  } catch {
+    setStatus('log', 'error', 'Could not parse screenshot(s). Fill in manually.');
+  }
+}
+
+// Drag & drop
+const zone = document.getElementById('upload-zone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+zone.addEventListener('drop', e => {
+  e.preventDefault(); zone.classList.remove('drag-over');
+  const files = [...e.dataTransfer.files].filter(f => f.type.startsWith('image/'));
+  if (files.length) handleFiles(files);
 });
 
-async function parseScreenshot(base64){
-  setStatus('log','loading','Parsing screenshot with AI...');
-  try{
-    const{data:{session}}=await sb.auth.getSession();
-    const res=await fetch(`${API_URL}/api/parse-screenshot`,{method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':`Bearer ${session.access_token}`},
-      body:JSON.stringify({imageBase64:base64})});
-    const json=await res.json();
-    if(!res.ok) throw new Error(json.error);
-    fillForm(json.data);
-    setStatus('log','success','✓ Screenshot parsed successfully');
-  }catch{setStatus('log','error','Could not parse screenshot. Fill in manually.');}
+function fillForm(d) {
+  // Do NOT overwrite date if manually entered
+  const dateEl = document.getElementById('f-date');
+  if (d.date && !dateEl.value) dateEl.value = d.date;
+  if (d.booking_id && /^\d{7}$/.test(String(d.booking_id))) document.getElementById('f-booking').value = d.booking_id;
+  const map = {
+    base_fare: 'f-base', wait_time: 'f-wait', greet_fee: null,
+    car_seat_fee: 'f-carseat', event_wait: 'f-eventwait', extra_stop: 'f-extrastop',
+    holiday_pay: null, discount: 'f-discount', expenses: 'f-expenses',
+    gratuity: 'f-gratuity', fuel_surcharge: 'f-fuel', parking: 'f-parking',
+    airport_fee: 'f-airport', tolls: 'f-tolls', total: 'f-total'
+  };
+  for (const [key, id] of Object.entries(map)) {
+    if (d[key] && id) document.getElementById(id).value = d[key];
+  }
+  // Checkboxes
+  if (d.greet_fee   > 0) setCheck('greet',   true);
+  if (d.holiday_pay > 0) setCheck('holiday',  true);
+  // Car seat: convert fee back to qty
+  if (d.car_seat_fee > 0) {
+    const qty = d.car_seat_count || (d.car_seat_fee === 20 ? 1 : Math.round((d.car_seat_fee - 20) / 10) + 1);
+    document.getElementById('f-carseat').value = qty;
+  }
+  calcEarnings();
 }
 
-function fillForm(d){
-  // Don't overwrite manually entered date
-  if(d.date&&!document.getElementById('f-date').value) document.getElementById('f-date').value=d.date;
-  if(d.booking_id&&/^\d{7}$/.test(String(d.booking_id))) document.getElementById('f-booking').value=d.booking_id;
-  if(d.base_fare)      document.getElementById('f-base').value=d.base_fare;
-  if(d.wait_time)      document.getElementById('f-wait').value=d.wait_time;
-  if(d.greet_fee)      document.getElementById('f-greet').checked=d.greet_fee>0;
-  if(d.car_seat_fee)   document.getElementById('f-carseat').value=d.car_seat_count||Math.round((d.car_seat_fee-10)/10);
-  if(d.event_wait)     document.getElementById('f-eventwait').value=d.event_wait;
-  if(d.discount)       document.getElementById('f-discount').value=d.discount;
-  if(d.expenses)       document.getElementById('f-expenses').value=d.expenses;
-  if(d.gratuity)       document.getElementById('f-gratuity').value=d.gratuity;
-  if(d.fuel_surcharge) document.getElementById('f-fuel').value=d.fuel_surcharge;
-  if(d.parking)        document.getElementById('f-parking').value=d.parking;
-  if(d.airport_fee)    document.getElementById('f-airport').value=d.airport_fee;
-  if(d.tolls)          document.getElementById('f-tolls').value=d.tolls;
-  if(d.total)          document.getElementById('f-total').value=d.total;
+// ── CHECKBOXES ────────────────────────────────────────────────────────────────
+function toggleCheck(name) {
+  const wrap = document.getElementById(name + '-wrap');
+  const box  = document.getElementById(name + '-box');
+  const isChecked = wrap.classList.contains('checked');
+  setCheck(name, !isChecked);
   calcEarnings();
+}
+
+function setCheck(name, val) {
+  const wrap = document.getElementById(name + '-wrap');
+  const box  = document.getElementById(name + '-box');
+  if (!wrap || !box) return;
+  wrap.classList.toggle('checked', val);
+  box.classList.toggle('checked', val);
+}
+
+function isChecked(name) {
+  return document.getElementById(name + '-wrap')?.classList.contains('checked') || false;
 }
 
 // ── EARNINGS ──────────────────────────────────────────────────────────────────
-function carSeatFee(qty){return qty<=0?0:20+Math.max(0,qty-1)*10;}
+function carSeatFee(qty) { return qty <= 0 ? 0 : 20 + Math.max(0, qty - 1) * 10; }
 
-function showEpRow(id,val){
-  const row=document.getElementById(id);
-  if(row) row.classList.toggle('visible',val!==0);
+function calcEarnings() {
+  const base      = parseFloat(document.getElementById('f-base').value)      || 0;
+  const wait      = parseFloat(document.getElementById('f-wait').value)      || 0;
+  const greet     = isChecked('greet')   ? 40 : 0;
+  const seatQty   = parseInt(document.getElementById('f-carseat').value)     || 0;
+  const seatFee   = carSeatFee(seatQty);
+  const evWait    = parseFloat(document.getElementById('f-eventwait').value) || 0;
+  const exStop    = parseFloat(document.getElementById('f-extrastop').value) || 0;
+  const holiday   = isChecked('holiday')  ? 20 : 0;
+  const disc      = parseFloat(document.getElementById('f-discount').value)  || 0;
+  const exp       = parseFloat(document.getElementById('f-expenses').value)  || 0;
+  const grat      = parseFloat(document.getElementById('f-gratuity').value)  || 0;
+  const fuel      = parseFloat(document.getElementById('f-fuel').value)      || 0;
+  const park      = parseFloat(document.getElementById('f-parking').value)   || 0;
+  const air       = parseFloat(document.getElementById('f-airport').value)   || 0;
+  const toll      = parseFloat(document.getElementById('f-tolls').value)     || 0;
+  const cash      = parseFloat(document.getElementById('f-cash-tips').value) || 0;
+
+  const adjBase = base + wait + greet + seatFee + evWait + exStop + holiday - disc + exp;
+  const total   = (adjBase * 0.38) + grat + fuel + park + air;
+
+  document.getElementById('ep-base-fare').textContent = fmt(base);
+  showEpRow('ep-row-wait',      wait);    document.getElementById('ep-wait').textContent      = fmt(wait);
+  showEpRow('ep-row-greet',     greet);   document.getElementById('ep-greet').textContent     = fmt(greet);
+  showEpRow('ep-row-carseat',   seatFee);
+  document.getElementById('ep-carseat-label').textContent = seatQty > 0 ? `Car Seats (${seatQty}×)` : 'Car Seats';
+  document.getElementById('ep-carseat').textContent = fmt(seatFee);
+  showEpRow('ep-row-eventwait', evWait);  document.getElementById('ep-eventwait').textContent = fmt(evWait);
+  showEpRow('ep-row-extrastop', exStop);  document.getElementById('ep-extrastop').textContent = fmt(exStop);
+  showEpRow('ep-row-holiday',   holiday); document.getElementById('ep-holiday').textContent   = fmt(holiday);
+  showEpRow('ep-row-discount',  disc);    document.getElementById('ep-discount').textContent  = '-' + fmt(disc);
+  showEpRow('ep-row-expenses',  exp);     document.getElementById('ep-expenses').textContent  = fmt(exp);
+  document.getElementById('ep-adj-base').textContent = fmt(adjBase);
+  document.getElementById('ep-base-pct').textContent = fmt(adjBase * 0.38);
+  showEpRow('ep-row-gratuity',  grat);    document.getElementById('ep-gratuity').textContent  = fmt(grat);
+  showEpRow('ep-row-fuel',      fuel);    document.getElementById('ep-fuel').textContent      = fmt(fuel);
+  showEpRow('ep-row-parking',   park);    document.getElementById('ep-parking').textContent   = fmt(park);
+  showEpRow('ep-row-airport',   air);     document.getElementById('ep-airport').textContent   = fmt(air);
+  showEpRow('ep-row-tolls',     toll);    document.getElementById('ep-tolls').textContent     = fmt(toll);
+  document.getElementById('ep-total').textContent = fmt(total);
+  showEpRow('ep-row-cash',      cash);    document.getElementById('ep-cash-tips-val').textContent = fmt(cash);
+
+  document.getElementById('earnings-preview').classList.toggle('show', base > 0);
+  saveDraft();
 }
 
-function calcEarnings(){
-  const base   =parseFloat(document.getElementById('f-base').value)||0;
-  const wait   =parseFloat(document.getElementById('f-wait').value)||0;
-  const greet  =document.getElementById('f-greet').checked?40:0;
-  const seatQty=parseInt(document.getElementById('f-carseat').value)||0;
-  const seatFee=carSeatFee(seatQty);
-  const evWait =parseFloat(document.getElementById('f-eventwait').value)||0;
-  const exStop =parseFloat(document.getElementById('f-extrastop').value)||0;
-  const disc   =parseFloat(document.getElementById('f-discount').value)||0;
-  const exp    =parseFloat(document.getElementById('f-expenses').value)||0;
-  const grat   =parseFloat(document.getElementById('f-gratuity').value)||0;
-  const fuel   =parseFloat(document.getElementById('f-fuel').value)||0;
-  const park   =parseFloat(document.getElementById('f-parking').value)||0;
-  const air    =parseFloat(document.getElementById('f-airport').value)||0;
-  const toll   =parseFloat(document.getElementById('f-tolls').value)||0;
-  const cash   =parseFloat(document.getElementById('f-cash-tips').value)||0;
+// ── DRAFT (localStorage) ──────────────────────────────────────────────────────
+const DRAFT_KEY = 'limopay_draft';
 
-  const adjBase=base+wait+greet+seatFee+evWait+exStop-disc+exp;
-  const basePct=adjBase*0.38;
-  const total  =basePct+grat+fuel+park+air;
+function saveDraft() {
+  if (editingId) return; // Don't save draft while editing
+  const draft = {
+    date:       document.getElementById('f-date').value,
+    booking:    document.getElementById('f-booking').value,
+    base:       document.getElementById('f-base').value,
+    gratuity:   document.getElementById('f-gratuity').value,
+    holiday:    isChecked('holiday'),
+    tolls:      document.getElementById('f-tolls').value,
+    airport:    document.getElementById('f-airport').value,
+    fuel:       document.getElementById('f-fuel').value,
+    discount:   document.getElementById('f-discount').value,
+    expenses:   document.getElementById('f-expenses').value,
+    wait:       document.getElementById('f-wait').value,
+    greet:      isChecked('greet'),
+    carseat:    document.getElementById('f-carseat').value,
+    eventwait:  document.getElementById('f-eventwait').value,
+    extrastop:  document.getElementById('f-extrastop').value,
+    parking:    document.getElementById('f-parking').value,
+    total:      document.getElementById('f-total').value,
+    cash:       document.getElementById('f-cash-tips').value,
+  };
+  const hasData = Object.entries(draft).some(([k, v]) => k !== 'date' && v && v !== '' && v !== false);
+  if (hasData) localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+  else localStorage.removeItem(DRAFT_KEY);
+}
 
-  document.getElementById('ep-base-fare').textContent=fmt(base);
-  showEpRow('ep-row-wait',wait);    document.getElementById('ep-wait').textContent=fmt(wait);
-  showEpRow('ep-row-greet',greet);  document.getElementById('ep-greet').textContent=fmt(greet);
-  showEpRow('ep-row-carseat',seatFee);
-  document.getElementById('ep-carseat-label').textContent=seatQty>0?`Car Seats (${seatQty}×)`:'Car Seats';
-  document.getElementById('ep-carseat').textContent=fmt(seatFee);
-  showEpRow('ep-row-eventwait',evWait); document.getElementById('ep-eventwait').textContent=fmt(evWait);
-  showEpRow('ep-row-extrastop',exStop); document.getElementById('ep-extrastop').textContent=fmt(exStop);
-  showEpRow('ep-row-discount',disc);    document.getElementById('ep-discount').textContent='-'+fmt(disc);
-  showEpRow('ep-row-expenses',exp);     document.getElementById('ep-expenses').textContent=fmt(exp);
-  document.getElementById('ep-adj-base').textContent=fmt(adjBase);
-  document.getElementById('ep-base-pct').textContent=fmt(basePct);
-  showEpRow('ep-row-gratuity',grat); document.getElementById('ep-gratuity').textContent=fmt(grat);
-  showEpRow('ep-row-fuel',fuel);     document.getElementById('ep-fuel').textContent=fmt(fuel);
-  showEpRow('ep-row-parking',park);  document.getElementById('ep-parking').textContent=fmt(park);
-  showEpRow('ep-row-airport',air);   document.getElementById('ep-airport').textContent=fmt(air);
-  showEpRow('ep-row-tolls',toll);    document.getElementById('ep-tolls').textContent=fmt(toll);
-  document.getElementById('ep-total').textContent=fmt(total);
-  showEpRow('ep-row-cash',cash);     document.getElementById('ep-cash-tips-preview').textContent=fmt(cash);
+function restoreDraft() {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return;
+    const d = JSON.parse(raw);
+    if (d.booking || d.base) {
+      // Only restore if there's meaningful data
+      if (d.date)      document.getElementById('f-date').value      = d.date;
+      if (d.booking)   document.getElementById('f-booking').value   = d.booking;
+      if (d.base)      document.getElementById('f-base').value      = d.base;
+      if (d.gratuity)  document.getElementById('f-gratuity').value  = d.gratuity;
+      if (d.tolls)     document.getElementById('f-tolls').value     = d.tolls;
+      if (d.airport)   document.getElementById('f-airport').value   = d.airport;
+      if (d.fuel)      document.getElementById('f-fuel').value      = d.fuel;
+      if (d.discount)  document.getElementById('f-discount').value  = d.discount;
+      if (d.expenses)  document.getElementById('f-expenses').value  = d.expenses;
+      if (d.wait)      document.getElementById('f-wait').value      = d.wait;
+      if (d.carseat)   document.getElementById('f-carseat').value   = d.carseat;
+      if (d.eventwait) document.getElementById('f-eventwait').value = d.eventwait;
+      if (d.extrastop) document.getElementById('f-extrastop').value = d.extrastop;
+      if (d.parking)   document.getElementById('f-parking').value   = d.parking;
+      if (d.total)     document.getElementById('f-total').value     = d.total;
+      if (d.cash)      document.getElementById('f-cash-tips').value = d.cash;
+      if (d.greet)     setCheck('greet',   true);
+      if (d.holiday)   setCheck('holiday', true);
+      calcEarnings();
+      setStatus('log', 'loading', 'Draft restored from previous session');
+      setTimeout(() => document.getElementById('status-log').classList.remove('show'), 3000);
+    }
+  } catch {}
+}
 
-  document.getElementById('earnings-preview').classList.toggle('show',base>0);
+function clearDraft() { localStorage.removeItem(DRAFT_KEY); }
+
+// ── BOOKING ID DUPLICATE CHECK ────────────────────────────────────────────────
+function onBookingInput() {
+  const w = document.getElementById('booking-warning');
+  const i = document.getElementById('f-booking');
+  w.classList.remove('show');
+  i.classList.remove('warning');
+  saveDraft();
+}
+
+function checkDuplicateBooking() {
+  const val = document.getElementById('f-booking').value.trim();
+  if (!val || !/^\d{7}$/.test(val)) return;
+  const warning = document.getElementById('booking-warning');
+  const input   = document.getElementById('f-booking');
+  const exists  = allTrips.some(t =>
+    t.booking_id === val &&
+    t.id !== editingId &&
+    (t.deleted_by === null || t.deleted_by === 'manager')
+  );
+  warning.classList.toggle('show', exists);
+  input.classList.toggle('warning', exists);
+  if (exists) warning.textContent = 'A trip with this Booking ID already exists';
 }
 
 // ── SAVE / EDIT TRIP ──────────────────────────────────────────────────────────
-function getFormData(){
-  const seatQty=parseInt(document.getElementById('f-carseat').value)||0;
+function getFormPayload() {
+  const seatQty = parseInt(document.getElementById('f-carseat').value) || 0;
   return {
-    date:          document.getElementById('f-date').value,
-    booking_id:    document.getElementById('f-booking').value.trim(),
-    base_fare:     parseFloat(document.getElementById('f-base').value)||0,
-    wait_time:     parseFloat(document.getElementById('f-wait').value)||0,
-    greet_fee:     document.getElementById('f-greet').checked?40:0,
-    car_seat_count:seatQty,
-    car_seat_fee:  carSeatFee(seatQty),
-    event_wait:    parseFloat(document.getElementById('f-eventwait').value)||0,
-    extra_stop:    parseFloat(document.getElementById('f-extrastop').value)||0,
-    discount:      parseFloat(document.getElementById('f-discount').value)||0,
-    expenses:      parseFloat(document.getElementById('f-expenses').value)||0,
-    gratuity:      parseFloat(document.getElementById('f-gratuity').value)||0,
-    fuel_surcharge:parseFloat(document.getElementById('f-fuel').value)||0,
-    parking:       parseFloat(document.getElementById('f-parking').value)||0,
-    airport_fee:   parseFloat(document.getElementById('f-airport').value)||0,
-    tolls:         parseFloat(document.getElementById('f-tolls').value)||0,
-    total:         parseFloat(document.getElementById('f-total').value)||0,
-    cash_tips:     parseFloat(document.getElementById('f-cash-tips').value)||0,
-    driver_id:     currentDriverId,
+    date:           document.getElementById('f-date').value,
+    booking_id:     document.getElementById('f-booking').value.trim(),
+    base_fare:      parseFloat(document.getElementById('f-base').value)      || 0,
+    wait_time:      parseFloat(document.getElementById('f-wait').value)      || 0,
+    greet_fee:      isChecked('greet')   ? 40 : 0,
+    car_seat_count: seatQty,
+    car_seat_fee:   carSeatFee(seatQty),
+    event_wait:     parseFloat(document.getElementById('f-eventwait').value) || 0,
+    extra_stop:     parseFloat(document.getElementById('f-extrastop').value) || 0,
+    holiday_pay:    isChecked('holiday') ? 20 : 0,
+    discount:       parseFloat(document.getElementById('f-discount').value)  || 0,
+    expenses:       parseFloat(document.getElementById('f-expenses').value)  || 0,
+    gratuity:       parseFloat(document.getElementById('f-gratuity').value)  || 0,
+    fuel_surcharge: parseFloat(document.getElementById('f-fuel').value)      || 0,
+    parking:        parseFloat(document.getElementById('f-parking').value)   || 0,
+    airport_fee:    parseFloat(document.getElementById('f-airport').value)   || 0,
+    tolls:          parseFloat(document.getElementById('f-tolls').value)     || 0,
+    total:          parseFloat(document.getElementById('f-total').value)     || 0,
+    cash_tips:      parseFloat(document.getElementById('f-cash-tips').value) || 0,
+    driver_id:      currentDriverId,
   };
 }
 
-async function saveTrip(){
-  const d=getFormData();
-  if(!d.booking_id){setStatus('log','error','Please enter Booking ID.');return;}
-  if(!/^\d{7}$/.test(d.booking_id)){setStatus('log','error','Booking ID must be exactly 7 digits.');return;}
+async function saveTrip() {
+  const d = getFormPayload();
 
-  const nums=['base_fare','wait_time','event_wait','extra_stop','discount','expenses','gratuity','fuel_surcharge','parking','airport_fee','tolls','total','cash_tips'];
-  for(const k of nums) if((d[k]||0)<0){setStatus('log','error','All amounts must be ≥ $0.');return;}
+  // Frontend validation
+  if (!d.booking_id) { setStatus('log', 'error', 'Please enter Booking ID.'); return; }
+  if (!/^\d{7}$/.test(d.booking_id)) { setStatus('log', 'error', 'Booking ID must be exactly 7 digits.'); return; }
+  if (d.base_fare <= 0) { setStatus('log', 'error', 'Base Fare must be greater than $0.'); return; }
+  if (d.total     <= 0) { setStatus('log', 'error', 'Total Fare must be greater than $0.'); return; }
 
-  const adjBaseCheck=d.base_fare+d.wait_time+(d.greet_fee||0)+d.car_seat_fee+d.event_wait+d.extra_stop+d.expenses;
-  if(d.discount>adjBaseCheck){setStatus('log','error',`Discount cannot exceed Adj. Base (${fmt(adjBaseCheck)}).`);return;}
+  // Negative check
+  const numericFields = ['base_fare','wait_time','event_wait','extra_stop','discount','expenses','gratuity','fuel_surcharge','parking','airport_fee','tolls','total','cash_tips'];
+  for (const k of numericFields) {
+    if ((d[k] || 0) < 0) { setStatus('log', 'error', 'All amounts must be $0.00 or greater.'); return; }
+  }
 
-  const btn=document.getElementById('btn-save');
-  btn.disabled=true;btn.textContent=editingId?'Updating...':'Saving...';
-  try{
-    const{data:{session}}=await sb.auth.getSession();
-    const method=editingId?'PATCH':'POST';
-    const url=editingId?`${API_URL}/api/trips/${editingId}`:`${API_URL}/api/trips`;
-    const res=await fetch(url,{method,
-      headers:{'Content-Type':'application/json','Authorization':`Bearer ${session.access_token}`},
-      body:JSON.stringify(d)});
-    const json=await res.json();
-    if(!res.ok) throw new Error(json.error);
-    if(editingId){
-      allTrips=allTrips.map(t=>t.id===editingId?json.data:t);
+  // Discount vs adjBase
+  const adjCheck = d.base_fare + d.wait_time + (isChecked('greet') ? 40 : 0) +
+    d.car_seat_fee + d.event_wait + d.extra_stop + (isChecked('holiday') ? 20 : 0) + d.expenses;
+  if (d.discount > adjCheck) {
+    setStatus('log', 'error', `Discount (${fmt(d.discount)}) cannot exceed Adjusted Base (${fmt(adjCheck)}).`);
+    return;
+  }
+
+  const btn = document.getElementById('btn-save');
+  btn.disabled = true;
+  btn.textContent = editingId ? 'Updating...' : 'Saving...';
+
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const method = editingId ? 'PATCH' : 'POST';
+    const url    = editingId ? `${API_URL}/api/trips/${editingId}` : `${API_URL}/api/trips`;
+
+    const res  = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+      body: JSON.stringify(d)
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error);
+
+    if (editingId) {
+      allTrips = allTrips.map(t => t.id === editingId ? json.data : t);
       showToast('✓ Trip updated!');
-      setStatus('log','success','✓ Trip updated!');
-    }else{
+      setStatus('log', 'success', '✓ Trip updated!');
+    } else {
       allTrips.unshift(json.data);
       showToast('✓ Trip saved!');
-      setStatus('log','success','✓ Trip saved!');
+      setStatus('log', 'success', '✓ Trip saved!');
     }
     clearForm();
-  }catch(err){setStatus('log','error','Failed: '+err.message);}
-  finally{btn.disabled=false;btn.textContent=editingId?'Update Trip':'Save Trip';}
+  } catch (err) {
+    setStatus('log', 'error', 'Failed: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = editingId ? 'Update Trip' : 'Save Trip';
+  }
 }
 
-function editTrip(id){
-  const t=allTrips.find(x=>x.id===id);
-  if(!t) return;
-  editingId=id;
-  document.getElementById('f-date').value       =t.date||'';
-  document.getElementById('f-booking').value    =t.booking_id||'';
-  document.getElementById('f-base').value       =t.base_fare||'';
-  document.getElementById('f-wait').value       =t.wait_time||'';
-  document.getElementById('f-greet').checked    =(t.greet_fee||0)>0;
-  document.getElementById('f-carseat').value    =t.car_seat_count||'';
-  document.getElementById('f-eventwait').value  =t.event_wait||'';
-  document.getElementById('f-extrastop').value  =t.extra_stop||'';
-  document.getElementById('f-discount').value   =t.discount||'';
-  document.getElementById('f-expenses').value   =t.expenses||'';
-  document.getElementById('f-gratuity').value   =t.gratuity||'';
-  document.getElementById('f-fuel').value       =t.fuel_surcharge||'';
-  document.getElementById('f-parking').value    =t.parking||'';
-  document.getElementById('f-airport').value    =t.airport_fee||'';
-  document.getElementById('f-tolls').value      =t.tolls||'';
-  document.getElementById('f-total').value      =t.total||'';
-  document.getElementById('f-cash-tips').value  =t.cash_tips||'';
-  document.getElementById('edit-booking-label').textContent='#'+t.booking_id;
+function editTrip(id) {
+  const t = allTrips.find(x => x.id === id);
+  if (!t) return;
+  editingId = id;
+
+  document.getElementById('f-date').value       = t.date         || '';
+  document.getElementById('f-booking').value    = t.booking_id   || '';
+  document.getElementById('f-base').value       = t.base_fare    || '';
+  document.getElementById('f-gratuity').value   = t.gratuity     || '';
+  document.getElementById('f-tolls').value      = t.tolls        || '';
+  document.getElementById('f-airport').value    = t.airport_fee  || '';
+  document.getElementById('f-fuel').value       = t.fuel_surcharge || '';
+  document.getElementById('f-discount').value   = t.discount     || '';
+  document.getElementById('f-expenses').value   = t.expenses     || '';
+  document.getElementById('f-wait').value       = t.wait_time    || '';
+  document.getElementById('f-carseat').value    = t.car_seat_count || '';
+  document.getElementById('f-eventwait').value  = t.event_wait   || '';
+  document.getElementById('f-extrastop').value  = t.extra_stop   || '';
+  document.getElementById('f-parking').value    = t.parking      || '';
+  document.getElementById('f-total').value      = t.total        || '';
+  document.getElementById('f-cash-tips').value  = t.cash_tips    || '';
+  setCheck('greet',   (t.greet_fee   || 0) > 0);
+  setCheck('holiday', (t.holiday_pay || 0) > 0);
+
+  document.getElementById('edit-booking-label').textContent = '#' + t.booking_id;
   document.getElementById('edit-banner').classList.add('show');
-  document.getElementById('btn-save').textContent='Update Trip';
+  document.getElementById('btn-save').textContent = 'Update Trip';
+
   calcEarnings();
   showTab('log');
-  window.scrollTo({top:0,behavior:'smooth'});
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function hasFormData(){
-  const fields=['f-booking','f-base','f-wait','f-eventwait','f-extrastop','f-discount',
-    'f-expenses','f-gratuity','f-fuel','f-parking','f-airport','f-tolls','f-total','f-cash-tips'];
-  return fields.some(id=>(document.getElementById(id)?.value||'').trim()!=='')||
-    document.getElementById('f-greet')?.checked||
-    (parseInt(document.getElementById('f-carseat')?.value)||0)>0;
+function hasFormData() {
+  const fields = ['f-booking','f-base','f-gratuity','f-tolls','f-airport','f-fuel','f-discount',
+    'f-expenses','f-wait','f-carseat','f-eventwait','f-extrastop','f-parking','f-total','f-cash-tips'];
+  return fields.some(id => (document.getElementById(id)?.value || '').trim() !== '') ||
+    isChecked('greet') || isChecked('holiday');
 }
 
-function cancelForm(){
-  if(editingId){if(!confirm('Cancel editing? Changes will be lost.')) return;}
-  else if(hasFormData()){if(!confirm('Cancel? All entered data will be lost.')) return;}
+function cancelForm() {
+  if (editingId) {
+    if (!confirm('Cancel editing? Changes will be lost.')) return;
+  } else if (hasFormData()) {
+    if (!confirm('Cancel? All entered data will be lost.')) return;
+  }
   clearForm();
 }
 
-function clearForm(){
-  editingId=null;
-  ['f-booking','f-base','f-wait','f-carseat','f-eventwait','f-extrastop',
-   'f-discount','f-expenses','f-gratuity','f-fuel','f-parking','f-airport',
-   'f-tolls','f-total','f-cash-tips'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  document.getElementById('f-greet').checked=false;
-  document.getElementById('f-date').value=localToday();
-  document.getElementById('img-preview').style.display='none';
+function clearForm() {
+  editingId = null;
+  const fields = ['f-booking','f-base','f-gratuity','f-tolls','f-airport','f-fuel','f-discount',
+    'f-expenses','f-wait','f-carseat','f-eventwait','f-extrastop','f-parking','f-total','f-cash-tips'];
+  fields.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('f-date').value = localToday();
+  setCheck('greet',   false);
+  setCheck('holiday', false);
+
+  // Clear upload zone
+  uploadedImages.forEach(i => URL.revokeObjectURL(i.objectUrl));
+  uploadedImages = [];
+  document.getElementById('multi-preview-wrap').style.display = 'none';
+  document.getElementById('img-previews').innerHTML = '';
+  document.getElementById('parse-btn').classList.remove('visible');
+  const fi = document.getElementById('file-input'); if (fi) fi.value = '';
+
   document.getElementById('earnings-preview').classList.remove('show');
   document.getElementById('edit-banner').classList.remove('show');
-  document.getElementById('btn-save').textContent='Save Trip';
-  const fi=document.getElementById('file-input');if(fi)fi.value='';
+  document.getElementById('btn-save').textContent = 'Save Trip';
+  document.getElementById('booking-warning').classList.remove('show');
+  document.getElementById('f-booking').classList.remove('warning');
+  clearDraft();
 }
 
-// ── LOAD TRIPS ────────────────────────────────────────────────────────────────
-async function loadTrips(){
-  try{
-    const{data:{session}}=await sb.auth.getSession();
-    const res=await fetch(`${API_URL}/api/trips`,{headers:{'Authorization':`Bearer ${session.access_token}`}});
-    const json=await res.json();
-    if(!res.ok) throw new Error(json.error);
-    allTrips=json.data||[];
-    renderStats();renderHistory();
-  }catch(err){console.error('Load trips:',err);}
-}
-
-// ── FUEL EXPENSE ──────────────────────────────────────────────────────────────
-async function saveFuelExpense(){
-  const date=document.getElementById('fuel-date').value;
-  const amount=parseFloat(document.getElementById('fuel-amount').value)||0;
-  const st=document.getElementById('fuel-status');
-  if(!date){st.style.color='var(--danger)';st.textContent='Please select a date.';return;}
-  if(amount<=0){st.style.color='var(--danger)';st.textContent='Please enter an amount > $0.';return;}
-  st.style.color='var(--muted)';st.textContent='Saving…';
-  try{
-    const{data:{session}}=await sb.auth.getSession();
-    const res=await fetch(`${API_URL}/api/fuel-expenses`,{method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':`Bearer ${session.access_token}`},
-      body:JSON.stringify({date,amount})});
-    const json=await res.json();
-    if(!res.ok) throw new Error(json.error);
-    st.style.color='var(--accent)';
-    st.textContent=`✓ $${amount.toFixed(2)} saved for ${date}`;
-    document.getElementById('fuel-amount').value='';
-  }catch(err){st.style.color='var(--danger)';st.textContent='Failed: '+err.message;}
-}
-
-// ── MY STATS ──────────────────────────────────────────────────────────────────
-function setStatsPeriod(f,btn){
-  statsFilter=f;
-  document.querySelectorAll('#pane-stats .period-btn').forEach(b=>b.classList.remove('active'));
+// ── MY DAY (STATS) ────────────────────────────────────────────────────────────
+function setStatsPeriod(f, btn) {
+  statsFilter = f;
+  document.querySelectorAll('#pane-stats .period-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  document.getElementById('stats-date-hint').textContent=dateHintText(f);
+  document.getElementById('stats-date-hint').textContent = dateHintText(f);
   renderStats();
 }
 
-function renderStats(){
-  document.getElementById('stats-date-hint').textContent=dateHintText(statsFilter);
-  const filtered=filterByPeriod(allTrips,statsFilter);
-  const numEl=document.getElementById('stats-numbers');
-  const ltEl=document.getElementById('last-trip-container');
-  if(!filtered.length){
-    numEl.innerHTML=`<div class="stat-card"><div class="stat-label">Earnings</div><div class="stat-value">$0.00</div></div>`;
-    ltEl.innerHTML=`<div class="empty-state"><div class="icon">🚗</div><div>No trips in this period.</div></div>`;
-    document.getElementById('stats-cash').innerHTML='';
+function renderStats() {
+  document.getElementById('stats-date-hint').textContent = dateHintText(statsFilter);
+  const filtered = filterByPeriod(allTrips, statsFilter);
+  const cardsEl  = document.getElementById('stats-cards');
+  const cashEl   = document.getElementById('stats-cash');
+  const ltEl     = document.getElementById('last-trip-container');
+
+  if (!filtered.length) {
+    cardsEl.innerHTML = `<div class="stat-card"><div class="stat-label">Earnings</div><div class="stat-value">$0.00</div></div>`;
+    cashEl.innerHTML  = '';
+    ltEl.innerHTML    = `<div class="empty-state"><svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg><div>No trips in this period.</div></div>`;
     return;
   }
-  const tot=filtered.reduce((s,t)=>s+(t.earnings||0),0);
-  const avg=tot/filtered.length;
-  const best=Math.max(...filtered.map(t=>t.earnings||0));
-  numEl.innerHTML=`
+
+  const tot  = filtered.reduce((s, t) => s + (t.earnings || 0), 0);
+  const avg  = tot / filtered.length;
+  const best = Math.max(...filtered.map(t => t.earnings || 0));
+
+  cardsEl.innerHTML = `
     <div class="stat-card highlight"><div class="stat-label">Total Earned</div><div class="stat-value">${fmt(tot)}</div></div>
     <div class="stat-card"><div class="stat-label">Avg Per Trip</div><div class="stat-value">${fmt(avg)}</div></div>
     <div class="stat-card"><div class="stat-label">Best Trip</div><div class="stat-value">${fmt(best)}</div></div>
     <div class="stat-card"><div class="stat-label">Trips</div><div class="stat-value neutral">${filtered.length}</div></div>`;
 
-  const cashEl=document.getElementById('stats-cash');
-  const totalCash=filtered.reduce((s,t)=>s+(t.cash_tips||0),0);
-  cashEl.innerHTML=totalCash>0?`
-    <div class="section-title" style="margin-top:4px;color:var(--accent2)">Cash Tips (private)</div>
+  // Cash tips (private)
+  const totalCash = filtered.reduce((s, t) => s + (t.cash_tips || 0), 0);
+  cashEl.innerHTML = totalCash > 0 ? `
+    <div class="section-title" style="color:var(--accent2);margin-top:4px">Cash Tips (private)</div>
     <div class="stats-row">
-      <div class="stat-card" style="border-color:rgba(96,212,240,.2)"><div class="stat-label">Total Cash</div><div class="stat-value" style="color:var(--accent2)">${fmt(totalCash)}</div></div>
-      <div class="stat-card" style="border-color:rgba(96,212,240,.2)"><div class="stat-label">Avg/Trip</div><div class="stat-value" style="color:var(--accent2)">${fmt(totalCash/filtered.length)}</div></div>
-    </div>`:'';
+      <div class="stat-card cash"><div class="stat-label">Total Cash</div><div class="stat-value cash">${fmt(totalCash)}</div></div>
+      <div class="stat-card cash"><div class="stat-label">Avg / Trip</div><div class="stat-value cash">${fmt(totalCash / filtered.length)}</div></div>
+    </div>` : '';
 
-  const last=allTrips[0];
-  if(!last){ltEl.innerHTML='';return;}
-  const adjB=((last.base_fare||0)+(last.wait_time||0)+(last.greet_fee||0)+(last.car_seat_fee||0)+(last.event_wait||0)+(last.extra_stop||0)-(last.discount||0)+(last.expenses||0));
-  ltEl.innerHTML=`
+  // Most recent trip within the selected period
+  const last = filtered[0];
+  if (!last) { ltEl.innerHTML = ''; return; }
+  const adjB = (last.base_fare||0)+(last.wait_time||0)+(last.greet_fee||0)+(last.car_seat_fee||0)+
+    (last.event_wait||0)+(last.extra_stop||0)+(last.holiday_pay||0)-(last.discount||0)+(last.expenses||0);
+  ltEl.innerHTML = `
     <div class="last-trip-card">
       <div class="ltc-header">
         <div class="ltc-title">Most Recent Trip</div>
-        <div class="ltc-date">${last.date}${last.booking_id?' · #'+last.booking_id:''}</div>
+        <div class="ltc-date">${last.date}${last.booking_id ? ' · #' + last.booking_id : ''}</div>
       </div>
-      <div class="ltc-earnings">${fmt(last.earnings||0)}</div>
+      <div class="ltc-earnings">${fmt(last.earnings || 0)}</div>
       <div class="ltc-rows">
-        <div class="ltc-row"><div class="ltc-row-label">Adj.Base × 38%</div><div class="ltc-row-val">${fmt(adjB*0.38)}</div></div>
+        <div class="ltc-row"><div class="ltc-row-label">Adj.Base × 38%</div><div class="ltc-row-val">${fmt(adjB * 0.38)}</div></div>
         <div class="ltc-row"><div class="ltc-row-label">Gratuity</div><div class="ltc-row-val">${fmt(last.gratuity||0)}</div></div>
         <div class="ltc-row"><div class="ltc-row-label">Fuel</div><div class="ltc-row-val">${fmt(last.fuel_surcharge||0)}</div></div>
         <div class="ltc-row"><div class="ltc-row-label">Airport</div><div class="ltc-row-val">${fmt(last.airport_fee||0)}</div></div>
         <div class="ltc-row"><div class="ltc-row-label">Parking</div><div class="ltc-row-val">${fmt(last.parking||0)}</div></div>
-        <div class="ltc-row" style="opacity:.5"><div class="ltc-row-label">Tolls (co.)</div><div class="ltc-row-val">${fmt(last.tolls||0)}</div></div>
+        <div class="ltc-row" style="opacity:0.5"><div class="ltc-row-label">Tolls (co.)</div><div class="ltc-row-val">${fmt(last.tolls||0)}</div></div>
       </div>
     </div>`;
 }
 
+// ── FUEL EXPENSE ──────────────────────────────────────────────────────────────
+async function saveFuelExpense() {
+  const date   = document.getElementById('fuel-date').value;
+  const amount = parseFloat(document.getElementById('fuel-amount').value) || 0;
+  const st     = document.getElementById('fuel-status');
+  if (!date)       { st.style.color = 'var(--danger)'; st.textContent = 'Please select a date.'; return; }
+  if (amount <= 0) { st.style.color = 'var(--danger)'; st.textContent = 'Amount must be greater than $0.'; return; }
+
+  st.style.color = 'var(--muted)'; st.textContent = 'Saving…';
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const res  = await fetch(API_URL + '/api/fuel-expenses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+      body: JSON.stringify({ date, amount })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error);
+
+    // Update local state
+    const idx = fuelExpenses.findIndex(f => f.date === date);
+    if (idx >= 0) fuelExpenses[idx] = json.data;
+    else fuelExpenses.unshift(json.data);
+    fuelExpenses.sort((a, b) => b.date.localeCompare(a.date));
+
+    st.style.color = 'var(--accent)';
+    st.textContent = `✓ $${amount.toFixed(2)} saved for ${date}`;
+    document.getElementById('fuel-amount').value = '';
+    renderFuelList();
+  } catch (err) {
+    st.style.color = 'var(--danger)'; st.textContent = 'Failed: ' + err.message;
+  }
+}
+
+function renderFuelList() {
+  const el = document.getElementById('fuel-list');
+  if (!fuelExpenses.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="fuel-list">` +
+    fuelExpenses.slice(0, 10).map(f => `
+      <div class="fuel-list-item">
+        <span class="fuel-list-date">${f.date}</span>
+        <span class="fuel-list-amount">${fmt(f.amount)}</span>
+      </div>`).join('') +
+    `</div>`;
+}
+
 // ── MY TRIPS ──────────────────────────────────────────────────────────────────
-function setHistoryFilter(f,btn){
-  historyFilter=f;
-  document.querySelectorAll('#pane-history .period-btn').forEach(b=>b.classList.remove('active'));
+function setHistoryFilter(f, btn) {
+  historyFilter = f;
+  document.querySelectorAll('#pane-history .period-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  document.getElementById('history-date-hint').textContent=dateHintText(f);
+  document.getElementById('history-date-hint').textContent = dateHintText(f);
   renderHistory();
 }
 
-function renderHistory(){
-  document.getElementById('history-date-hint').textContent=dateHintText(historyFilter);
-  const filtered=filterByPeriod(allTrips,historyFilter);
-  const tbody=document.getElementById('trips-body');
-  const empty=document.getElementById('empty-history');
-  if(!filtered.length){tbody.innerHTML='';empty.style.display='block';return;}
-  empty.style.display='none';
-  tbody.innerHTML=filtered.map(t=>`
-    <tr>
-      <td class="mono" style="white-space:nowrap">${t.date}</td>
-      <td style="color:var(--muted);font-family:'DM Mono',monospace">${t.booking_id||'—'}</td>
-      <td class="mono">${fmt(t.total||0)}</td>
-      <td class="earn-val">${fmt(t.earnings||0)}</td>
-      <td class="cash-val">${(t.cash_tips||0)>0?fmt(t.cash_tips):'—'}</td>
-      <td>
-        <div class="actions-cell">
-          <button class="btn-edit" onclick="editTrip('${t.id}')">✏️</button>
-          <button class="btn-delete" onclick="deleteTrip('${t.id}')">✕</button>
-        </div>
-      </td>
-    </tr>`).join('');
+function renderHistory() {
+  document.getElementById('history-date-hint').textContent = dateHintText(historyFilter);
+  const search   = (document.getElementById('history-search')?.value || '').toLowerCase();
+  let filtered   = filterByPeriod(allTrips, historyFilter);
+  if (search) filtered = filtered.filter(t => (t.booking_id || '').toLowerCase().includes(search));
+
+  const tbody = document.getElementById('trips-body');
+  const empty = document.getElementById('empty-history');
+  if (!filtered.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  tbody.innerHTML = filtered.map(t => {
+    const isDeletedByMgr = t.deleted_by === 'manager';
+    return `
+      <tr class="trip-row" id="tr-${t.id}" onclick="toggleDetail('${t.id}')">
+        <td><span class="expand-icon">▶</span></td>
+        <td class="td-mono">${t.date}</td>
+        <td class="td-mono td-muted">
+          ${t.booking_id || '—'}
+          ${isDeletedByMgr ? '<span class="deleted-badge">deleted by mgr</span>' : ''}
+        </td>
+        <td class="td-mono">${fmt(t.total || 0)}</td>
+        <td class="td-earn">${fmt(t.earnings || 0)}</td>
+        <td class="td-cash">${(t.cash_tips || 0) > 0 ? fmt(t.cash_tips) : '—'}</td>
+        <td>
+          ${!isDeletedByMgr ? `
+            <div class="actions-cell" onclick="event.stopPropagation()">
+              <button class="btn-icon" onclick="editTrip('${t.id}')" title="Edit">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </button>
+              <button class="btn-icon danger" onclick="deleteTrip('${t.id}')" title="Delete">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>` : ''}
+        </td>
+      </tr>
+      <tr class="detail-row">
+        <td colspan="7">
+          <div class="detail-content" id="bd-${t.id}">${breakdownHTML(t)}</div>
+        </td>
+      </tr>`;
+  }).join('');
 }
 
-async function deleteTrip(id){
-  if(!confirm('Delete this trip?')) return;
-  try{
-    const{data:{session}}=await sb.auth.getSession();
-    await fetch(`${API_URL}/api/trips/${id}`,{method:'DELETE',headers:{'Authorization':`Bearer ${session.access_token}`}});
-    allTrips=allTrips.filter(t=>t.id!==id);
-    renderHistory();renderStats();
-  }catch{alert('Failed to delete trip');}
+function toggleDetail(id) {
+  const content = document.getElementById('bd-' + id);
+  const row     = document.getElementById('tr-' + id);
+  if (!content || !row) return;
+  const open = content.classList.contains('show');
+  content.classList.toggle('show', !open);
+  row.classList.toggle('open', !open);
 }
 
-// ── DASHBOARD ─────────────────────────────────────────────────────────────────
-function setDashQuick(period,btn){
-  document.querySelectorAll('#pane-dashboard .period-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  const today=localToday();
-  const fromEl=document.getElementById('dash-date-from');
-  const toEl=document.getElementById('dash-date-to');
-  if(period==='today'){fromEl.value=today;toEl.value=today;}
-  else if(period==='week'){const r=periodDateRange('week');fromEl.value=r.from;toEl.value=r.to;}
-  else if(period==='month'){fromEl.value=today.slice(0,7)+'-01';toEl.value=today;}
-  else{fromEl.value='';toEl.value='';}
-  renderDashboard();
+async function deleteTrip(id) {
+  if (!confirm('Delete this trip?')) return;
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const res = await fetch(`${API_URL}/api/trips/${id}`, {
+      method: 'DELETE', headers: { 'Authorization': 'Bearer ' + session.access_token }
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error);
+    // Soft delete: update local state
+    allTrips = allTrips.map(t => t.id === id ? { ...t, deleted_by: 'driver' } : t);
+    renderHistory(); renderStats();
+  } catch { alert('Failed to delete trip'); }
 }
 
-function resetDashFilters(){
-  document.getElementById('dash-date-from').value='';
-  document.getElementById('dash-date-to').value='';
-  document.getElementById('dash-driver-filter').value='';
-  document.getElementById('dash-date-hint').textContent='';
-  document.querySelectorAll('#pane-dashboard .period-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelector('#pane-dashboard .period-btn:last-child').classList.add('active');
-  renderDashboard();
-}
-
-function getDashFiltered(){
-  const from=document.getElementById('dash-date-from')?.value;
-  const to=document.getElementById('dash-date-to')?.value;
-  const driver=document.getElementById('dash-driver-filter')?.value;
-  const errEl=document.getElementById('dash-date-error');
-  if(from&&to&&from>to){if(errEl)errEl.textContent='From date cannot be after To date.';return[];}
-  if(errEl)errEl.textContent='';
-  return allTrips.filter(t=>{
-    if(from&&t.date<from)return false;
-    if(to&&t.date>to)return false;
-    if(driver&&t.driver_id!==driver)return false;
-    return true;
-  });
-}
-
-function populateDriverFilter(){
-  const sel=document.getElementById('dash-driver-filter');
-  const drivers=[...new Set(allTrips.map(t=>t.driver_id).filter(Boolean))].sort();
-  const cur=sel.value;
-  sel.innerHTML='<option value="">All drivers</option>'+
-    drivers.map(d=>`<option value="${d}"${d===cur?' selected':''}>Driver #${d}</option>`).join('');
-}
-
-function toggleBreakdown(id){
-  const row=document.getElementById('bd-'+id);
-  const tr=document.getElementById('tr-'+id);
-  if(!row||!tr)return;
-  const open=row.classList.contains('show');
-  row.classList.toggle('show',!open);
-  tr.classList.toggle('expanded',!open);
-}
-
-function breakdownHTML(t){
+function breakdownHTML(t) {
   return `<div class="bd-grid">
     <div class="bd-item"><div class="bd-item-label">Base Fare</div><div class="bd-item-val">${fmt(t.base_fare||0)}</div></div>
     <div class="bd-item"><div class="bd-item-label">Wait Time</div><div class="bd-item-val">${fmt(t.wait_time||0)}</div></div>
@@ -1066,7 +1753,8 @@ function breakdownHTML(t){
     <div class="bd-item"><div class="bd-item-label">Car Seat</div><div class="bd-item-val">${fmt(t.car_seat_fee||0)}</div></div>
     <div class="bd-item"><div class="bd-item-label">Event Wait</div><div class="bd-item-val">${fmt(t.event_wait||0)}</div></div>
     <div class="bd-item"><div class="bd-item-label">Extra Stop</div><div class="bd-item-val">${fmt(t.extra_stop||0)}</div></div>
-    <div class="bd-item"><div class="bd-item-label">Discount</div><div class="bd-item-val" style="color:var(--danger)">-${fmt(t.discount||0)}</div></div>
+    <div class="bd-item"><div class="bd-item-label">Holiday Pay</div><div class="bd-item-val">${fmt(t.holiday_pay||0)}</div></div>
+    <div class="bd-item"><div class="bd-item-label">Discount</div><div class="bd-item-val danger">${t.discount ? '-'+fmt(t.discount) : fmt(0)}</div></div>
     <div class="bd-item"><div class="bd-item-label">Expenses</div><div class="bd-item-val">${fmt(t.expenses||0)}</div></div>
     <div class="bd-item"><div class="bd-item-label">Gratuity</div><div class="bd-item-val">${fmt(t.gratuity||0)}</div></div>
     <div class="bd-item"><div class="bd-item-label">Fuel</div><div class="bd-item-val">${fmt(t.fuel_surcharge||0)}</div></div>
@@ -1076,108 +1764,364 @@ function breakdownHTML(t){
   </div>`;
 }
 
-function renderDashboard(){
-  const filtered=getDashFiltered();
-  const tbody=document.getElementById('dash-body');
-  const tfoot=document.getElementById('dash-foot');
-  const empty=document.getElementById('empty-dash');
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+function setDashQuick(period, btn) {
+  document.querySelectorAll('#pane-dashboard .period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const today  = localToday();
+  const fromEl = document.getElementById('dash-date-from');
+  const toEl   = document.getElementById('dash-date-to');
+  if      (period === 'today')  { fromEl.value = today; toEl.value = today; }
+  else if (period === 'week')   { const r = periodDateRange('week');  fromEl.value = r.from; toEl.value = r.to; }
+  else if (period === 'month')  { fromEl.value = today.slice(0, 7) + '-01'; toEl.value = today; }
+  else                          { fromEl.value = ''; toEl.value = ''; }
+  renderDashboard();
+}
 
-  const from=document.getElementById('dash-date-from')?.value;
-  const to=document.getElementById('dash-date-to')?.value;
-  const hint=document.getElementById('dash-date-hint');
-  if(from&&to&&from===to) hint.textContent=fmtDateShort(from);
-  else if(from&&to)       hint.textContent=fmtDateShort(from)+' – '+fmtDateShort(to);
-  else                    hint.textContent='';
+function resetDashFilters() {
+  document.getElementById('dash-date-from').value  = '';
+  document.getElementById('dash-date-to').value    = '';
+  document.getElementById('dash-driver-filter').value = '';
+  document.getElementById('dash-date-hint').textContent = '';
+  document.getElementById('dash-search').value = '';
+  document.querySelectorAll('#pane-dashboard .period-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('#pane-dashboard .period-btn:last-child').classList.add('active');
+  renderDashboard();
+}
+
+function getDashFiltered() {
+  const from   = document.getElementById('dash-date-from')?.value;
+  const to     = document.getElementById('dash-date-to')?.value;
+  const driver = document.getElementById('dash-driver-filter')?.value;
+  const search = (document.getElementById('dash-search')?.value || '').toLowerCase();
+  const errEl  = document.getElementById('dash-date-error');
+
+  if (from && to && from > to) {
+    if (errEl) errEl.textContent = 'From date cannot be after To date.';
+    return [];
+  }
+  if (errEl) errEl.textContent = '';
+
+  return allTrips.filter(t => {
+    if (from   && t.date < from)                                return false;
+    if (to     && t.date > to)                                  return false;
+    if (driver && t.driver_id !== driver)                       return false;
+    if (search && !(t.booking_id || '').toLowerCase().includes(search)) return false;
+    return true;
+  });
+}
+
+function populateDriverFilter() {
+  const sel     = document.getElementById('dash-driver-filter');
+  const drivers = [...new Set(allTrips.map(t => t.driver_id).filter(Boolean))].sort();
+  const cur     = sel.value;
+  sel.innerHTML = '<option value="">All drivers</option>' +
+    drivers.map(d => `<option value="${d}"${d === cur ? ' selected' : ''}>Driver #${d}</option>`).join('');
+}
+
+function renderDashboard() {
+  const filtered = getDashFiltered();
+  const tbody    = document.getElementById('dash-body');
+  const tfoot    = document.getElementById('dash-foot');
+  const empty    = document.getElementById('empty-dash');
+
+  // Date hint
+  const from   = document.getElementById('dash-date-from')?.value;
+  const to     = document.getElementById('dash-date-to')?.value;
+  const hint   = document.getElementById('dash-date-hint');
+  if (from && to && from === to) hint.textContent = fmtDateShort(from);
+  else if (from && to)           hint.textContent = fmtDateShort(from) + ' – ' + fmtDateShort(to);
+  else                           hint.textContent = '';
 
   populateDriverFilter();
-  if(!filtered.length){
-    tbody.innerHTML='';tfoot.innerHTML='';
-    empty.style.display='block';
-    document.getElementById('dash-stats').innerHTML='';
+
+  if (!filtered.length) {
+    tbody.innerHTML = ''; tfoot.innerHTML = '';
+    empty.style.display = 'block';
+    document.getElementById('dash-stats').innerHTML = '';
     return;
   }
-  empty.style.display='none';
-  const rev=filtered.reduce((s,t)=>s+(t.total||0),0);
-  const pay=filtered.reduce((s,t)=>s+(t.earnings||0),0);
-  const tolls=filtered.reduce((s,t)=>s+(t.tolls||0),0);
-  const net=rev-pay-tolls;
+  empty.style.display = 'none';
 
-  document.getElementById('dash-stats').innerHTML=`
+  const rev   = filtered.reduce((s, t) => s + (t.total    || 0), 0);
+  const pay   = filtered.reduce((s, t) => s + (t.earnings || 0), 0);
+  const tolls = filtered.reduce((s, t) => s + (t.tolls    || 0), 0);
+  const net   = rev - pay - tolls;
+
+  document.getElementById('dash-stats').innerHTML = `
     <div class="stat-card"><div class="stat-label">Total Revenue</div><div class="stat-value">${fmt(rev)}</div></div>
     <div class="stat-card highlight"><div class="stat-label">Total Payroll</div><div class="stat-value">${fmt(pay)}</div></div>
     <div class="stat-card"><div class="stat-label">i-Pass (Tolls)</div><div class="stat-value">${fmt(tolls)}</div></div>
     <div class="stat-card"><div class="stat-label">Company Net</div><div class="stat-value">${fmt(net)}</div></div>
     <div class="stat-card neutral"><div class="stat-label">Trips</div><div class="stat-value neutral">${filtered.length}</div></div>`;
 
-  tbody.innerHTML=filtered.map(t=>`
-    <tr class="dash-row" id="tr-${t.id}" onclick="toggleBreakdown('${t.id}')">
+  tbody.innerHTML = filtered.map(t => `
+    <tr class="trip-row" id="tr-${t.id}" onclick="toggleDetail('${t.id}')">
       <td><span class="expand-icon">▶</span></td>
-      <td class="mono" style="white-space:nowrap">${t.date}</td>
-      <td><span class="driver-id-badge">#${t.driver_id||'—'}</span></td>
-      <td style="color:var(--muted);font-family:'DM Mono',monospace">${t.booking_id||'—'}</td>
-      <td class="mono">${fmt(t.total||0)}</td>
-      <td class="earn-val">${fmt(t.earnings||0)}</td>
+      <td class="td-mono">${t.date}</td>
+      <td><span class="driver-id-badge">#${t.driver_id || '—'}</span></td>
+      <td class="td-mono td-muted">
+        ${t.booking_id || '—'}
+        ${t.deleted_by === 'driver' ? '<span class="deleted-badge">deleted by driver</span>' : ''}
+      </td>
+      <td class="td-mono">${fmt(t.total || 0)}</td>
+      <td class="td-earn">${fmt(t.earnings || 0)}</td>
       <td onclick="event.stopPropagation()">
-        <button class="btn-delete" onclick="deleteTripManager('${t.id}','${t.booking_id||''}')">✕</button>
+        <button class="btn-icon danger" onclick="deleteTripManager('${t.id}','${t.booking_id || ''}')" title="Delete">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
       </td>
     </tr>
-    <tr class="breakdown-row">
-      <td colspan="7"><div class="breakdown-content" id="bd-${t.id}">${breakdownHTML(t)}</div></td>
+    <tr class="detail-row">
+      <td colspan="7">
+        <div class="detail-content" id="bd-${t.id}">${breakdownHTML(t)}</div>
+      </td>
     </tr>`).join('');
 
-  const summaryBD=`<div class="bd-grid">
-    ${['base_fare','wait_time','greet_fee','car_seat_fee','event_wait','extra_stop','discount','expenses','gratuity','fuel_surcharge','parking','airport_fee','tolls'].map(f=>{
-      const sum=filtered.reduce((s,t)=>s+(t[f]||0),0);
-      const label=f.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
-      return `<div class="bd-item"><div class="bd-item-label">${label}</div><div class="bd-item-val">${fmt(sum)}</div></div>`;
-    }).join('')}
-  </div>`;
+  // Summary footer
+  const fields  = ['base_fare','wait_time','greet_fee','car_seat_fee','event_wait','extra_stop','holiday_pay','discount','expenses','gratuity','fuel_surcharge','parking','airport_fee','tolls'];
+  const sumBD   = `<div class="bd-grid">${fields.map(f => {
+    const sum   = filtered.reduce((s, t) => s + (t[f] || 0), 0);
+    const label = f.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    return `<div class="bd-item"><div class="bd-item-label">${label}</div><div class="bd-item-val">${fmt(sum)}</div></div>`;
+  }).join('')}</div>`;
 
-  tfoot.innerHTML=`
-    <tr class="dash-row" id="tr-total" onclick="toggleBreakdown('total')">
+  tfoot.innerHTML = `
+    <tr class="trip-row" id="tr-total" onclick="toggleDetail('total')">
       <td><span class="expand-icon">▶</span></td>
       <td colspan="2" style="font-weight:700;color:var(--text)">TOTAL (${filtered.length} trips)</td>
       <td></td>
-      <td class="mono" style="font-weight:700">${fmt(rev)}</td>
-      <td class="earn-val" style="font-weight:700">${fmt(pay)}</td>
+      <td class="td-mono" style="font-weight:700">${fmt(rev)}</td>
+      <td class="td-earn" style="font-weight:700">${fmt(pay)}</td>
       <td></td>
     </tr>
-    <tr class="breakdown-row">
-      <td colspan="7"><div class="breakdown-content" id="bd-total">${summaryBD}</div></td>
+    <tr class="detail-row">
+      <td colspan="7">
+        <div class="detail-content" id="bd-total">${sumBD}</div>
+      </td>
     </tr>`;
 }
 
-async function deleteTripManager(id,bookingId){
-  const label=bookingId?`booking #${bookingId}`:'trip';
-  if(!confirm(`Delete ${label}?\n\nThis action cannot be undone.`)) return;
-  try{
-    const{data:{session}}=await sb.auth.getSession();
-    await fetch(`${API_URL}/api/trips/${id}`,{method:'DELETE',headers:{'Authorization':`Bearer ${session.access_token}`}});
-    allTrips=allTrips.filter(t=>t.id!==id);
+async function deleteTripManager(id, bookingId) {
+  const label = bookingId ? `booking #${bookingId}` : 'this trip';
+  if (!confirm(`Delete ${label}?\n\nThis action cannot be undone.`)) return;
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const res = await fetch(`${API_URL}/api/trips/${id}`, {
+      method: 'DELETE', headers: { 'Authorization': 'Bearer ' + session.access_token }
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error);
+    allTrips = allTrips.map(t => t.id === id ? { ...t, deleted_by: 'manager' } : t);
     renderDashboard();
-  }catch{alert('Failed to delete trip');}
+  } catch { alert('Failed to delete trip'); }
 }
 
-// ── EXPORT ────────────────────────────────────────────────────────────────────
-function exportCSV(){
-  const filtered=getDashFiltered();
-  if(!filtered.length){alert('No data to export');return;}
-  const headers=['Date','Driver ID','Booking ID','Base Fare','Wait Time','Greet Fee','Car Seat Fee','Event Wait','Extra Stop','Discount','Expenses','Gratuity','Fuel','Parking','Airport Fee','Tolls','Total','Earnings'];
-  const rows=filtered.map(t=>[
-    t.date,t.driver_id||'',t.booking_id||'',
-    t.base_fare||0,t.wait_time||0,t.greet_fee||0,t.car_seat_fee||0,
-    t.event_wait||0,t.extra_stop||0,t.discount||0,t.expenses||0,t.gratuity||0,
-    t.fuel_surcharge||0,t.parking||0,t.airport_fee||0,t.tolls||0,
-    t.total||0,t.earnings||0
-  ].join(','));
-  const csv=[headers.join(','),...rows].join('\n');
-  const blob=new Blob([csv],{type:'text/csv'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;a.download=`limopay_${new Date().toISOString().split('T')[0]}.csv`;
-  a.click();URL.revokeObjectURL(url);
+// ── EXCEL EXPORT ──────────────────────────────────────────────────────────────
+async function exportXLSX() {
+  const filtered = getDashFiltered();
+  if (!filtered.length) { alert('No data to export'); return; }
+
+  // Lazy-load ExcelJS
+  if (!window.ExcelJS) {
+    await new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+      s.onload = resolve; s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+
+  const fromVal   = document.getElementById('dash-date-from').value;
+  const toVal     = document.getElementById('dash-date-to').value;
+  const driverVal = document.getElementById('dash-driver-filter').value;
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'LimoPay'; wb.created = new Date();
+  const ws = wb.addWorksheet('LimoPay Export');
+
+  const C = {
+    black: '00000000', white: '00FFFFFF',
+    accent: '00C8F060', dark: '00111118',
+    surface: '001A1A24', border: '002A2A38',
+    danger: '00F06060', muted: '006A6A80',
+  };
+
+  const COLS = [
+    { key: 'date',          header: 'Date',         width: 14 },
+    { key: 'booking_id',    header: 'Booking ID',   width: 14 },
+    { key: 'base_fare',     header: 'Base Fare',    width: 12 },
+    { key: '_adj_base',     header: 'Adj. Base',    width: 12 },
+    { key: 'gratuity',      header: 'Gratuity',     width: 12 },
+    { key: 'holiday_pay',   header: 'Holiday Pay',  width: 12 },
+    { key: 'tolls',         header: 'Tolls',        width: 10 },
+    { key: 'airport_fee',   header: 'Airport Fee',  width: 12 },
+    { key: 'fuel_surcharge',header: 'Fuel',         width: 10 },
+    { key: 'discount',      header: 'Discount',     width: 10 },
+    { key: 'expenses',      header: 'Expenses',     width: 10 },
+    { key: 'wait_time',     header: 'Wait Time',    width: 10 },
+    { key: 'greet_fee',     header: 'Greet Fee',    width: 10 },
+    { key: 'car_seat_fee',  header: 'Car Seat',     width: 10 },
+    { key: 'event_wait',    header: 'Event Wait',   width: 10 },
+    { key: 'extra_stop',    header: 'Extra Stop',   width: 10 },
+    { key: 'parking',       header: 'Parking',      width: 10 },
+    { key: 'total',         header: 'Total Fare',   width: 12 },
+    { key: 'earnings',      header: 'Earnings',     width: 12 },
+  ];
+
+  ws.columns = COLS.map(c => ({ key: c.key, width: c.width }));
+  const numFmt = '$#,##0.00';
+  const numKeys = new Set(COLS.filter(c => c.key !== 'date' && c.key !== 'booking_id').map(c => c.key));
+
+  // Helper: adj base from trip
+  const adjBase = t => (t.base_fare||0)+(t.wait_time||0)+(t.greet_fee||0)+(t.car_seat_fee||0)+
+    (t.event_wait||0)+(t.extra_stop||0)+(t.holiday_pay||0)-(t.discount||0)+(t.expenses||0);
+
+  function styleRow(row, opts = {}) {
+    row.eachCell({ includeEmpty: true }, (cell, col) => {
+      if (opts.bg) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: opts.bg } };
+      cell.font = { bold: opts.bold || false, color: { argb: opts.color || C.black }, size: 10, name: 'Arial' };
+      cell.alignment = { horizontal: col <= 2 ? 'left' : 'right', vertical: 'middle' };
+      if (numKeys.has(COLS[col - 1]?.key)) cell.numFmt = numFmt;
+    });
+    row.height = opts.height || 18;
+  }
+
+  // Title row
+  const titleRow = ws.addRow(['LimoPay Export' + (fromVal && toVal ? `  ${fromVal} – ${toVal}` : '') + (driverVal ? `  Driver #${driverVal}` : '')]);
+  titleRow.getCell(1).font = { bold: true, size: 13, name: 'Arial', color: { argb: C.black } };
+  titleRow.height = 24;
+  ws.addRow([]);
+
+  // Column headers
+  const hdrRow = ws.addRow(COLS.map(c => c.header));
+  styleRow(hdrRow, { bg: C.accent, bold: true, height: 22 });
+
+  // Group by driver
+  const byDriver = {};
+  filtered.forEach(t => {
+    const k = t.driver_id || 'Unknown';
+    (byDriver[k] = byDriver[k] || []).push(t);
+  });
+
+  let grandEarnings = 0, grandRevenue = 0;
+
+  for (const [driverId, trips] of Object.entries(byDriver)) {
+    // Driver header
+    const dHdr = ws.addRow([`Driver #${driverId}`]);
+    dHdr.getCell(1).font = { bold: true, color: { argb: C.white }, name: 'Arial', size: 10 };
+    dHdr.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: C.dark } };
+    dHdr.height = 20;
+
+    let driverEarnings = 0, driverRevenue = 0;
+    let prevDate = null;
+
+    const sortedTrips = [...trips].sort((a, b) => a.date.localeCompare(b.date));
+
+    for (const t of sortedTrips) {
+      const isDeleted = t.deleted_by === 'driver';
+      const bId = isDeleted ? `[deleted by driver] ${t.booking_id || ''}` : (t.booking_id || '');
+      const row = ws.addRow({
+        date:           t.date,
+        booking_id:     bId,
+        base_fare:      t.base_fare      || 0,
+        _adj_base:      adjBase(t),
+        gratuity:       t.gratuity       || 0,
+        holiday_pay:    t.holiday_pay    || 0,
+        tolls:          t.tolls          || 0,
+        airport_fee:    t.airport_fee    || 0,
+        fuel_surcharge: t.fuel_surcharge || 0,
+        discount:       t.discount       || 0,
+        expenses:       t.expenses       || 0,
+        wait_time:      t.wait_time      || 0,
+        greet_fee:      t.greet_fee      || 0,
+        car_seat_fee:   t.car_seat_fee   || 0,
+        event_wait:     t.event_wait     || 0,
+        extra_stop:     t.extra_stop     || 0,
+        parking:        t.parking        || 0,
+        total:          t.total          || 0,
+        earnings:       t.earnings       || 0,
+      });
+      styleRow(row, { color: isDeleted ? C.danger : C.black });
+      driverEarnings += t.earnings || 0;
+      driverRevenue  += t.total    || 0;
+    }
+
+    // Driver subtotal
+    const subRow = ws.addRow({ date: 'Subtotal', booking_id: '', earnings: driverEarnings, total: driverRevenue });
+    subRow.getCell(1).value = `Driver #${driverId} Subtotal`;
+    styleRow(subRow, { bg: 'FFE8F5C8', bold: true, height: 20 });
+
+    grandEarnings += driverEarnings;
+    grandRevenue  += driverRevenue;
+  }
+
+  // Grand total
+  const gtRow = ws.addRow({ date: 'GRAND TOTAL', earnings: grandEarnings, total: grandRevenue });
+  gtRow.getCell(1).value = `GRAND TOTAL (${filtered.length} trips)`;
+  styleRow(gtRow, { bg: C.dark, bold: true, color: C.white, height: 22 });
+
+  // Download
+  const buf  = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const date = new Date().toISOString().split('T')[0];
+  a.href     = url;
+  a.download = `limopay${driverVal ? '_driver' + driverVal : ''}_${date}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
+// ── KEEP-ALIVE ────────────────────────────────────────────────────────────────
+(function keepAlive() {
+  let wakeLock = null;
+  let wasHidden = false;
+
+  async function requestWakeLock() {
+    if (!('wakeLock' in navigator)) return;
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => { wakeLock = null; });
+    } catch {}
+  }
+
+  document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'hidden') { wasHidden = true; return; }
+    // Page became visible
+    requestWakeLock();
+    if (wasHidden && currentUser) {
+      wasHidden = false;
+      const { data: { session } } = await sb.auth.getSession().catch(() => ({ data: { session: null } }));
+      if (!session) return;
+      await loadTrips(session.access_token);
+      await loadFuelExpenses(session.access_token);
+      const active = ['log','stats','history','dashboard'].find(t =>
+        document.getElementById('pane-' + t)?.style.display !== 'none'
+      );
+      if (active === 'stats')     renderStats();
+      if (active === 'history')   renderHistory();
+      if (active === 'dashboard') renderDashboard();
+    }
+  });
+
+  requestWakeLock();
+
+  // Token refresh every 4 minutes
+  setInterval(async () => {
+    if (document.visibilityState !== 'visible') return;
+    try { await sb.auth.getSession(); } catch {}
+  }, 4 * 60 * 1000);
+})();
+
+// ── SERVICE WORKER ────────────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+
+// ── START ─────────────────────────────────────────────────────────────────────
 init();
 </script>
 </body>
