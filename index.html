@@ -18,14 +18,14 @@
   --danger:   #f06060;
   --text:     #e8e8f0;
   --muted:    #6a6a80;
-  --radius:   10px;
+  --radius:   8px;
 
-  --fh:   42px;
+  --fh:   44px;
   --ffs:  16px;
-  --fp:   0 12px;
-  --gap:  10px;
+  --fp:   0 10px;
+  --gap:  8px;
   --lfs:  10px;
-  --pad:  14px;
+  --pad:  12px;
 }
 
 /* ── RESET ───────────────────────────────────────────────────────────────────── */
@@ -254,8 +254,8 @@ header {
 /* ── UPLOAD ZONE ─────────────────────────────────────────────────────────────── */
 .upload-zone {
   border: 1.5px dashed var(--border); border-radius: var(--radius);
-  padding: 16px; text-align: center; cursor: pointer;
-  transition: all 0.2s; margin-bottom: 14px; background: var(--surface);
+  padding: 10px 12px; text-align: center; cursor: pointer;
+  transition: all 0.2s; margin-bottom: 10px; background: var(--surface);
 }
 .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: rgba(200,240,96,0.03); }
 .upload-zone input[type="file"] { display: none; }
@@ -315,22 +315,26 @@ header {
   display: grid;
   grid-template-columns: 1fr 1fr; /* ALWAYS exactly 2 equal columns */
   gap: var(--gap);
-  margin-bottom: 14px;
+  margin-bottom: 10px;
   width: 100%;
 }
 .field { display: flex; flex-direction: column; min-width: 0; }
 .field label {
   display: block; font-size: var(--lfs); color: var(--muted);
-  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;
+  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .field input, .field select {
-  width: 100%; height: var(--fh); padding: var(--fp);
+  width: 100%;
+  height: var(--fh);
+  line-height: 1;
+  padding: 0 10px;
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: 8px; color: var(--text);
+  border-radius: 6px; color: var(--text);
   font-family: 'DM Mono', monospace; font-size: var(--ffs);
   transition: border-color 0.2s; -webkit-appearance: none; appearance: none;
   min-width: 0;
+  display: block;
 }
 .field input:focus, .field select:focus { outline: none; border-color: var(--accent); }
 .field input[type="number"]::-webkit-inner-spin-button,
@@ -358,9 +362,9 @@ header {
 .checkbox-field { display: flex; flex-direction: column; }
 .checkbox-wrap {
   display: flex; align-items: center; gap: 10px;
-  height: var(--fh); padding: var(--fp);
+  height: var(--fh); padding: 0 10px;
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: 8px; cursor: pointer; transition: all 0.2s;
+  border-radius: 6px; cursor: pointer; transition: all 0.2s;
 }
 .checkbox-wrap.checked { border-color: var(--accent); background: rgba(200,240,96,0.05); }
 .checkbox-box {
@@ -378,7 +382,7 @@ header {
 /* ── EARNINGS PREVIEW ────────────────────────────────────────────────────────── */
 .earnings-preview {
   background: var(--surface); border: 1px solid rgba(200,240,96,0.2);
-  border-radius: var(--radius); padding: 14px; margin-bottom: 14px; display: none;
+  border-radius: var(--radius); padding: 10px 12px; margin-bottom: 10px; display: none;
 }
 .earnings-preview.show { display: block; }
 .ep-title { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
@@ -415,19 +419,19 @@ header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border-bottom: 1px solid var(--border);
-  gap: 8px;
+  gap: 6px;
 }
 .trip-card-date {
   font-family: 'DM Mono', monospace;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--muted);
   flex-shrink: 0;
 }
 .trip-card-booking {
   font-family: 'DM Mono', monospace;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--muted);
   flex: 1;
   text-align: center;
@@ -441,32 +445,39 @@ header {
 .trip-card-body {
   display: flex;
   align-items: center;
-  padding: 10px 12px;
+  padding: 8px 10px;
   gap: 0;
 }
 .trip-card-total {
   flex: 1;
-  font-size: 12px;
-  color: var(--muted);
+  min-width: 0;
 }
-.trip-card-total span {
+.trip-card-total .label-text {
+  font-size: 9px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   display: block;
+  margin-bottom: 2px;
+}
+.trip-card-total .value-text {
   font-family: 'DM Mono', monospace;
-  font-size: 15px;
+  font-size: 14px;
   color: var(--text);
   font-weight: 600;
+  white-space: nowrap;
 }
 .trip-card-earned {
   flex: 1;
   text-align: center;
 }
-.trip-card-earned .label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
-.trip-card-earned .value { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 700; color: var(--accent); }
+.trip-card-earned .label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+.trip-card-earned .value { font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 700; color: var(--accent); }
 .trip-card-cash {
   flex: 1;
   text-align: right;
 }
-.trip-card-cash .label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+.trip-card-cash .label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
 .trip-card-cash .value { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 600; color: var(--accent2); }
 .trip-card-cash .value.empty { color: var(--muted); font-size: 12px; }
 
@@ -501,7 +512,7 @@ header {
 /* ── PERIOD TABS + DATE HINT ─────────────────────────────────────────────────── */
 .period-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
 .period-btn {
-  padding: 6px 12px; background: var(--surface); border: 1px solid var(--border);
+  padding: 5px 10px; background: var(--surface); border: 1px solid var(--border);
   border-radius: 6px; color: var(--muted); font-family: 'Syne', sans-serif;
   font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;
 }
@@ -597,8 +608,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   padding: 1px 4px; margin-left: 5px; vertical-align: middle; white-space: nowrap;
 }
 
-/* Dashboard footer total */
-#dash-foot tr td { border-top: 2px solid var(--border); font-weight: 700; padding-top: 12px; }
+/* Dashboard footer total — kept for reference */
 
 /* ── DASHBOARD FILTERS ───────────────────────────────────────────────────────── */
 .dash-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; margin-bottom: 8px; }
@@ -957,23 +967,8 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       <input type="text" class="search-input" id="dash-search" placeholder="Search booking ID..." oninput="renderDashboard()">
     </div>
 
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th></th>
-            <th>Date</th>
-            <th>Driver</th>
-            <th>Booking</th>
-            <th>Total</th>
-            <th>Earnings</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="dash-body"></tbody>
-        <tfoot id="dash-foot"></tfoot>
-      </table>
-    </div>
+    <div id="dash-list"></div>
+    <div id="dash-foot-card"></div>
     <div id="empty-dash" class="empty-state" style="display:none">
       <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
       <div>No trips found for selected filters.</div>
@@ -985,7 +980,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 <script>
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 const SUPABASE_URL  = 'https://uljmcbrorgjrrvoxzmdb.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsam1jYnJvcmdqcnJ2b3h6bWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQzNzAsImV4cCI6MjA4OTg4MDM3MH0.gzfN9ayldCSF0kRSfSCT9Np02Dpke8ZSS42iJLBhzmA';
+const SUPABASE_ANON = '%%VITE_SUPABASE_ANON_KEY%%';
 const API_URL       = 'https://limopay-production.up.railway.app';
 
 const { createClient } = supabase;
@@ -1817,8 +1812,8 @@ function renderHistory() {
         </div>
         <div class="trip-card-body">
           <div class="trip-card-total">
-            <span>Total Fare</span>
-            <span>${fmt(t.total || 0)}</span>
+            <span class="label-text">Total Fare</span>
+            <span class="value-text">${fmt(t.total || 0)}</span>
           </div>
           <div class="trip-card-earned">
             <div class="label">Earned</div>
@@ -1930,14 +1925,14 @@ function populateDriverFilter() {
 
 function renderDashboard() {
   const filtered = getDashFiltered();
-  const tbody    = document.getElementById('dash-body');
-  const tfoot    = document.getElementById('dash-foot');
+  const list     = document.getElementById('dash-list');
+  const foot     = document.getElementById('dash-foot-card');
   const empty    = document.getElementById('empty-dash');
 
   // Date hint
-  const from   = document.getElementById('dash-date-from')?.value;
-  const to     = document.getElementById('dash-date-to')?.value;
-  const hint   = document.getElementById('dash-date-hint');
+  const from = document.getElementById('dash-date-from')?.value;
+  const to   = document.getElementById('dash-date-to')?.value;
+  const hint = document.getElementById('dash-date-hint');
   if (from && to && from === to) hint.textContent = fmtDateShort(from);
   else if (from && to)           hint.textContent = fmtDateShort(from) + ' – ' + fmtDateShort(to);
   else                           hint.textContent = '';
@@ -1945,7 +1940,7 @@ function renderDashboard() {
   populateDriverFilter();
 
   if (!filtered.length) {
-    tbody.innerHTML = ''; tfoot.innerHTML = '';
+    list.innerHTML = ''; foot.innerHTML = '';
     empty.style.display = 'block';
     document.getElementById('dash-stats').innerHTML = '';
     return;
@@ -1964,53 +1959,74 @@ function renderDashboard() {
     <div class="stat-card"><div class="stat-label">Company Net</div><div class="stat-value">${fmt(net)}</div></div>
     <div class="stat-card neutral"><div class="stat-label">Trips</div><div class="stat-value neutral">${filtered.length}</div></div>`;
 
-  tbody.innerHTML = filtered.map(t => `
-    <tr class="trip-row" id="tr-${t.id}" onclick="toggleDetail('${t.id}')">
-      <td><span class="expand-icon">▶</span></td>
-      <td class="td-mono">${t.date}</td>
-      <td><span class="driver-id-badge">#${t.driver_id || '—'}</span></td>
-      <td class="td-mono td-muted">
-        ${t.booking_id || '—'}
-        ${t.deleted_by === 'driver' ? '<span class="deleted-badge">deleted by driver</span>' : ''}
-      </td>
-      <td class="td-mono">${fmt(t.total || 0)}</td>
-      <td class="td-earn">${fmt(t.earnings || 0)}</td>
-      <td onclick="event.stopPropagation()">
-        <button class="btn-icon danger" onclick="deleteTripManager('${t.id}','${t.booking_id || ''}')" title="Delete">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M18 6L6 18M6 6l12 12"/>
-          </svg>
-        </button>
-      </td>
-    </tr>
-    <tr class="detail-row">
-      <td colspan="7">
-        <div class="detail-content" id="bd-${t.id}">${breakdownHTML(t)}</div>
-      </td>
-    </tr>`).join('');
+  list.innerHTML = filtered.map(t => {
+    const isDeleted = t.deleted_by === 'driver';
+    return `
+      <div class="trip-card" onclick="toggleTripCard('dash-${t.id}')">
+        <div class="trip-card-header">
+          <span class="trip-card-date">${t.date}</span>
+          <span class="trip-card-booking">
+            <span class="driver-id-badge" style="font-size:10px">#${t.driver_id || '—'}</span>
+            &nbsp;#${t.booking_id || '—'}
+            ${isDeleted ? '<span class="deleted-badge">del by driver</span>' : ''}
+          </span>
+          <div class="trip-card-actions" onclick="event.stopPropagation()">
+            <button class="btn-icon danger" onclick="deleteTripManager('${t.id}','${t.booking_id || ''}')" title="Delete">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="trip-card-body">
+          <div class="trip-card-total">
+            <span class="label-text">Total Fare</span>
+            <span class="value-text">${fmt(t.total || 0)}</span>
+          </div>
+          <div class="trip-card-earned">
+            <div class="label">Earned</div>
+            <div class="value">${fmt(t.earnings || 0)}</div>
+          </div>
+          <div class="trip-card-cash">
+            <div class="label">Tolls</div>
+            <div class="value" style="color:var(--muted)">${fmt(t.tolls || 0)}</div>
+          </div>
+        </div>
+        <div class="trip-card-detail" id="tcd-dash-${t.id}">${breakdownHTML(t)}</div>
+      </div>`;
+  }).join('');
 
-  // Summary footer
-  const fields  = ['base_fare','wait_time','greet_fee','car_seat_fee','event_wait','extra_stop','holiday_pay','discount','expenses','gratuity','fuel_surcharge','parking','airport_fee','tolls'];
-  const sumBD   = `<div class="bd-grid">${fields.map(f => {
+  // Summary total card
+  const fields = ['base_fare','wait_time','greet_fee','car_seat_fee','event_wait','extra_stop','holiday_pay','discount','expenses','gratuity','fuel_surcharge','parking','airport_fee','tolls'];
+  const sumBD  = `<div class="bd-grid">${fields.map(f => {
     const sum   = filtered.reduce((s, t) => s + (t[f] || 0), 0);
     const label = f.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     return `<div class="bd-item"><div class="bd-item-label">${label}</div><div class="bd-item-val">${fmt(sum)}</div></div>`;
   }).join('')}</div>`;
 
-  tfoot.innerHTML = `
-    <tr class="trip-row" id="tr-total" onclick="toggleDetail('total')">
-      <td><span class="expand-icon">▶</span></td>
-      <td colspan="2" style="font-weight:700;color:var(--text)">TOTAL (${filtered.length} trips)</td>
-      <td></td>
-      <td class="td-mono" style="font-weight:700">${fmt(rev)}</td>
-      <td class="td-earn" style="font-weight:700">${fmt(pay)}</td>
-      <td></td>
-    </tr>
-    <tr class="detail-row">
-      <td colspan="7">
-        <div class="detail-content" id="bd-total">${sumBD}</div>
-      </td>
-    </tr>`;
+  foot.innerHTML = `
+    <div class="trip-card" style="border-color:rgba(200,240,96,0.2)" onclick="toggleTripCard('dash-total')">
+      <div class="trip-card-header">
+        <span class="trip-card-date" style="color:var(--text);font-weight:700">TOTAL</span>
+        <span class="trip-card-booking" style="color:var(--muted)">${filtered.length} trips</span>
+        <span></span>
+      </div>
+      <div class="trip-card-body">
+        <div class="trip-card-total">
+          <span class="label-text">Revenue</span>
+          <span class="value-text">${fmt(rev)}</span>
+        </div>
+        <div class="trip-card-earned">
+          <div class="label">Payroll</div>
+          <div class="value">${fmt(pay)}</div>
+        </div>
+        <div class="trip-card-cash">
+          <div class="label">Net</div>
+          <div class="value" style="color:var(--text)">${fmt(net)}</div>
+        </div>
+      </div>
+      <div class="trip-card-detail" id="tcd-dash-total">${sumBD}</div>
+    </div>`;
 }
 
 async function deleteTripManager(id, bookingId) {
